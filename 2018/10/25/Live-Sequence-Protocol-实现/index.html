@@ -88,7 +88,7 @@
 <meta property="og:description" content="分布式环境中，网络不稳定导致消息（数据包）的传输存在乱序、重复和丢失的情况，同时，节点宕机也不可避免。如何优雅地处理这些问题，是构建一个健壮的分布式系统的关键。网络的复杂性使得数据包传输协议至关重要。低级别的IP协议提供不可靠的数据报服务，即消息可能延时、重复或丢失，另外，它也限制了在网络节点中传输的消息的最大字节数，因此很少直接利用IP协议来构建分布式应用。在传输层，UDP也不提供可靠的数据报服">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://raw.githubusercontent.com/qqzeng/15-440/master/p1/traffic%20control.png">
-<meta property="og:updated_time" content="2018-10-25T11:32:51.699Z">
+<meta property="og:updated_time" content="2018-10-25T12:02:47.731Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Live Sequence Protocol 实现">
 <meta name="twitter:description" content="分布式环境中，网络不稳定导致消息（数据包）的传输存在乱序、重复和丢失的情况，同时，节点宕机也不可避免。如何优雅地处理这些问题，是构建一个健壮的分布式系统的关键。网络的复杂性使得数据包传输协议至关重要。低级别的IP协议提供不可靠的数据报服务，即消息可能延时、重复或丢失，另外，它也限制了在网络节点中传输的消息的最大字节数，因此很少直接利用IP协议来构建分布式应用。在传输层，UDP也不提供可靠的数据报服">
@@ -409,7 +409,7 @@
       
         <p>分布式环境中，网络不稳定导致消息（数据包）的传输存在乱序、重复和丢失的情况，同时，节点宕机也不可避免。如何优雅地处理这些问题，是构建一个健壮的分布式系统的关键。网络的复杂性使得数据包传输协议至关重要。低级别的IP协议提供不可靠的数据报服务，即消息可能延时、重复或丢失，另外，它也限制了在网络节点中传输的消息的最大字节数，因此很少直接利用IP协议来构建分布式应用。在传输层，UDP也不提供可靠的数据报服务，但它可以通过端口定向传输报文。而TCP则会保证消息传输的可靠性、有序性，并允许任意字节大小的消息传递，还提供额外的功能，如流量控制、拥塞控制。</p>
 <a id="more"></a>
-<p>我们的目的是实现一个基于UDP、具备TCP的几个关键特性的消息传输协议 (<code>Live Sequence Protocol</code>），同时它还具备如下功能：</p>
+<p>我们的目的是实现一个基于UDP、具备TCP几个关键特性的消息传输协议 (<code>Live Sequence Protocol</code>），同时它还具备如下功能：</p>
 <ul>
 <li>不同于UDP或TCP，它支持 <code>client-server</code>通信模型 。</li>
 <li><code>server</code>会维护若干个<code>client</code>的连接。</li>
@@ -417,7 +417,7 @@
 <li>消息传输是可靠的：消息一旦发送，就会被顺序接收，且每个消息只会被接收一次。</li>
 <li><code>server</code>与<code>client</code>可以检测连接的状态。</li>
 </ul>
-<p>协议具体的工作原理、关键特性、运行流程及开放使用的接口可以参考<code>p1.pdf</code>。</p>
+<p>协议具体的工作原理、关键特性、<a href="https://github.com/qqzeng/15-440/blob/master/p1/p1.pdf" target="_blank" rel="noopener"><code>p1.pdf</code></a>。</p>
 <p>下面我会讨论协议实现过程中的几个关键点，以及个人在实现过程中遇到的棘手的问题。</p>
 <h2 id="系统逻辑框架构建"><a href="#系统逻辑框架构建" class="headerlink" title="系统逻辑框架构建"></a>系统逻辑框架构建</h2><p>清晰且优雅地构建整个系统的逻辑框架至关重要，代码框架设计关系到后期功能模块调试与扩展，不合理的系统逻辑框架设计会使得后期的扩展寸步难行，也会导致代码的可调试性、可读性变差。因此，在编写出你的第一个可用的版本之前，尽可能合理地安排系统框架，这需要理解并梳理系统的主干及各分支（异常）运行流程，为了更简单、高效且合理地实现模块功能，必须尽可能熟悉(<code>go</code>)语言的特性(<code>channel</code>、<code>gorountine</code>及<code>interface</code>)。 </p>
 <p>协议实现文档清晰地描述了协议的完整工作流程，按照此流程，其核心是<code>epoch event</code>触发后，协议的应对逻辑，可以实现出一个可运行的版本。合理安排程序框架关键在于处理好以下三个方面的问题：</p>
