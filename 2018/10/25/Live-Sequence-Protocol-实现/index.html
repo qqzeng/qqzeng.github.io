@@ -88,7 +88,7 @@
 <meta property="og:description" content="分布式环境中，网络不稳定导致消息（数据包）的传输存在乱序、重复和丢失的情况，同时，节点宕机也不可避免。如何优雅地处理这些问题，是构建一个健壮的分布式系统的关键。网络的复杂性使得数据包传输协议至关重要。低级别的IP协议提供不可靠的数据报服务，即消息可能延时、重复或丢失，另外，它也限制了在网络节点中传输的消息的最大字节数，因此很少直接利用IP协议来构建分布式应用。在传输层，UDP也不提供可靠的数据报服">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://raw.githubusercontent.com/qqzeng/15-440/master/p1/traffic%20control.png">
-<meta property="og:updated_time" content="2018-10-25T12:02:47.731Z">
+<meta property="og:updated_time" content="2018-10-25T12:13:27.852Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Live Sequence Protocol 实现">
 <meta name="twitter:description" content="分布式环境中，网络不稳定导致消息（数据包）的传输存在乱序、重复和丢失的情况，同时，节点宕机也不可避免。如何优雅地处理这些问题，是构建一个健壮的分布式系统的关键。网络的复杂性使得数据包传输协议至关重要。低级别的IP协议提供不可靠的数据报服务，即消息可能延时、重复或丢失，另外，它也限制了在网络节点中传输的消息的最大字节数，因此很少直接利用IP协议来构建分布式应用。在传输层，UDP也不提供可靠的数据报服">
@@ -417,65 +417,46 @@
 <li>消息传输是可靠的：消息一旦发送，就会被顺序接收，且每个消息只会被接收一次。</li>
 <li><code>server</code>与<code>client</code>可以检测连接的状态。</li>
 </ul>
-<p>协议具体的工作原理、关键特性、<a href="https://github.com/qqzeng/15-440/blob/master/p1/p1.pdf" target="_blank" rel="noopener"><code>p1.pdf</code></a>。</p>
-<p>下面我会讨论协议实现过程中的几个关键点，以及个人在实现过程中遇到的棘手的问题。</p>
+<p>协议具体的工作原理、关键特性、运行流程及开放使用的接口可以参考<a href="https://github.com/qqzeng/15-440/blob/master/p1/p1.pdf" target="_blank" rel="noopener"><code>p1.pdf</code></a>。下面我会讨论协议实现过程中的几个关键点，以及个人在实现过程中遇到的棘手的问题。</p>
 <h2 id="系统逻辑框架构建"><a href="#系统逻辑框架构建" class="headerlink" title="系统逻辑框架构建"></a>系统逻辑框架构建</h2><p>清晰且优雅地构建整个系统的逻辑框架至关重要，代码框架设计关系到后期功能模块调试与扩展，不合理的系统逻辑框架设计会使得后期的扩展寸步难行，也会导致代码的可调试性、可读性变差。因此，在编写出你的第一个可用的版本之前，尽可能合理地安排系统框架，这需要理解并梳理系统的主干及各分支（异常）运行流程，为了更简单、高效且合理地实现模块功能，必须尽可能熟悉(<code>go</code>)语言的特性(<code>channel</code>、<code>gorountine</code>及<code>interface</code>)。 </p>
 <p>协议实现文档清晰地描述了协议的完整工作流程，按照此流程，其核心是<code>epoch event</code>触发后，协议的应对逻辑，可以实现出一个可运行的版本。合理安排程序框架关键在于处理好以下三个方面的问题：</p>
 <ul>
-<li><p>哪些功能逻辑应该被顺序执行，如何保证同步顺序执行。</p>
-<p>比如，当创建<code>client</code>后，只有当其与<code>server</code>建立连接<code>connection</code>（抽象连接，并非消息传输所使用的连接）后才能返回，同时启动后台服务。注意<code>client</code>创建UDP连接到<code>server</code>可能会尝试多次，因为<code>server</code>可能存在慢启动问题，而且<code>Connect</code>消息也可能丢失。</p>
-</li>
-<li><p>系统需要哪些后台服务(<code>background goroutine</code>)， 后台服务如何可靠地同主线程协调交互。</p>
-<p>比如，对于<code>client</code>而言，至少需要三个<code>goroutine</code>来处理消息。</p>
-<ul>
+<li>哪些功能逻辑应该被顺序执行，如何保证同步顺序执行。<br>比如，当创建<code>client</code>后，只有当其与<code>server</code>建立连接<code>connection</code>（抽象连接，并非消息传输所使用的连接）后才能返回，同时启动后台服务。注意<code>client</code>创建UDP连接到<code>server</code>可能会尝试多次，因为<code>server</code>可能存在慢启动问题，而且<code>Connect</code>消息也可能丢失。</li>
+<li>系统需要哪些后台服务(<code>background goroutine</code>)， 后台服务如何可靠地同主线程协调交互。<br>比如，对于<code>client</code>而言，至少需要三个<code>goroutine</code>来处理消息。<ul>
 <li><code>read goroutine</code>持续从连接中读取消息，直到连接关闭。</li>
 <li><code>write goroutine</code>，因为写操作的调用是非阻塞的，但由于滑动窗口大小限制，并非所有消息都能立刻cache到滑动窗口并立即发送出去，因此，可以将用户<code>wirte</code>的消息放入到消息的<code>write channel</code>中，然后由专门的后台服务从<code>channel</code>中取消息，并在恰当的时候发送消息。</li>
 <li><code>epoch event trigger goroutine</code>，即处理与<code>epoch</code>相关的逻辑，超时如何处理？接收到<code>Ack</code>消息或<code>Data</code>消息如何处理？达到<code>max epoch</code>时如何处理？</li>
 </ul>
 </li>
-<li><p>确保开放接口的实现符合协议规范中预定义的准则要求。</p>
-<p>比如，<code>server</code>的<code>Read</code>接口的调用会阻塞直到其从任一<code>client</code>收到消息，然后返回消息的<code>payload</code>及对应的<code>connection ID</code>。如果连接丢失，关闭或者<code>Server</code>主动关闭终止，都应该返回错误提示。这个方法不应该被简单地设计成从连接中持续读取数据，因为<code>Server</code>可能连接多个<code>client</code>，针对每一个<code>client</code> 连接的读取，必须启用单独的<code>goroutine</code>。所以，一种简单的设计是<code>server</code>并发地从各连接读取数据，若通过了校验（如保证用户调用<code>Read</code>所返回的数据正是用户所期望的），则将数据放入到<code>channel</code>，让<code>Read</code>持续从<code>channel</code>中取数据，注意数据一旦添加到<code>channel</code>中，则会以放入的顺序被<code>Read</code>取出，并返回给用户。</p>
-</li>
+<li>确保开放接口的实现符合协议规范中预定义的准则要求。<br>比如，<code>server</code>的<code>Read</code>接口的调用会阻塞直到其从任一<code>client</code>收到消息，然后返回消息的<code>payload</code>及对应的<code>connection ID</code>。如果连接丢失，关闭或者<code>Server</code>主动关闭终止，都应该返回错误提示。这个方法不应该被简单地设计成从连接中持续读取数据，因为<code>Server</code>可能连接多个<code>client</code>，针对每一个<code>client</code> 连接的读取，必须启用单独的<code>goroutine</code>。所以，一种简单的设计是<code>server</code>并发地从各连接读取数据，若通过了校验（如保证用户调用<code>Read</code>所返回的数据正是用户所期望的），则将数据放入到<code>channel</code>，让<code>Read</code>持续从<code>channel</code>中取数据，注意数据一旦添加到<code>channel</code>中，则会以放入的顺序被<code>Read</code>取出，并返回给用户。</li>
 </ul>
 <h2 id="理解UDP通信本质"><a href="#理解UDP通信本质" class="headerlink" title="理解UDP通信本质"></a>理解UDP通信本质</h2><p>大家可能对<code>TCP</code>原理及编程更为熟悉，<code>UDP</code>相对简单，但因为<code>lsp(Live Sequence Protocol)</code>基于<code>UDP</code>，并在更高的协议抽象层面具备TCP的特性，所以，不要混淆了二者的通信原理。<code>UDP</code>是无连接的！它会完全按照程序员的意愿发送消息，它不考虑对方主机是否存在或正常工作，也不会主动重发消息，因此，也就无法保证消息的可靠接收与发送。</p>
 <p>所以，<code>server</code>不需要也不能维护其与<code>client</code>的连接！但应当在<code>sever</code>端创建并维护与其通信的<code>client</code>关联的信息实体（需包含哪些数据？），那何时创建？答案是当<code>server</code>读取到数据时，因为此时可以获取读取所返回的<code>client</code>地址，<code>server</code>可以通过cache已经连接的信息来判断此次读取对应的连接是否是新的连接。若不是，则直接进入消息读取处理逻辑，否则需要先初始化<code>server</code>维护的<code>client</code>相关联的信息实体。</p>
 <p>最后，注意<code>server</code>与<code>client</code>使用的是不同的<code>UDP</code>读写通信接口。（<code>client</code>直接持有与<code>server</code>通信的连接，而<code>server</code>是通过指定地址（<code>IP+port</code>）发送与接收消息）。</p>
 <h2 id="如何实现滑动窗口"><a href="#如何实现滑动窗口" class="headerlink" title="如何实现滑动窗口"></a>如何实现滑动窗口</h2><p>滑动窗口<code>sliding window</code>是协议实现流量控制的关键，是整个协议的功能核心，并且其与TCP的滑动窗口机制类似。关于滑动窗口，在理解它的工作原理后，重点考虑以下三个方面：</p>
 <ul>
-<li><p>设计滑动窗口的数据结构。</p>
-<ul>
+<li>设计滑动窗口的数据结构。<ul>
 <li>消息应该被有序添加到滑动窗口。</li>
 <li>发送消息窗口需要标识每一条消息是否已经被ack。</li>
 </ul>
 </li>
-<li><p>发送消息所关联的滑动窗口<code>latestSentDataMsg</code>。</p>
-<p>以<code>client</code>作为示例，维持其发送消息的窗口，以便对未按时返回<code>Ack</code>的消息进行重发（已发送的<code>data</code>消息可能会丢失，或者接收主机响应的<code>Ack</code>消息丢失）。</p>
-<ul>
+<li>发送消息所关联的滑动窗口<code>latestSentDataMsg</code>。<br>以<code>client</code>作为示例，维持其发送消息的窗口，以便对未按时返回<code>Ack</code>的消息进行重发（已发送的<code>data</code>消息可能会丢失，或者接收主机响应的<code>Ack</code>消息丢失）。<ul>
 <li>因为窗口内的消息所返回的<code>Ack</code>是无序的（消息异步发送，网络传输也不能保证消息按序到达），所以，需要维护一个指针，表示当前返回的<code>Ack</code>消息的最小的序号<code>receivedAckSeqNum</code>，以作为窗口向前推进的依据。</li>
-<li>当<code>client</code>发送<code>data</code>消息时，需同时将其cache到<code>latestSentDataMsg</code>。而当其接收到<code>Ack</code>消息时，需要执行更新此指针<code>receivedAckSeqNum</code>的逻辑。</li>
+<li>当<code>client</code>发送<code>data</code>消息时，需同时将其cache到<code>latestSentDataMsg</code>。而当其接收到<code>Ack</code>消息时，需要执行更新此指针<code>receivedAckSeqNum</code>的逻辑。<br>而<code>server</code>则需要对其所维护的每一个连接构建对应的发送消息窗口，但处理逻辑类似。</li>
 </ul>
-<p>而<code>server</code>则需要对其所维护的每一个连接构建对应的发送消息窗口，但处理逻辑类似。</p>
 </li>
-<li><p>接收消息所关联的滑动窗口<code>latestReceivedDataMsg</code>。</p>
-<p>同样以<code>client</code>作为示例，维持其接收消息的窗口，以便在计时器超时后，对最近收到的若干个<code>data</code>消息，重发<code>Ack</code>消息。</p>
-<ul>
+<li>接收消息所关联的滑动窗口<code>latestReceivedDataMsg</code>。<br>同样以<code>client</code>作为示例，维持其接收消息的窗口，以便在计时器超时后，对最近收到的若干个<code>data</code>消息，重发<code>Ack</code>消息。<ul>
 <li>同样，接收消息窗口也是无序的，因此，为了保证返回给用户的消息有序，需要维护一个指针，表示下一个期望接收到的<code>data</code>消息序号<code>nextReceiveDataSeqNum</code>（或者是当前已经接收到的最大的<code>data</code>消息的消息序号），它是依次递增的。对于接收到的任何<code>data</code>消息，若其<code>SeqNum</code>在此指针之后，都应该直接添加（暂时缓存）到<code>latestReceivedDataMsg</code>中，而不应该作为<code>Read</code>调用的返回结果。</li>
-<li>当<code>client</code>收到<code>server</code>的<code>data</code>消息时，也需要将其cache到<code>latestReceivedDataMsg</code>，并判断是否需要更新<code>nextReceiveDataSeqNum</code>，若需要更新，则应当将更新过程中所涉及到的cache在接收消息窗口中的<code>data</code>消息按序添加到供<code>Read</code>接口所读取的<code>channel</code>。</li>
+<li>当<code>client</code>收到<code>server</code>的<code>data</code>消息时，也需要将其cache到<code>latestReceivedDataMsg</code>，并判断是否需要更新<code>nextReceiveDataSeqNum</code>，若需要更新，则应当将更新过程中所涉及到的cache在接收消息窗口中的<code>data</code>消息按序添加到供<code>Read</code>接口所读取的<code>channel</code>。<br><code>server</code>同样是一个连接对应一个接收消息窗口。</li>
 </ul>
-<p><code>server</code>同样是一个连接对应一个接收消息窗口。</p>
 </li>
 </ul>
-<h2 id="如何实现流量控制"><a href="#如何实现流量控制" class="headerlink" title="如何实现流量控制"></a>如何实现流量控制</h2><p>流量控制表示若当前主机有过多的消息未被ack（网络拥塞），因此发送主机需要对用户调用<code>Write</code>接口的<code>data</code>消息进行阻塞以延缓发送。它的实现关键是滑动窗口机制。具体的实现原理为：</p>
+<h2 id="如何实现流量控制"><a href="#如何实现流量控制" class="headerlink" title="如何实现流量控制"></a>如何实现流量控制</h2><p>流量控制表示若当前主机有过多的消息未被ack（网络拥塞），因此发送主机需要对用户调用<code>Write</code>接口的<code>data</code>消息进行阻塞以延缓发送。其实现关键是滑动窗口机制。具体实现原理为：</p>
 <ol>
-<li><p>当用户调用<code>Write</code>接口以发送消息时，将消息添加到消息发送队列<code>channel</code>，然后返回，不能阻塞。</p>
-</li>
-<li><p>后台服务<code>write goroutine</code>从消息发送队列中不断的取消息，但在消息正式发送前，需要检测消息发送滑动窗口是否空闲<code>idle</code>，并且包含多少空闲的<code>slot</code>。</p>
-</li>
-<li><p>空闲的<code>slot</code>数目可以根据以下表达式计算：</p>
-<p><code>idleSlotNum := cli.params.WindowSize-(lastMsg.SeqNum-cli.receivedAckSeqNum)</code>，其中，<code>lastMsg</code>为消息发送窗口中最后一个消息，即<code>SeqNum</code>最大的消息。</p>
-</li>
-<li><p>如果<code>idleSlotNum</code>大于0，则可以发送对应数目的消息，并将已经发送的消息记录到消息发送窗口，同时递增<code>nextSendDataSeqNum</code>指针。否则，<code>write goroutine</code>应该被阻塞住。那如何解除阻塞？每当<code>client</code>在接收到<code>Ack</code>消息时都要去尝试解除阻塞。</p>
-</li>
+<li>当用户调用<code>Write</code>接口以发送消息时，将消息添加到消息发送队列<code>channel</code>，然后返回，不能阻塞。</li>
+<li>后台服务<code>write goroutine</code>从消息发送队列中不断的取消息，但在消息正式发送前，需要检测消息发送滑动窗口是否空闲<code>idle</code>，并且包含多少空闲的<code>slot</code>。</li>
+<li>空闲的<code>slot</code>数目可以根据以下表达式计算：<br><code>idleSlotNum := cli.params.WindowSize-(lastMsg.SeqNum-cli.receivedAckSeqNum)</code>，其中，<code>lastMsg</code>为消息发送窗口中最后一个消息，即<code>SeqNum</code>最大的消息。</li>
+<li>如果<code>idleSlotNum</code>大于0，则可以发送对应数目的消息，并将已经发送的消息记录到消息发送窗口，同时递增<code>nextSendDataSeqNum</code>指针。否则，<code>write goroutine</code>应该被阻塞住。那如何解除阻塞？每当<code>client</code>在接收到<code>Ack</code>消息时都要去尝试解除阻塞。</li>
 </ol>
 <p>如图所示，当滑动窗口处于(a)的情况下，当用户调用<code>Write</code>以发送消息时，消息会被阻塞在<code>write channel</code>中，因为此时<code>receivedAckSeqNum</code>为9，消息发送窗口的<code>idle</code>的<code>slot</code>数目为：5-(14-9)=0。而当<code>client</code>接收若干<code>Ack</code>消息后，滑动窗口转移到(b)状态时，注意到<code>receivedAckSeqNum</code>从9逐一递增到11，消息发送窗口<code>idleSlotNum</code>为：5-(14-11)=2，因此窗口前移，并可以从<code>write channel</code>中顺序取出两个消息，进行发送。</p>
 <p><img src="https://raw.githubusercontent.com/qqzeng/15-440/master/p1/traffic%20control.png" alt="traffic control"></p>
@@ -493,16 +474,10 @@
 <h2 id="如何优雅地关闭连接"><a href="#如何优雅地关闭连接" class="headerlink" title="如何优雅地关闭连接"></a>如何优雅地关闭连接</h2><p>保证连接优雅地关闭是一个非常棘手的问题。其中，相比于<code>client</code>端的连接关闭，<code>server</code>的关闭又更为复杂。协议规范清晰地描述了<code>client</code>及<code>server</code>在关闭连接时需要注意的问题。其核心是：</p>
 <ul>
 <li>当存在<code>pending</code>消息时，需要将其处理完成（即需保证接收到<code>Ack</code>消息）。</li>
-<li>同时，一旦<code>data</code>消息被加入到<code>write channel</code>，它必须保证最后能够被发送出去。</li>
-</ul>
-<p><code>client</code>的关闭相对简单，具体处理逻辑为：当用户调用<code>Close</code>接口时，需要判断是否存在<code>pending</code>消息，如何检测？两个条件：</p>
-<ul>
+<li>同时，一旦<code>data</code>消息被加入到<code>write channel</code>，它必须保证最后能够被发送出去。<br><code>client</code>的关闭相对简单，具体处理逻辑为：当用户调用<code>Close</code>接口时，需要判断是否存在<code>pending</code>消息，如何检测？两个条件：</li>
 <li>保证消息发送窗口的最后一个消息的<code>SeqNum</code>恰好为其持有的<code>receivedAckSeqNum</code>的值。</li>
-<li>保证<code>write channel</code>中没有任何未被处理的消息。</li>
+<li>保证<code>write channel</code>中没有任何未被处理的消息。<br>因此如果此时存在<code>pending</code>消息，<code>Close</code>会被阻塞。那如何解除阻塞？每当<code>client</code>在接收到<code>Ack</code>消息时都要去尝试解除阻塞。此外，值得注意的是，在阻塞的过程中，如果触发了<code>max epoch event</code>，则<code>client</code>应该立刻返回，因为这表明连接已经<code>discarded</code>，此时要么所有<code>pending</code>消息已被处理，要么<code>server</code>主动关闭了连接。<br><code>server</code>的<code>CloseConn</code>接口可以看作是<code>client</code>的<code>Close</code>接口的非阻塞版本。而<code>Close</code>接口需要协调所有的<code>connection</code>的关闭。同样，<code>server</code>的某个连接也可能到达<code>max epoch</code>，此时其对应的连接应该被关闭。当所有连接都关闭时，<code>Close</code>才能返回。<br>在连接关闭时，需要及时退出对应的<code>background goroutine</code>。</li>
 </ul>
-<p>因此如果此时存在<code>pending</code>消息，<code>Close</code>会被阻塞。那如何解除阻塞？每当<code>client</code>在接收到<code>Ack</code>消息时都要去尝试解除阻塞。此外，值得注意的是，在阻塞的过程中，如果触发了<code>max epoch event</code>，则<code>client</code>应该立刻返回，因为这表明连接已经<code>discarded</code>，此时要么所有<code>pending</code>消息已被处理，要么<code>server</code>主动关闭了连接。</p>
-<p><code>server</code>的<code>CloseConn</code>接口可以看作是<code>client</code>的<code>Close</code>接口的非阻塞版本。而<code>Close</code>接口需要协调所有的<code>connection</code>的关闭。同样，<code>server</code>的某个连接也可能到达<code>max epoch</code>，此时其对应的连接应该被关闭。当所有连接都关闭时，<code>Close</code>才能返回。</p>
-<p>在连接关闭时，需要及时退出对应的<code>background goroutine</code>。</p>
 <h2 id="需注意的细节问题"><a href="#需注意的细节问题" class="headerlink" title="需注意的细节问题"></a>需注意的细节问题</h2><p>往往一些编程方面的细节，包括逻辑漏洞或者被忽视的语法问题会造成很长时间的调试。而且，当通信过程中，数据交换复杂变得越发复杂时，很难从庞大的日志文件中找出错误的根源。个人在实现的过程中，遇到两个问题：</p>
 <ul>
 <li><code>dead lock</code>。死锁很容易产生，一般有两个原因，其一，资源的相互持有，造成两个线程都无法向前推进。其二，没有正确嵌套使用锁，你需要清楚锁是否可重入。</li>
