@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,逻辑时钟,lamport clock,互斥算法,资源共享,">
+  <meta name="keywords" content="分布式系统,互斥算法,资源共享,lamport clock,逻辑时钟,">
 
 
 
@@ -94,14 +94,14 @@
 
 
 <meta name="description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
-<meta name="keywords" content="分布式系统,逻辑时钟,lamport clock,互斥算法,资源共享">
+<meta name="keywords" content="分布式系统,互斥算法,资源共享,lamport clock,逻辑时钟">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式互斥算法解析与实现">
 <meta property="og:url" content="https://www.qqzeng.top/2018/11/09/分布式互斥算法解析与实现/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-11-09T12:20:27.462Z">
+<meta property="og:updated_time" content="2018-11-09T12:26:50.786Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="分布式互斥算法解析与实现">
 <meta name="twitter:description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
@@ -476,13 +476,15 @@
 <p><code>Lmpoart Distributed Mutual Exclusion</code>算法的相比<code>Ricart Agrawala</code>算法在实现上更为复杂。通信层采用<code>peer to peer</code>模型。</p>
 <h2 id="Token-Ring"><a href="#Token-Ring" class="headerlink" title="Token Ring"></a>Token Ring</h2><p><code>Token Ring</code>是基于令牌的互斥算法。是一种简单的互斥算法模型，局限性也较大。系统内部只有一种消息：传递 token 的(<code>OK</code>)消息。算法核心为：将所有进程在逻辑上组成一个环，并将 token 在环上依次传递，获取到 token 的进程则具备进行临界区的条件，未收到 token 的进程则必须等待。在进程启动时，必须先将 token 传递给某一进程，若此接收进程需要锁，则进入临界区，执行完临界区代码后，再将 token 传递给相邻的下一个进程。否则直接将 token 传递给相邻下一个进程。算法的公平性同样易保证。消息带宽为<code>n-1</code>，其中<code>n</code>为进程数。</p>
 <p><code>Token Ring</code>算法较易实现，同样采用<code>peer to peer</code>通信模型。注意进程启动时，初始的 token 持有者。</p>
-<h2 id="关于测试"><a href="#关于测试" class="headerlink" title="关于测试"></a>关于测试</h2><p>在实现上述四种算法时(<code>go</code>语言)，采用<code>TCP</code>协议（可靠的）。测试的流程包含两个独立的阶段：</p>
-<p><strong>Phase a</strong>. 每个进程独立的重复以下操作若干次。</p>
+<h2 id="关于测试"><a href="#关于测试" class="headerlink" title="关于测试"></a>关于测试</h2><p>在实现上述四种算法时(<code>go</code>语言)，采用<code>TCP</code>协议（可靠的）。测试的流程包含两个独立的阶段：<br><strong>Phase a</strong>. 每个进程独立的重复以下操作若干次。</p>
 <ol>
 <li>执行本地操作。采用 sleep [100, 300]ms 来模拟。</li>
 <li>开始进入临界区(<code>critical section</code>)。执行获取互斥锁逻辑。</li>
 <li>执行临界区代码。对一个共享变量进行累加，在 [100, 200]ms超时时间内，每隔100ms，对共享变量随机增加 [1,10]。将累加过程写入文件，同时将累加的中间值记录到全局数组。</li>
-<li>退出临界区。执行释放互斥锁逻辑。<br><strong>Phase b</strong>. 每个进程独立的重复以下操作若干次。</li>
+<li>退出临界区。执行释放互斥锁逻辑。</li>
+</ol>
+<p><strong>Phase b</strong>. 每个进程独立的重复以下操作若干次。</p>
+<ol>
 <li>进程号为偶数的进程 sleep [100, 300]ms，然后重复 Phase a 操作流程。进程号奇数的进程直接重复 Phase b 流程。</li>
 </ol>
 <p>对算法的执行结果的验证侧重于两个方面：</p>
@@ -512,13 +514,13 @@
           
             <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
           
-            <a href="/tags/逻辑时钟/" rel="tag"># 逻辑时钟</a>
-          
-            <a href="/tags/lamport-clock/" rel="tag"># lamport clock</a>
-          
             <a href="/tags/互斥算法/" rel="tag"># 互斥算法</a>
           
             <a href="/tags/资源共享/" rel="tag"># 资源共享</a>
+          
+            <a href="/tags/lamport-clock/" rel="tag"># lamport clock</a>
+          
+            <a href="/tags/逻辑时钟/" rel="tag"># 逻辑时钟</a>
           
         </div>
       
