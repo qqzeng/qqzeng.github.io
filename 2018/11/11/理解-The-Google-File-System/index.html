@@ -93,18 +93,18 @@
 
 
 
-<meta name="description" content="分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 The Google File System，它在谷歌内部是配合其分布式计算框架MapReduce使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量持续增大以及技术革新使得GFS不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这">
+<meta name="description" content="分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 The Google File System，它在谷歌内部是配合其分布式计算框架MapReduce使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量激增以及技术革新使得GFS不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这篇博">
 <meta name="keywords" content="分布式系统,分布式文件系统,GFS">
 <meta property="og:type" content="article">
 <meta property="og:title" content="理解 The Google File System">
 <meta property="og:url" content="https://www.qqzeng.top/2018/11/11/理解-The-Google-File-System/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
-<meta property="og:description" content="分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 The Google File System，它在谷歌内部是配合其分布式计算框架MapReduce使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量持续增大以及技术革新使得GFS不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这">
+<meta property="og:description" content="分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 The Google File System，它在谷歌内部是配合其分布式计算框架MapReduce使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量激增以及技术革新使得GFS不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这篇博">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-11-12T05:10:47.427Z">
+<meta property="og:updated_time" content="2018-11-12T05:13:09.558Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="理解 The Google File System">
-<meta name="twitter:description" content="分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 The Google File System，它在谷歌内部是配合其分布式计算框架MapReduce使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量持续增大以及技术革新使得GFS不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这">
+<meta name="twitter:description" content="分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 The Google File System，它在谷歌内部是配合其分布式计算框架MapReduce使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量激增以及技术革新使得GFS不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这篇博">
 
 
 
@@ -413,7 +413,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  4,165
+                  4,163
                 </span>
               words
 
@@ -450,7 +450,7 @@
       
 
       
-        <p>分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 <code>The Google File System</code>，它在谷歌内部是配合其分布式计算框架<code>MapReduce</code>使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量持续增大以及技术革新使得<code>GFS</code>不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这篇博文阐述个人对原论文的一些理解与心得，并不是对原论文的完整翻译，因此你需要提前阅读论文。</p>
+        <p>分布式文件系统是构建整个分布式系统的基石，为分布式计算提供底层数据存储。谷歌早在 2013 年就发表了论文 <code>The Google File System</code>，它在谷歌内部是配合其分布式计算框架<code>MapReduce</code>使用，共同为谷歌搜索等业务提供技术栈支撑。虽然数据量激增以及技术革新使得<code>GFS</code>不断演进，但理解其最初的设计理念、运行原理以及关键实现技术同样让人受益匪浅，并指导着我们实际的学习和工程实践。这篇博文阐述个人对原论文的一些理解与心得，并不是对原论文的完整翻译，因此你需要提前阅读论文。</p>
 <a id="more"></a>
 <h2 id="设计动机与目标"><a href="#设计动机与目标" class="headerlink" title="设计动机与目标"></a>设计动机与目标</h2><p>设计一个通用的分布式文件系统是不现实的，它不仅在实现上异常困难（因为不得不考虑所有应用场景），而且实际使用也难以满足要求（往往存在显而易见的性能或容错瓶颈）。<a href="https://static.googleusercontent.com/media/research.google.com/en//archive/gfs-sosp2003.pdf" target="_blank" rel="noopener">GFS</a> 设计初衷是利用数以千计的廉价机器为<code>MapReduce</code>提供底层<strong>可靠且高性能</strong>的分布式数据存储，以应对海量离线数据存储与处理的应用场景，比如存储应用程序持续产生的日志流以提供离线日志分析。由此，其设计目标为容错可靠(<code>fault tolerance</code>)、高性能读写(<code>high-performance read&amp;write</code>)以及节约网络带宽(<code>save bandwidth</code>)。</p>
 <p>一致性(<code>consistency</code>)是分布式系统不可回避的问题。对于分布式文件系统而言，为了提供容错，必须维持数据副本(<code>replica</code>），那如何保证各副本间一致显得至关重要，特别是在应用并发访问场合。一致性是个极其宽泛的术语，你可以实现数据的强一致性(<code>strong consistency</code>)以保证用户始终读到的是最新的数据，这对于用户（客户端）而言是个极佳选择，但它提高了系统的实现难度，因为你必须设计复杂的一致性协议（如<code>Paxos</code>或<code>Raft</code>）来实现强一致性，它也会损害系统性能，典型的它需要机器之间通信以对副本状态达成一致。而弱一致性(<code>weak consistency</code>)则几乎相反。因此，必须根据特定的应用场景，在保证系统逻辑正确的提前下，放宽一致性要求，设计具备良好性能且能提供<strong>足够的一致性</strong>(<code>sufficient consistency</code>)的系统。对于<code>GFS</code>而言，它针对<code>MapReduce</code>应用程序进行了特定优化，比如，对<strong>大文件高性能读取</strong>、允许出现<strong>文件空洞</strong>(<code>hole</code>)、数据<strong>记录重复</strong>(<code>record duplicate</code>)以及偶尔<strong>读取不一致</strong>(<code>inconsistent reads</code>)。具体在数据读写方面，其侧重于大规模一次性写入和追加写入，而并非覆盖写和随机写；读取同样倾向于顺序读取，并不关心随机读取。</p>
