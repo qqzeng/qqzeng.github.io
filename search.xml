@@ -38,10 +38,10 @@
       </categories>
       <tags>
         <tag>分布式系统</tag>
+        <tag>逻辑时钟</tag>
+        <tag>lamport clock</tag>
         <tag>互斥算法</tag>
         <tag>资源共享</tag>
-        <tag>lamport clock</tag>
-        <tag>逻辑时钟</tag>
       </tags>
   </entry>
   <entry>
@@ -54,10 +54,10 @@
       </categories>
       <tags>
         <tag>分布式系统</tag>
-        <tag>lamport clock</tag>
-        <tag>逻辑时钟</tag>
         <tag>时钟同步</tag>
+        <tag>逻辑时钟</tag>
         <tag>物理时钟</tag>
+        <tag>lamport clock</tag>
       </tags>
   </entry>
   <entry>
