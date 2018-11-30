@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,逻辑时钟,lamport clock,互斥算法,资源共享,">
+  <meta name="keywords" content="分布式系统,互斥算法,资源共享,lamport clock,逻辑时钟,">
 
 
 
@@ -94,14 +94,14 @@
 
 
 <meta name="description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
-<meta name="keywords" content="分布式系统,逻辑时钟,lamport clock,互斥算法,资源共享">
+<meta name="keywords" content="分布式系统,互斥算法,资源共享,lamport clock,逻辑时钟">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式互斥算法解析与实现">
 <meta property="og:url" content="https://www.qqzeng.top/2018/11/09/分布式互斥算法解析与实现/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-11-09T12:46:08.317Z">
+<meta property="og:updated_time" content="2018-11-30T20:53:04.874Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="分布式互斥算法解析与实现">
 <meta name="twitter:description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
@@ -469,7 +469,7 @@
 <p><code>Ricart Agrawala</code>算法的相比集中式算法在实现上更为复杂。同样在通信层，则不能构建<code>one server, muliti-client</code>模型，而采用<code>peer to peer</code>模型，因为所有进程都是对等的，即同时充当<code>server</code>与<code>client</code>，而且作为一种简化实现，所有进程在启动后，应该互相建立连接。除此之外，你需要实现（模拟）<a href="https://qqzeng.top/2018/11/05/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%97%B6%E9%97%B4%E3%80%81%E6%97%B6%E9%92%9F%E4%B8%8E%E4%BA%8B%E4%BB%B6%E9%A1%BA%E5%BA%8F/" target="_blank" rel="noopener">lamport clock 算法</a>，否则互斥算法的正确性不能得到保证，注意对于某些消息（如<code>reply</code>）的发送事件，虽然可以更新消息时间戳，但其实不影响算法正确性。</p>
 <h2 id="Lamport-Distributed-Mutual-Exclusion"><a href="#Lamport-Distributed-Mutual-Exclusion" class="headerlink" title="Lamport Distributed Mutual Exclusion"></a>Lamport Distributed Mutual Exclusion</h2><p><code>Lmpoart Distributed Mutual Exclusion</code>算法于1978年由 Lamport 在关于<code>lamport clock</code>理论论文中提出，其作为<code>lamport clock</code>的实际应用，因此，显然其依赖于<code>lamport clock</code>。事实上，此算法不仅可以作为分布式互斥算法，其内部的请求优先级队列也能作为分布式节点副本一致性的实现参考模型。但原论文提出的互斥算法基于消息按顺序到达的假设，解释如下：</p>
 <blockquote>
-<p>比如，进程i在时间片1发送锁请求a，但因为网络原因被极端延时了。而且在其它进程收到进程i发现的请求消息a之前，进程j在时间片5发送了请求b，而请求b恰好被顺利传输，很快被其他进程接收，并且其他进程立刻发送了对请求消息b的回复消息（包括进程i），同时回复消息也立刻被进程j接收，但此时进程j仍未收到进程i的请求消息a，所以进程j以为自己成功获取到锁（收到了其它所有进程对请求消息b的回复），而事实上，进程i的请求消息i要比进程j的请求消息更早发送，因此应该是进程i先获取锁。其根本原因在于，进程i在收到其他节点请求消息（进程j的请求消息b）时，没有进行额外检查，理论上它需要判定自己是否在更早前发出过请求消息，而不只是直接对请求消息回复，即使最后其在请求消息队列里移除的消息是它自己的请求消息（因为自己是请求消息是最早的）。但这造成了整个系统的不正确性。</p>
+<p>比如，进程i在时间片1发送锁请求a，但因为网络原因被极端延时了。而且在其它进程收到进程i发送的请求消息a之前，进程j在时间片5发送了请求b，而请求b恰好被顺利传输，很快被其他进程接收，并且其他进程（包括进程i）立刻发送了对请求消息b的回复消息，同时回复消息也立刻被进程j接收，但此时进程j仍未收到进程i的请求消息a，所以进程j以为自己成功获取到锁（收到了其它所有进程对请求消息b的回复）。而事实上，进程i的请求消息a要比进程j的请求消息b更早发送，因此应该是进程i先获取锁。其根本原因在于，进程i在收到其他节点请求消息（进程j的请求消息b）时，没有进行额外检查，理论上它需要判定自己是否在更早前发出过请求消息，而不只是直接对请求消息回复，即使最后其在请求消息队列里移除的消息是它自己的请求消息（因为自己是请求消息是最早的）。但这造成了整个系统的不正确性。</p>
 </blockquote>
 <p>因此，改变<code>Lmpoart Distributed Mutual Exclusion</code>算法在接收请求消息后发送回复消息的条件，消除了消息按序到达的假设，但同时也使得变更后的算法更为复杂。</p>
 <p>系统内部包括三种消息：请求(<code>reqeust,i,ts</code>)消息、回复(<code>reply,j</code>)消息以及释放(<code>release</code>)消息。核心数据结构包括缓存其它进程回复消息的队列(<code>replyQueue</code>)、缓存推迟回复进程请求消息队列(<code>deferQueue</code>)以及一个以时间戳为依据的请求消息优先级队列(<code>requestPriorityQueue</code>)。算法变更的核心为：进程<code>i</code>在收到进程<code>j</code>的请求消息<code>(request, j, t)</code>时，（条件1）先判断自己是否发送过更早的请求消息，（条件2）并且未收到进程<code>j</code>针对此请求消息的回复消息。如果二者之中任一个未被满足，则对进程<code>i</code>的请求消息发送回复，否则将其加入到<code>deferQueue</code>。原因如下：条件1是明显的；关于条件2，如果进程<code>j</code>已经收到了进程<code>i</code>的消息回复，说明进程<code>i</code>先前发出的请求消息肯定已经被进程<code>j</code>接收（换言之，进程<code>i</code>若发送过请求消息，则此请求消息必定已经缓存到了进程<code>j</code>的<code>requestPriorityQueue</code>），因此消除了消息延迟（乱序）的影响。另一方面，当进程<code>i</code>收到请求回复消息时，它会先将其加入到<code>replyQueue</code>，并判断发送此回复消息的进程是否被加入到了其<code>deferQueue</code>中，如果已经加入到了，则将其移除，然后对此进程发送回复消息（因为进程<code>i</code>确认它已经收到被移除进程的回复消息）。其它的算法逻辑同论文中描述一致。事实上，消除消息按序到达的关键为<code>deferQueue</code>。算法的公平性容易保证。而消息带宽为<code>{request: n-1, reply: n-1, release: n-1} =&gt; 3(n-1)</code>，其中<code>n</code>为进程数。</p>
@@ -492,7 +492,7 @@
 <li><strong>算法正确性</strong>。通过检查 Phase a&amp;b 中全局数组的记录情况来确保共享资源的互斥访问。另外，核查 Phase a&amp;b 中进程访问共享资源的访问日志文件。</li>
 <li><strong>带宽与延时</strong>。统计每个进程的消息读写数目，及获取互斥锁的延时，并计算平均延时。</li>
 </ul>
-<p><a href="https://github.com/qqzeng/distributed-mutual-exclusion" target="_blank" rel="noopener">参考实现在这里</a>。</p>
+<p><a href="https://github.com/qqzeng/distributed-mutual-exclusion" target="_blank" rel="noopener">参考代码在这里</a>。</p>
 <p>参考文献：</p>
 <p>[1] Ricart G, Agrawala A K. An Algorithm for Mutual Exclusion in Computer Networks[R]. MARYLAND UNIV COLLEGE PARK DEPT OF COMPUTER SCIENCE, 1980.<br>[2] Lamport L. Time, clocks, and the ordering of events in a distributed system[J]. Communications of the ACM, 1978, 21(7): 558-565.<br>[3].<a href="https://www.cs.cmu.edu/~dga/15-440/S14/" target="_blank" rel="noopener">CMU Distributed System Lecture.</a></p>
 
@@ -514,13 +514,13 @@
           
             <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
           
-            <a href="/tags/逻辑时钟/" rel="tag"># 逻辑时钟</a>
-          
-            <a href="/tags/lamport-clock/" rel="tag"># lamport clock</a>
-          
             <a href="/tags/互斥算法/" rel="tag"># 互斥算法</a>
           
             <a href="/tags/资源共享/" rel="tag"># 资源共享</a>
+          
+            <a href="/tags/lamport-clock/" rel="tag"># lamport clock</a>
+          
+            <a href="/tags/逻辑时钟/" rel="tag"># 逻辑时钟</a>
           
         </div>
       

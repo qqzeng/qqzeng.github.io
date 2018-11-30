@@ -102,7 +102,7 @@
 <meta property="og:description" content="分布式环境中，网络不稳定导致消息（数据包）的传输存在乱序、重复和丢失的情况，同时，节点宕机也不可避免。如何优雅地处理这些问题，是构建一个健壮的分布式系统的关键。网络的复杂性使得数据包传输协议至关重要。低级别的IP协议提供不可靠的数据报服务，即消息可能延时、重复或丢失，另外，它也限制了在网络节点中传输的消息的最大字节数，因此很少直接利用IP协议来构建分布式应用。在传输层，UDP也不提供可靠的数据报服">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://raw.githubusercontent.com/qqzeng/15-440/master/p1/traffic%20control.png">
-<meta property="og:updated_time" content="2018-10-25T13:19:02.579Z">
+<meta property="og:updated_time" content="2018-11-30T20:52:34.612Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Live Sequence Protocol 实现">
 <meta name="twitter:description" content="分布式环境中，网络不稳定导致消息（数据包）的传输存在乱序、重复和丢失的情况，同时，节点宕机也不可避免。如何优雅地处理这些问题，是构建一个健壮的分布式系统的关键。网络的复杂性使得数据包传输协议至关重要。低级别的IP协议提供不可靠的数据报服务，即消息可能延时、重复或丢失，另外，它也限制了在网络节点中传输的消息的最大字节数，因此很少直接利用IP协议来构建分布式应用。在传输层，UDP也不提供可靠的数据报服">
@@ -415,7 +415,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,822
+                  3,829
                 </span>
               words
 
@@ -530,6 +530,7 @@
 </ul>
 <p>最后，需要提醒的是，分布式程序异步、并发，且网络复杂的特性导致其很难debug。所以，尽可能设计完善的日志流程，以帮助跟踪未符合期望的执行逻辑，并定位问题。</p>
 <p>另外，cmu提供较为完善的测试程序，如果程序出现问题，可以对某一个或几个子测试用例进行单独测试，熟悉测试用例代码，了解测试用例流程是有必要的。</p>
+<p><a href="https://github.com/qqzeng/15-440/tree/master/p1/src/github.com/cmu440/lsp" target="_blank" rel="noopener">参考代码在这里</a></p>
 
       
     </div>
