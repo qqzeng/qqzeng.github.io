@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="分布式系统中，将数据块冗余到不同节点使得系统具备容错能力，但其代价是必须要保证各数据副本间的一致性。同样，我们可以将计算（执行）分发到不同节点，以更有效地利用节点并行处理能力，但其代价是必须要对各节点的执行进行协调，以产生应用程序期望的结果。换言之，我们需要推断出节点内部执行的正确性，以保证应用程序可见的语义。而数据库通常能提供涉及事务(transaction)和可序列化(serializabil">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-15T14:59:35.331Z">
+<meta property="og:updated_time" content="2018-12-15T15:03:13.725Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="浅析分布式事务">
 <meta name="twitter:description" content="分布式系统中，将数据块冗余到不同节点使得系统具备容错能力，但其代价是必须要保证各数据副本间的一致性。同样，我们可以将计算（执行）分发到不同节点，以更有效地利用节点并行处理能力，但其代价是必须要对各节点的执行进行协调，以产生应用程序期望的结果。换言之，我们需要推断出节点内部执行的正确性，以保证应用程序可见的语义。而数据库通常能提供涉及事务(transaction)和可序列化(serializabil">
@@ -453,8 +453,7 @@
         <p>分布式系统中，将数据块冗余到不同节点使得系统具备容错能力，但其代价是必须要保证各数据副本间的一致性。同样，我们可以将计算（执行）分发到不同节点，以更有效地利用节点并行处理能力，但其代价是必须要对各节点的执行进行协调，以产生应用程序期望的结果。换言之，我们需要推断出节点内部执行的正确性，以保证应用程序可见的语义。而数据库通常能提供涉及事务(<code>transaction</code>)和可序列化(<code>serializability</code>)的相对较强的语义。因此，对于分布式系统而言，此种语义的正确性可以通过分布式事务(<code>distributed transaction</code>)来保证，其通常涉及两个或多个在物理上分离且通过网络连接的主机的数据库事务。</p>
 <a id="more"></a>
 <p>正式而言，分布式事务包含两个方面：并发控制(<code>concurrency control</code>)及原子提交(<code>atomic commit</code>)。并发控制描述事务并发执行的正确性，而原子提交表示事务包含的一组操作要么全部执行，要么全部不执行，这通常与失败(<code>failure</code>)相关。本文会依次阐述分布式事务的并发控制、原子提交相关内容。</p>
-<p>##并发控制</p>
-<p>我们以一个例子来展开对并发控制的讨论。考虑一个银行转账的场景：有两个银行账户<code>x</code>和<code>y</code>，且<code>x</code>与<code>y</code>仅次于不同的服务器上，<code>x</code>与<code>y</code>账户初始数目都是 10 。客户端<code>c1</code>将从<code>x</code>账户转账1到<code>y</code>账户，同时，<code>c2</code>是一个审计者以检查银行各账户的钱是否有丢失。因此，抽象化<code>c1</code>及<code>c2</code>的操作为：</p>
+<h2 id="并发控制"><a href="#并发控制" class="headerlink" title="并发控制"></a>并发控制</h2><p>我们以一个例子来展开对并发控制的讨论。考虑一个银行转账的场景：有两个银行账户<code>x</code>和<code>y</code>，且<code>x</code>与<code>y</code>仅次于不同的服务器上，<code>x</code>与<code>y</code>账户初始数目都是 10 。客户端<code>c1</code>将从<code>x</code>账户转账1到<code>y</code>账户，同时，<code>c2</code>是一个审计者以检查银行各账户的钱是否有丢失。因此，抽象化<code>c1</code>及<code>c2</code>的操作为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">c1:             c2:</span><br><span class="line">add(x, 1)       tmp1 = get(x)</span><br><span class="line">add(y, -1)      tmp2 = get(y)</span><br><span class="line">                print tmp1, tmp2</span><br></pre></td></tr></table></figure>
 <p>我们（应用程序）期待最终的结果为：<code>x=11, y=9</code>，同时<code>c2</code>打印 <code>10, 10</code>或者<code>11, 9</code>。但并发执行的操作可能并不会按照应用期待的结果输出。比如，若<code>c2</code>的两个操作完全运行在<code>c1</code>的两个操作之间，导致最终的结果为：<code>x=11, y=9</code>，同时打印<code>11, 10</code>。显然，对于此应用场景而言，我们并不希望出现后者。因此我们需要对并发执行的操作进行协调，以保证其操作结果的语义能够符合应用程序。</p>
 <p>先引出一个概念<code>before-or-after atomicity</code>，其定义如下。</p>
@@ -467,7 +466,7 @@
 </blockquote>
 <p>可以通过如下几个步骤来认证此观点的正确性：考虑一个系统被应用（可能是并发执行的）操作之后从一个状态转换到另一个状态，如果系统的初始状态是正确的（由具体应用程序确定），并且操作正确地被执行应用到系统，则系统新的状态也是正确的。并且此论述独立于应用程序。同样，如果如果是多个操作并发执行，则上述的论断变更为，若系统最终所处的状态是应用到系统的并发操作集的某个顺序执行后系统的状态，那么此时系统的新的状态也是正确的。换言之，结合<code>before-or-after atomicity</code>属性，可以得出这样的结论：若协调并发操作的规则遵循<code>before-or-after atomicity</code>，则这些并发操作是可序列化的，即存在某些并发事务构成的串行执行顺序，若遵循这些顺序，将导致系统处于相同的终止状态，此时并发操作的结果是正确的。这同样是传统数据事务正确性定义——<code>serializability</code>所要求的。</p>
 <p>理论上而言，并发操作的中间过程是不重要的，因为只要保证并发操作所产生的系统新的状态与按照某一个顺序顺序执行所有的“单个”的原子操作所产生的系统新的状态相同，我们并不关心具体与哪一个操作顺序相同，甚至，我们都不要求所谓的顺序操作的中间状态是否真实存在（如图所示，即若操作执行的中间状态的路径是按照虚线进行的），只要此中间状态不会被外部应用程序所观察到，那么我们同样认为这样的操作具备<code>before-or-after atomicity</code>属性，即符合<code>serializability</code>的要求。值得注意的是，对系统应用并发操作的目的是提高性能，但具备<code>before-or-after atomicity</code>属性，或满足<code>serializability</code>的并发操作并不保证系统具备最佳的执行性能。另外，满足<code>serializability</code>特性的并发操作，对编程人员是友好的，因为，我们不必关心并发操作细节。</p>
-<h2 id="基于锁的-before-or-after-atomicity-属性的实现"><a href="#基于锁的-before-or-after-atomicity-属性的实现" class="headerlink" title="基于锁的 before-or-after atomicity 属性的实现"></a>基于锁的 <code>before-or-after atomicity</code> 属性的实现</h2><p>基于锁来实现事务的并发控制可以分为两个类别：悲观锁(<code>pessimistic</code>)及乐观锁(<code>optimistic</code>)。前者会在操作共享对象之前获取锁，如果在获取锁时，锁已经被其它事务占用了，则必须等待。而后者并不要求在操作共享对象之前获取锁，它会先将对象进行拷贝，然后操作对象，在提交事务的时候检查原始对象是否有被更改过，若没有，则提交事务，否则中止事务，换言之，在获取锁失败时，乐观并发控制(<code>optimistic cocurrency controll</code>)采用的是<code>abort+retry</code>的模式来操作共享对象，因为它没有直接给对象加锁，因此若对象访问没有冲突时，它比悲观锁要快，反之，若在一个充满锁竞争的事务环境下，乐观锁的效果一种会比悲观锁要差。而本节下面提到的基于锁的<code>before-or-after atomicity</code>属性（或<code>serializability</code>）的实现都属于悲观锁的实现。</p>
+<h2 id="基于锁的-before-or-after-atomicity-属性的实现"><a href="#基于锁的-before-or-after-atomicity-属性的实现" class="headerlink" title="基于锁的 before-or-after atomicity 属性的实现"></a>基于锁的 before-or-after atomicity 属性的实现</h2><p>基于锁来实现事务的并发控制可以分为两个类别：悲观锁(<code>pessimistic</code>)及乐观锁(<code>optimistic</code>)。前者会在操作共享对象之前获取锁，如果在获取锁时，锁已经被其它事务占用了，则必须等待。而后者并不要求在操作共享对象之前获取锁，它会先将对象进行拷贝，然后操作对象，在提交事务的时候检查原始对象是否有被更改过，若没有，则提交事务，否则中止事务，换言之，在获取锁失败时，乐观并发控制(<code>optimistic cocurrency controll</code>)采用的是<code>abort+retry</code>的模式来操作共享对象，因为它没有直接给对象加锁，因此若对象访问没有冲突时，它比悲观锁要快，反之，若在一个充满锁竞争的事务环境下，乐观锁的效果一种会比悲观锁要差。而本节下面提到的基于锁的<code>before-or-after atomicity</code>属性（或<code>serializability</code>）的实现都属于悲观锁的实现。</p>
 <p><code>system-wide lock</code>，即系统级锁。这是基于锁实现的<code>before-or-after atomicity</code>属性最简单的版本。顾名思义，它在系统开始运行时便在内存中创建一个（唯一一个）锁对象，并且必须在事务执行的开始与结束位置插入获取锁与释放锁的代码。显然，<code>system-wide lock</code>一次只允许运行单个事务，它会将所有的事务按照其获取锁的顺序依次执行，不支持事务的并发执行。因为<code>system-wide lock</code>锁住孙事务涉及的所有对象，因此在某些场合其是不必根据，换言之，其锁的粒度（范围）过大。</p>
 <p><code>simple locking</code>，即简单锁。它满足两个规则：其一，每个事务在对某一对象执行实际的读写操作时，必须提前获取此对象的锁。其二，当事务所有操作完成后被提交或者事务被中断时才释放锁。其中，<code>lock point</code>被定义为事务获取其范围内操作所有对象的锁的时刻。而<code>lock set</code>被定义为截止<code>lock point</code>时间点，其所获取的锁的集合。因此，为了保证能正确地协调事务的并发执行，应用程序在执行其每个事务前必须获取事务所对应的<code>lock set</code>，同样，在事务执行完成时释放<code>lock set</code>中的锁。下面简单证明<code>simple locking</code>的策略能够保证<code>before-or-after atomicity</code>。</p>
 <blockquote>
@@ -475,8 +474,7 @@
 </blockquote>
 <p>显然，<code>simple locking</code> 所提供的并发粒度也过大，因为，它必须对事务可能涉及到的每一个共享对象加锁，因此它有可能锁住那些原本并不需要的对象。</p>
 <p><code>two-phase locking</code>(<code>2PL</code>)，即两阶段锁。相比于<code>simple locking</code>，它并不要求事务在操作共享对象之前获取其所涉及到的所有对象的锁（准确而言，对于<code>simple locking</code>，一旦事务操作任一共享对象，都需要获取所有对象的锁，而<code>two-phase locking</code>只有等到事务真正操作某一对象时，才去尝试获取此对象对应的锁，因此其锁的粒度要比<code>simple locking</code>要小）。典型地，<code>2PL</code>包括两个过程：1. 扩展锁阶段(<code>expanding phase</code>)，根据操作共享对象的顺序依次获取锁，在此过程中不会有锁被释放。2. 收缩锁阶段(<code>shrinking phase</code>)，锁逐渐被释放，并且在此过程不会尝试获取锁（如果阶段一没有明确的完成标志，那么为了保证事务安全，会等到事务提交或者事务中止时，才会一次性释放所有锁）。但同<code>simple locking</code>类似的是，<code>2PL</code>也允许应用程序并发执行事务，其也会保证所有事务的执行所产生的结果同它们以某一个顺序（到达<code>lock point</code>的顺序）执行所产生的结果相同（因此，<code>2PL</code>有可能导致死锁）。虽然，同<code>simple locking</code>相比，<code>2PL</code>提供更强的事务并发执行能力，但其同样会导致原本允许并发执行的事务的串行顺序执行。参考文献[1]还讨论了当事务执行失败时，锁与日志的交互如何保证事务的顺序执行。</p>
-<p>##原子提交</p>
-<p>若构成事务的操作分布在不同机器上，为了确保事务被正确执行，则必须保证事务原子性提交，即分布在不同机器上的事务要么全部执行，要么都不执行。</p>
+<h2 id="原子提交"><a href="#原子提交" class="headerlink" title="原子提交"></a>原子提交</h2><p>若构成事务的操作分布在不同机器上，为了确保事务被正确执行，则必须保证事务原子性提交，即分布在不同机器上的事务要么全部执行，要么都不执行。</p>
 <p><code>Two-phase commit</code>(<code>2PC</code>)，两阶段提交。它被用于解决分布式事务原子提交问题（但并没有完全解决）。先简要阐述经典的<code>2PC</code>协议，整个事务由一个事务协调者(<code>transaction coordinator</code>及若干事务参与者(<code>participant</code>)构成，协议的执行大致可以分为如下两个阶段：</p>
 <ul>
 <li><code>prepare</code>阶段：客户端向<code>TC</code>发送事务提交请求，<code>TC</code>开始执行两阶段提交。它首先通过<code>RPC</code>向所有的<code>participant</code>发送<code>prepare</code>消息，若<code>participant</code>当前能够执行事务，则向<code>TC</code>回复<code>prepare</code>成功(<code>YES</code>)，并且锁定事务执行所需要的锁与资源，否则回复<code>NO</code>。</li>
@@ -694,7 +692,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基于锁的-before-or-after-atomicity-属性的实现"><span class="nav-number">1.</span> <span class="nav-text">基于锁的 before-or-after atomicity 属性的实现</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#并发控制"><span class="nav-number">1.</span> <span class="nav-text">并发控制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于锁的-before-or-after-atomicity-属性的实现"><span class="nav-number">2.</span> <span class="nav-text">基于锁的 before-or-after atomicity 属性的实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原子提交"><span class="nav-number">3.</span> <span class="nav-text">原子提交</span></a></li></ol></div>
             
 
           </div>
