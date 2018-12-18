@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="分布式系统中，将数据块冗余到不同节点使得系统具备容错能力，但其代价是必须要保证各数据副本间的一致性。同样，我们可以将计算（执行）分发到不同节点，以更有效地利用节点并行处理能力，但其代价是必须要对各节点的执行进行协调，以产生应用程序期望的结果。换言之，我们需要推断出节点内部执行的正确性，以保证应用程序可见的语义。而数据库通常能提供涉及事务(transaction)和可序列化(serializabil">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-15T15:03:13.725Z">
+<meta property="og:updated_time" content="2018-12-18T06:13:27.843Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="浅析分布式事务">
 <meta name="twitter:description" content="分布式系统中，将数据块冗余到不同节点使得系统具备容错能力，但其代价是必须要保证各数据副本间的一致性。同样，我们可以将计算（执行）分发到不同节点，以更有效地利用节点并行处理能力，但其代价是必须要对各节点的执行进行协调，以产生应用程序期望的结果。换言之，我们需要推断出节点内部执行的正确性，以保证应用程序可见的语义。而数据库通常能提供涉及事务(transaction)和可序列化(serializabil">
@@ -413,7 +413,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  4,063
+                  4,174
                 </span>
               words
 
@@ -486,7 +486,8 @@
 <li>事务参与者宕机，然后重启。若此<code>participant</code>在宕机前对<code>TC</code>的<code>prepare</code>消息回复了<code>YES</code>，那么它必须在宕机前对日志记录。因为其它的<code>participant</code>也有可能同意了<code>prepare</code>消息。具体而言，如果<code>participant</code>重启后，其日志文件记录了<code>prepare</code>的<code>YES</code>消息，但其并没有<code>commit</code>事务，此时它必须主动发消息给<code>TC</code>，或者等待<code>TC</code>重新向它发送<code>commit</code>消息。且在整个过程中，<code>participant</code>必须一直保持对资源及锁的占用。</li>
 <li>事务协调者宕机，然后重启。因为<code>TC</code>可能在宕机前对所有协调者发送了<code>commit</code>消息，因此它也必须对此作日志记录。因为或许某个<code>participant</code>已经执行了事务的<code>commit</code>。如果其在重启后，收到了<code>participant</code>的询问消息，必须重新发送<code>commit</code>消息（或者等待一段超时时间后，重新发送<code>commit</code>消息）。</li>
 <li>事务协调者一直未收到事务参与者的对<code>prepare</code>消息的回复。可能此时<code>participant</code>已经宕机并且没有重启，也有可能网络发生了故障。因此<code>TC</code>必须设置超时机制，一旦超时未收到回复，则中止事务的提交（因为此时并没有发送<code>commit</code>消息，所有<code>participant</code>都不会提交，保证了事务提交的原子性）。</li>
-<li>事务参与者在收到<code>prepare</code>消息前宕机，或者超时（一直未收到）。此时，因为<code>participant</code>并没有回复<code>prepare</code>消息（即未对<code>TC</code>作出事务执行的任何承诺），因此其允许单方面中止事务，释放锁及其它资源。</li>
+<li>事务参与者在收到<code>prepare</code>消息前宕机，或超时（一直未收到）。此时，因为<code>participant</code>并没有回复<code>prepare</code>消息（即未对<code>TC</code>作出事务执行的任何承诺），因此其允许单方面中止事务，释放锁及其它资源，此时可能是协议还未开始执行（自然而然，<code>participant</code>的宕机对协议是没有任何影响，直到下一次协议开始执行了，若此<code>participant</code>仍旧处于宕机状态，则将导致<code>abort</code>事务）。</li>
+<li>事务协调者在未发送<code>prepare</code>消息前宕机。此时，同上一种情况类似，协议很可能还未开始执行，因此<code>TC</code>的宕机并不影响事务正确性。</li>
 <li>事务参与者对<code>prepare</code>消息回复了<code>YES</code>，但是一直未收到<code>commit/abort</code>消息。此时，<code>participant</code>不能单方面中止事务，因为其已经向<code>TC</code>的<code>prepare</code>消息回复了<code>YES</code>，且其它<code>participant</code>也有可能向<code>TC</code>回复了<code>YES</code>，因此<code>TC</code>可能已经向除此<code>participant</code>之外的所有<code>participant</code>发送了<code>commit</code>消息，然后<code>TC</code>发生了宕机。但收到<code>commit</code>消息的<code>participant</code>可能已经<code>commit</code>本地事务。因此，此<code>participant</code>不能单方面<code>abort</code>事务（否则造成事务不一致）。同时，此<code>participant</code>也不能单方面的<code>commit</code>本地事务，因为同样，其它的<code>participant</code>也有可能对<code>TC</code>的<code>prepare</code>消息回复了<code>NO</code>，因此<code>TC</code>在收到所有的<code>prepare</code>消息的回复后，中止了事务的提交。总而言之，若<code>participant</code>对<code>TC</code>的<code>prepare</code>消息回复了<code>YES</code>，则它不能单方面作出任何决定，只能一直阻塞等待<code>TC</code>对事务的决定。</li>
 </ul>
 <p>因此，通过上述分述，经典的<code>2PC</code>协议存在明显的局限性：</p>
@@ -726,7 +727,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">25.0k</span>
+    <span title="Site words total count">25.1k</span>
   
 </div>
 
