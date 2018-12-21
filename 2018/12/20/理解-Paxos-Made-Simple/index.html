@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="Paxos 算法在分布式系统领域早已是如雷贯耳般的存在，基本成为了分布式一致性协议的代名词，想必对于任何一个从事分布式领域的人来说都充满敬畏——即感叹算法的精巧，也畏惧算法的晦涩。Leslie Lamport 早在 1980s 就写作了描述 Paxos最原始的论文 《The Part-Time Parliament》，但因其难以理解（与论述方式相关?）而没有得到过多的关注（相反，Lamport 本">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-21T08:00:45.655Z">
+<meta property="og:updated_time" content="2018-12-21T08:05:51.788Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="理解 Paxos Made Simple">
 <meta name="twitter:description" content="Paxos 算法在分布式系统领域早已是如雷贯耳般的存在，基本成为了分布式一致性协议的代名词，想必对于任何一个从事分布式领域的人来说都充满敬畏——即感叹算法的精巧，也畏惧算法的晦涩。Leslie Lamport 早在 1980s 就写作了描述 Paxos最原始的论文 《The Part-Time Parliament》，但因其难以理解（与论述方式相关?）而没有得到过多的关注（相反，Lamport 本">
@@ -413,7 +413,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  5,319
+                  5,314
                 </span>
               words
 
@@ -450,7 +450,7 @@
       
 
       
-        <p>Paxos 算法在分布式系统领域早已是如雷贯耳般的存在，基本成为了分布式一致性协议的代名词，想必对于任何一个从事分布式领域的人来说都充满敬畏——即感叹算法的精巧，也畏惧算法的晦涩。Leslie Lamport 早在 1980s 就写作了描述 <code>Paxos</code>最原始的论文 《The Part-Time Parliament》，但因其难以理解（与论述方式相关?）而没有得到过多的关注（相反，Lamport 本人却坚持认为自己采用了一种更加形象恰当且容易理解的方式阐述，摈弃了传统学术论文的”死板”风格）。在 2001年，Lamport 对 <code>Paxos</code> 论文进行整理简化并发表了《Paxos Made Simple》，引起了广泛关注。论文的第一句话 The Paxos algorithm, when presented in plain English, is very simple 可以体会到 Leslie Lamport 似乎仍旧对众人对 <code>Paxos</code> 冠以难理解性的言行的”不屑”。</p>
+        <p>Paxos 算法在分布式系统领域早已是如雷贯耳般的存在，基本成为了分布式一致性协议的代名词，想必对于任何一个从事分布式领域的人来说都充满敬畏——即感叹算法的精巧，也畏惧算法的晦涩。Leslie Lamport 早在 1980s 就写作了描述 <code>Paxos</code>最原始的论文 《The Part-Time Parliament》，但因其难以理解（与论述方式相关?）而没有得到过多的关注（相反，Lamport 本人却坚持认为自己采用了一种更加形象恰当且容易理解的方式阐述，摈弃了传统学术论文的”死板“风格）。在 2001年，Lamport 对 <code>Paxos</code> 论文进行整理简化并发表了《Paxos Made Simple》，引起了广泛关注。论文的第一句话 The Paxos algorithm, when presented in plain English, is very simple 可以体会到 Leslie Lamport 似乎仍旧对众人对 <code>Paxos</code> 冠以难理解性的言行的”不屑“。</p>
 <a id="more"></a>
 <p>最近重新阅读了《Paxo Made Simple》论文，想从论文本身出发，阐述自己对论文的一些（浅显，且可能有误）的理解，因为还未了解<code>Paoxs</code>系列其它论文（如 Fast Paxos），因此个人的理解可能存在一定的局限性。同时，个人坚持认为，反复读原始论文是理解算法的最根本途径，最好结合开源实现进行理解（开源实现一般都会对算法进行工程上的优化与”妥协”）。当然读完原论文可能会有困惑，因此，也可以尝试参考别人的理解（从不同的角度思考问题，或许会有收获），但最终还是要回归论文。如果你对本文有兴趣，你需要先阅读论文。另外，你需要先了解其应用场景。本文先简述其应用场景，然后按照原论文推理的逻辑和步骤来逐步阐述自己对这些步骤的理解。</p>
 <h2 id="Paxos-应用场景"><a href="#Paxos-应用场景" class="headerlink" title="Paxos 应用场景"></a>Paxos 应用场景</h2><p><code>Paxos</code>用于解决分布式场景的一致性问题。换言之，<code>Paxos</code>是一个一致性（共识）算法。这个说法可能比较笼统宽泛，因为你可能在很多领域了解过一致性问题（虽然这些解释背后的含义可能也存在共性）。比如对于分布式存储，典型的<code>Nosql</code>数据库领域，所谓的一致性可能是要求客户端能够读取其最新写入的数据。换言之，最近写入的数据需要对所后续的客户端的读都可见，强调的是可见性。这可以用线性一致性(<code>Linearizability</code>)来描述；再者，在数据库领域，顺序一致性(<code>serializability</code>)是事务正确性的保证，即强调正确性；而复制状态机(<code>replicated state machine</code>)是很多一致性算法的典型应用场景（包括<code>Paxos</code>），其强调的是让一组互为备份的节点执行一系列相同的命令日志来保证存储在此节点集合中的数据的一致，以达到容错目的。另外，从一致性算法的强弱角度来考虑，一致性算法包括强一致性，弱一致性以及最终一致性。而<code>Paxos</code>则属于强一致性算法。另外，我们再简单了共识算法的正确性的保证：</p>
@@ -461,7 +461,7 @@
 <li><em>Termination</em> - all nodes eventually decide</li>
 </ol>
 </blockquote>
-<p>这些都容易理解，比如，对于<code>Agreement</code>而言，若某个算法都不难最后表决出来的值是同一个，那就不能称之为共识算法，而<code>Validity</code>可能觉得是很显然的事情，可以从这样一个角度思考，如果所有节点始终回复相同的值，而不管实际提出的值是什么，那么<code>Agreement</code>能够得到保证，但却违反了<code>Validity</code>条件。最后的<code>Termination</code>保证了算法最终能够停止，即我们不仅希望你们能够做表决，也希望你们能够最终表决出一个结果，否则这个表决过程是没有意义的。而<code>Paxos</code>论文提到的<code>safty requirement</code> 如下：</p>
+<p>这些都容易理解，比如，对于<code>Agreement</code>而言，若某个算法都不难最后表决出来的值是同一个，那就不能称之为共识算法，而<code>Validity</code>可能觉得是很显然的事情，可以从这样一个角度思考，如果所有节点始终回复相同的值，而不管实际提出的值是什么，那么<code>Agreement</code>能够得到保证，但却违反了<code>Validity</code>条件。最后的<code>Termination</code>保证了算法最终能够停止，即我们不仅希望你们能够做表决，也希望能够最终表决出一个结果，否则此表决过程没有意义。而<code>Paxos</code>论文提到的<code>safty requirement</code> 如下：</p>
 <blockquote>
 <ol>
 <li>Only a value that has been proposed may be chosen,</li>
