@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="如果你了解过Raft协议、ZAB(ZooKeeper&amp;#39;s Atomic Broadcast)协议及Paxos算法，你会发现它们本质上都是为了解决共识问题，即属于一种一致性算法（原子广播协议通常意义上可以等同于一致性协议）。但你可能会觉得相比于Paxos，ZAB与Raft可能更相似。从直观感受上，Paxos协议（Basic Paxos）更像是一种广义上的一致性算法的理论版本，它泛化了很多问题">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-01-08T10:19:51.226Z">
+<meta property="og:updated_time" content="2019-01-08T10:24:35.673Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="简单对比 Raft 及 ZAB 协议">
 <meta name="twitter:description" content="如果你了解过Raft协议、ZAB(ZooKeeper&amp;#39;s Atomic Broadcast)协议及Paxos算法，你会发现它们本质上都是为了解决共识问题，即属于一种一致性算法（原子广播协议通常意义上可以等同于一致性协议）。但你可能会觉得相比于Paxos，ZAB与Raft可能更相似。从直观感受上，Paxos协议（Basic Paxos）更像是一种广义上的一致性算法的理论版本，它泛化了很多问题">
@@ -350,7 +350,7 @@
             
             <span class="post-updated">
               &nbsp; | &nbsp; 更新于
-              <time itemprop="dateUpdated" datetime="2019-01-08T18:19:51+08:00" content="2019-01-08">
+              <time itemprop="dateUpdated" datetime="2019-01-08T18:24:35+08:00" content="2019-01-08">
                 2019-01-08
               </time>
             </span>
@@ -423,7 +423,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  2,588
+                  2,586
                 </span>
               words
 
@@ -470,7 +470,7 @@
 <p>如果不幸<code>leader</code>发生了宕机，集群因此重新进行了选举，并生成了新的<code>leader</code>，上一个<code>term</code>并不会影响到当前的<code>leader</code>的工作。这在<code>Raft</code>及<code>ZAB</code>协议中分别可以通过<code>term</code>及<code>epoch</code>来判定决定。那上一任期遗留的事务日志如何处理？典型地，这包含是否已被<code>quorum</code>节点复制的日志。而对于之前<code>term</code>的事务日志，<code>Raft</code>的策略在前文已经叙述，不会主动提交，若已经被过半复制，则会隐式提交。而那些未过半复制的，可能会被删除。而<code>ZAB</code>协议则采取更激进的策略，对于所有过半还是未过半的日志都判定为提交，都将其应用到状态机。</p>
 <p>最后，是关于如何让一个新的节点加入协议流程的问题。在<code>Raft</code>中，<code>leader</code>会周期性地向<code>follower</code>发送心跳信息，里面包含了<code>leader</code>信息，因此，此节点可以重构其需要的信息。在<code>ZAB</code>中会有所不同，刚启动后，它会向转入<code>election</code>状态，并向所有节点发送投票信息，因此，正常情况下它会收到集群中其它的<code>follower</code>节点发送的关于<code>leader</code>的投票信息，当然也会收到<code>leader</code>的消息，然后从这些回复中判断当前的<code>leader</code>节点的信息，然后转入<code>following</code>状态，会周期性收到<code>leader</code>的心跳消息。需要注意的一点是，对于<code>Raft</code>而言，一个节点加入协议（不是新机器）不会阻塞整个协议的运行，因为<code>leader</code>保存有节点目前已同步的信息，或者说下一个需要同步的日志的索引，因此它只需要将后续的日志通过心跳发送给<code>follower</code>即可。而<code>ZAB</code>协议中是会阻塞<code>leader</code>收到客户端的写请求。因此，<code>leader</code>向<code>follower</code>同步日志的过程，需要获取<code>leader</code>数据的读锁，然后，确定需要同步给<code>follower</code>的事务日志，确定之后才能释放锁。值得注意的是，<code>Raft</code>的日志被设计成是连续的。而<code>ZAB</code>的日志被设计成允许存在空洞。具体而言，<code>leader</code>为每个<code>follower</code>保存了一个队列，用于存放所有变更。当<code>follower</code>在与<code>leader</code>进行同步时，需要阻塞<code>leader</code>的写请求，只有等到将<code>follower</code>和<code>leader</code>之间的差异数据先放入队列完成之后，才能解除阻塞。这是为了保证所有请求的顺序性，因为在同步期间的数据需要被添加在了上述队列末尾，从而保证了队列中的数据是有序的，从而进一步保证<code>leader</code>发给<code>follower</code>的数据与其接受到客户端的请求的顺序相同，而<code>follower</code>也是一个个进行确认请求（这不同于<code>Raft</code>，后者可以批量同步事务日志），所以对于<code>leader</code>的请求回复也是严格有序的。</p>
 <p>最后，从论文来看，二者的快照也略有不同。<code>Raft</code>的快照机制对应了某一个时刻状态机数据（即采取的是准确式快照）。而<code>ZooKeeper为</code>了保证快照的高性能，采用一种<code>fuzzy snapshot</code>机制（这在<code>ZooKeeper</code>博文中有介绍），大概地，它会记录从快照开始的事务标识，并且此时不会阻塞写请求（不锁定内存），因此，它会对部分新的事务日志应用多次（事务日志的幂等特性保证了这种做法的正确性）。</p>
-<p>顺便提五，<code>ZooKeepr</code>为了保证读性能的线性扩展，因此，任何节点都能够处理读请求。但这带来的代价是过期数据。（虽然可通过<code>sync read</code>来强制读取最新数据）。而<code>Raft</code>不会出现过期数据的情况（具体如何保证取决于实现，如将读请求转发到<code>leader</code>）。</p>
+<p>顺便提一下，<code>ZooKeepr</code>为保证读性能的线性扩展，让任何节点都能处理读请求。但这带来的代价是过期数据。（虽然可通过<code>sync read</code>来强制读取最新数据）。而<code>Raft</code>不会出现过期数据的情况（具体如何保证取决于实现，如将读请求转发到<code>leader</code>）。</p>
 <p>本文是从协议流程的各个阶段来对比<code>Raft</code>及<code>ZAB</code>协议。<a href="https://blog.acolyer.org/2015/03/11/vive-la-difference-paxos-vs-viewstamped-replication-vs-zab/" target="_blank" rel="noopener">这里</a>也提供更系统、更理论、更深入的对比（加入了<code>Viewstamped Replication</code>和<code>Paxos</code>一致性协议），它简要概括了<a href="https://arxiv.org/pdf/1309.5671.pdf" target="_blank" rel="noopener">论文</a>。</p>
 <p>关于<code>ZAB</code>协议与<code>Paxos</code>的区别，这里便不多阐述了。在<code>ZAB</code>文章中有简略介绍。另外，也可以在<a href="https://cwiki.apache.org/confluence/display/ZOOKEEPER/Zab+vs.+Paxos" target="_blank" rel="noopener">这里</a>进行了解。这篇博文主要参考了文献[1]。</p>
 <p>参考文献</p>
