@@ -351,7 +351,7 @@
             
             <span class="post-updated">
               &nbsp; | &nbsp; 更新于
-              <time itemprop="dateUpdated" datetime="2019-01-08T17:22:50+08:00" content="2019-01-08">
+              <time itemprop="dateUpdated" datetime="2019-01-08T18:19:51+08:00" content="2019-01-08">
                 2019-01-08
               </time>
             </span>
@@ -424,7 +424,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  2,592
+                  2,588
                 </span>
               words
 
@@ -462,24 +462,14 @@
 
       
         
-          
-            <p>如果你了解过<code>Raft</code>协议、<code>ZAB</code>(<code>ZooKeeper&#39;s Atomic Broadcast</code>)协议及<code>Paxos</code>算法，你会发现它们本质上都是为了解决共识问题，即属于一种一致性算法（原子广播协议通常意义上可以等同于一致性协议）。但你可能会觉得相比于<code>Paxos</code>，<code>ZAB</code>与<code>Raft</code>可能更相似。从直观感受上，<code>Paxos</code>协议（<code>Basic Paxos</code>）更像是一种广义上的一致性算法的理论版本，它泛化了很多问题，并且没有基于特定场景的（工程）设计，因此相对而言也更难理解。而<code>ZAB</code>及<code>Raft</code>则像是具化的一致性化算法，并且简化了一些问题的前提设定，这也使得它们更易理解，也更易实现。本文对<code>Raft</code>协议及<code>ZAB</code>协议进行简单理解对比，主要讨论它们的不同之处。考虑到<code>Raft</code>论文给出了关于实现的详细细节，但官方提供的<code>ZAB</code>论文并没有涉及太多实现细节（Andr´e Medeiros 于 2012 年发表了一篇理论结合实践的论文），因此关于<code>ZAB</code>的细节是针对<code>ZooKeeper</code>的实现而言的。</p>
-<!--More!-->
-<p>首先，考虑一个问题，为什么需要选举出一个<code>leader</code>？我们知道，在<code>Basic Paxos</code>中并没有强调一定需要一个<code>leader</code>。但在<code>Raft</code>中包含了<code>leader</code>的强领导原则，而<code>ZAB</code>协议，正常的<code>Broadcast</code>阶段也需要一个<code>leader</code>。很自然地，若能够选举出一个<code>leader</code>节点，由其来统筹所有的客户端请求，可以方便并发控制，而且，因为<code>leader</code>是具备最新日志的节点，这使得日志同步过程也变得更简单，单向地由<code>leader</code>流向<code>follower</code>。另外，其实在日志恢复过程中，需要挑选出包含最新日志的节点，如果将它作为<code>leader</code>，那将使得失败恢复过程加快。最后，根本上而言，<code>Raft</code>及<code>ZAB</code>的对日志的应用都差不多归纳为一个二阶段过程，先收集<code>follower</code>反馈，然后，根据特定规则决定是否提交。那么收集反馈的工作若交由<code>leader</code>来处理，明显简化了协议流程。</p>
-<p>接下来，我们简述<code>Raft</code>协议与<code>ZAB</code>协议中选举流程的对比情况。明显地，二者都是先选投票给自己，然后广播投票信息，另外它们都包含了选举轮次的概念（在<code>Raft</code>中为任期<code>term</code>，在<code>ZAB</code>中为<code>round</code>，两者的选举过程可能会涉及多轮），这确实比较类似，但需要注意的是，选举完成后，对于<code>Raft</code>而言，<code>term</code>即为<code>leader</code>所在的任期，而<code>ZAB</code>协议却额外使用了一个任期概念(<code>epoch</code>)。在具体的选举过程中，<code>Raft</code>协议规定一旦节点认为它能够为候选者投票，则在此轮投票过程中，都不会改变。而在<code>ZAB</code>协议中，集群中各节点反复交换选票信息（里面包含各自已提交的历史事务日志），以更新选票信息。二者都有<code>quorum</code>选票成功的概念。</p>
-<p>与选举流程相关的另一个问题就是如何定义节点包含更新的事务日志。在<code>Raft</code>中，是通过依次比较<code>term</code>及<code>index</code>来确定。而<code>ZAB</code>协议是依次比较<code>epoch</code>及<code>counter</code>来决定（即通过比较<code>zxid</code>），值得注意的是选举轮次<code>round</code>也会作为比较因素。另外，在<code>Raft</code>中有一个很重要的一点为，被选举出来的<code>leader</code>只能提交本<code>term</code>的事务日志（不能显式提交之前<code>term</code>的未提交的事务日志，论文中详细阐述了原因），即在提交当前<code>term</code>的事务日志时，隐式（顺便）提交了之前<code>term</code>的未提交的（但已被复制到<code>quorum</code>节点）事务日志。在<code>ZAB</code>协议中，当<code>leader</code>选举未完成后，不会存在这样的情况，因为在<code>Broadcast</code>阶段之前，<code>Synchronization</code>阶段（<code>Raft</code>协议并未提供此阶段）会保证各节点的日志处于完全一致的状态。</p>
-<p>另外，<code>ZAB</code>与<code>Raft</code>协议在选举阶段都使用了超时机制，以保证节点在超时时间内未收到投票信息，会自动转入下一轮的选举。具体而言，<code>Raft</code>的选举流程还可能会出现瓜分选票的情况(<code>split vote)</code>，因此，<code>Raft</code>通过随机化超时(<code>randomized timeout</code>)时间来缓解这个问题（不是解决）。而<code>ZAB</code>协议不会存在瓜分选票的情况，唯一依据是节点的选票的新旧程度。因此，理论上<code>Raft</code>可能存在活性的问题，即不会选举过程不会终止。而<code>ZAB</code>的选举时间应该会比<code>Raft</code>的选举时间更长（更频繁的交换选票信息）。</p>
-<p>其次，在<code>ZAB</code>论文中有提到过，<code>follower</code>及<code>leader</code>由<code>Broadcast</code>阶段进入选举阶段，有各自判定依据，或者，这可以表述为，各节点如何触发<code>leader</code>选举过程。明显，在集群刚启动时，节点会先进行选举。另外，<code>Raft</code>协议通过周期性地由<code>leader</code>向<code>follower</code>发送心跳，心巩固<code>leader</code>的领导地位，一旦超时时间内，<code>follower</code>未收到心跳信息，则转为<code>candidate</code>状态、递增<code>term</code>，并触发选举流程（当<code>leader</code>发现消息回复中包含更高<code>term</code>时，便转为<code>follower</code>状态）。而在<code>ZAB</code>协议中，也是通过<code>leader</code>周期性向<code>follower</code>发送心跳，一旦<code>leader</code>未检测到<code>quorum</code>个回复，则会转为<code>election</code>状态，并进入选举流程（它会断开与<code>follower</code>的连接）。而此时<code>follower</code>一旦检测到<code>leader</code>已经卸任，同样会进入<code>election</code>状态，进入选举流程。</p>
-<p>如果不幸<code>leader</code>发生了宕机，集群因此重新进行了选举，并生成了新的<code>leader</code>，上一个<code>term</code>并不会影响到当前的<code>leader</code>的工作。这在<code>Raft</code>及<code>ZAB</code>协议中分别可以通过<code>term</code>及<code>epoch</code>来判定决定。那上一任期遗留的事务日志如何处理？典型地，这包含是否已被<code>quorum</code>节点复制的日志。而对于之前<code>term</code>的事务日志，<code>Raft</code>的策略在前文已经叙述，不会主动提交，若已经被过半复制，则会隐式提交。而那些未过半复制的，可能会被删除。而<code>ZAB</code>协议则采取更激进的策略，对于所有过半还是未过半的日志都判定为提交，都将其应用到状态机。</p>
-<p>最后，是关于如何让一个新的节点加入协议流程的问题。在<code>Raft</code>中，<code>leader</code>会周期性地向<code>follower</code>发送心跳信息，里面包含了<code>leader</code>信息，因此，此节点可以重构其需要的信息。在<code>ZAB</code>中会有所不同，刚启动后，它会向转入<code>election</code>状态，并向所有节点发送投票信息，因此，正常情况下它会收到集群中其它的<code>follower</code>节点发送的关于<code>leader</code>的投票信息，当然也会收到<code>leader</code>的消息，然后从这些回复中判断当前的<code>leader</code>节点的信息，然后转入<code>following</code>状态，会周期性收到<code>leader</code>的心跳消息。需要注意的一点是，对于<code>Raft</code>而言，一个节点加入协议（不是新机器）不会阻塞整个协议的运行，因为<code>leader</code>保存有节点目前已同步的信息，或者说下一个需要同步的日志的索引，因此它只需要将后续的日志通过心跳发送给<code>follower</code>即可。而<code>ZAB</code>协议中是会阻塞<code>leader</code>收到客户端的写请求。因此，<code>leader</code>向<code>follower</code>同步日志的过程，需要获取<code>leader</code>数据的读锁，然后，确定需要同步给<code>follower</code>的事务日志，确定之后才能释放锁。值得注意的是，<code>Raft</code>的日志被设计成是连续的。而<code>ZAB</code>的日志被设计成允许存在空洞。具体而言，<code>leader</code>为每个<code>follower</code>保存了一个队列，用于存放所有变更。当<code>follower</code>在与<code>leader</code>进行同步时，需要阻塞<code>leader</code>的写请求，只有等到将<code>follower</code>和<code>leader</code>之间的差异数据先放入队列完成之后，才能解除阻塞。这是为了保证所有请求的顺序性，因为在同步期间的数据需要被添加在了上述队列末尾，从而保证了队列中的数据是有序的，从而进一步保证<code>leader</code>发给<code>follower</code>的数据与其接受到客户端的请求的顺序相同，而<code>follower</code>也是一个个进行确认请求（这不同于<code>Raft</code>，后者可以批量同步事务日志），所以对于<code>leader</code>的请求回复也是严格有序的。</p>
-<p>最后，从论文来看，二者的快照也略有不同。<code>Raft</code>的快照机制对应了某一个时刻状态机数据（即采取的是准确式快照）。而<code>ZooKeeper为</code>了保证快照的高性能，采用一种<code>fuzzy snapshot</code>机制（这在<code>ZooKeeper</code>博文中有介绍），大概地，它会记录从快照开始的事务标识，并且此时不会阻塞写请求（不锁定内存），因此，它会对部分新的事务日志应用多次（事务日志的幂等特性保证了这种做法的正确性）。</p>
-<p>顺便一提，<code>ZooKeepr</code>为了保证读性能的线性扩展，因此，任何节点都能够处理读请求。但这带来的代价是过期数据。（虽然可以通过<code>sync read</code>来强制读取最新的数据）。而<code>Raft</code>是不会出现过期数据的情况（具体如何保证取决于实现，比如将读请求转发到<code>leader</code>）。</p>
-<p>本文是从协议流程的各个阶段来对比<code>Raft</code>及<code>ZAB</code>协议。<a href="https://blog.acolyer.org/2015/03/11/vive-la-difference-paxos-vs-viewstamped-replication-vs-zab/" target="_blank" rel="noopener">这里</a>也提供更系统、更理论、更深入的对比（加入了<code>Viewstamped Replication</code>和<code>Paxos</code>一致性协议），它简要概括了<a href="https://arxiv.org/pdf/1309.5671.pdf" target="_blank" rel="noopener">论文</a>。</p>
-<p>关于<code>ZAB</code>协议与<code>Paxos</code>的区别，这里便不多阐述了。在<code>ZAB</code>文章中有简略介绍。另外，也可以在<a href="https://cwiki.apache.org/confluence/display/ZOOKEEPER/Zab+vs.+Paxos" target="_blank" rel="noopener">这里</a>进行了解。这篇博文主要参考了文献[1]。</p>
-<p>参考文献</p>
-<p>[1]. <a href="https://my.oschina.net/pingpangkuangmo/blog/782702" target="_blank" rel="noopener">Raft对比ZAB协议</a><br>[2]. <a href="https://blog.acolyer.org/2015/03/11/vive-la-difference-paxos-vs-viewstamped-replication-vs-zab/" target="_blank" rel="noopener">Vive La Différence: Paxos vs Viewstamped Replication vs Zab</a><br>[3]. Van Renesse R, Schiper N, Schneider F B. Vive la différence: Paxos vs. viewstamped replication vs. zab[J]. IEEE Transactions on Dependable and Secure Computing, 2015, 12(4): 472-484.</p>
-
-          
+          <p>如果你了解过<code>Raft</code>协议、<code>ZAB</code>(<code>ZooKeeper&#39;s Atomic Broadcast</code>)协议及<code>Paxos</code>算法，你会发现它们本质上都是为了解决共识问题，即属于一种一致性算法（原子广播协议通常意义上可以等同于一致性协议）。但你可能会觉得相比于<code>Paxos</code>，<code>ZAB</code>与<code>Raft</code>可能更相似。从直观感受上，<code>Paxos</code>协议（<code>Basic Paxos</code>）更像是一种广义上的一致性算法的理论版本，它泛化了很多问题，并且没有基于特定场景的（工程）设计，因此相对而言也更难理解。而<code>ZAB</code>及<code>Raft</code>则像是具化的一致性化算法，并且简化了一些问题的前提设定，这也使得它们更易理解，也更易实现。本文对<code>Raft</code>协议及<code>ZAB</code>协议进行简单理解对比，主要讨论它们的不同之处。考虑到<code>Raft</code>论文给出了关于实现的详细细节，但官方提供的<code>ZAB</code>论文并没有涉及太多实现细节（Andr´e Medeiros 于 2012 年发表了一篇理论结合实践的论文），因此关于<code>ZAB</code>的细节是针对<code>ZooKeeper</code>的实现而言的。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/01/08/简单对比-Raft-及-ZAB-协议/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
