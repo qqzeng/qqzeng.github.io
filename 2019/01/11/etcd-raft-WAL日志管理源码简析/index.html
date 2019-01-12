@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上一篇文章简单分析了etcd-raft 网络传输组件相关的源码。本文会简要分析etcd-raft WAL日志管理部分的源码。WAL(Write-Ahead Logging)即为预写式日志，即在真正执行写操作之前先写日志，这在数据库系统和分布式系统领域很常见。它是为了保证数据的可靠写。日志对于利用一致性协议构建高可用的分布式系统而言至关重要，在etcd raft中，日志也会在各节点之间同步。并且et">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-01-11T07:59:48.054Z">
+<meta property="og:updated_time" content="2019-01-11T08:02:32.521Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="etcd-raft WAL日志管理源码简析">
 <meta name="twitter:description" content="上一篇文章简单分析了etcd-raft 网络传输组件相关的源码。本文会简要分析etcd-raft WAL日志管理部分的源码。WAL(Write-Ahead Logging)即为预写式日志，即在真正执行写操作之前先写日志，这在数据库系统和分布式系统领域很常见。它是为了保证数据的可靠写。日志对于利用一致性协议构建高可用的分布式系统而言至关重要，在etcd raft中，日志也会在各节点之间同步。并且et">
@@ -452,7 +452,7 @@
       
 
       
-        <p>上一篇文章简单分析了<code>etcd-raft 网络传输组件相关的源码</code>。本文会简要分析<code>etcd-raft WAL</code>日志管理部分的源码。<code>WAL</code>(<code>Write-Ahead Logging</code>)即为预写式日志，即在真正执行写操作之前先写日志，这在数据库系统和分布式系统领域很常见。它是为了保证数据的可靠写。日志对于利用一致性协议构建高可用的分布式系统而言至关重要，在<code>etcd raft</code>中，日志也会在各节点之间同步。并且<code>etcd</code>提供了一个<code>WAL</code>的日志库，它暴露日志管理相关的接口以方便应用程序具体操作日志的逻辑。本文从应用调用 <code>WAL</code>库执行日志追加逻辑切入，重点分析<code>etcd</code>提供的<code>WAL</code>日志库的相关接口实现逻辑细则，包括<code>WAL</code>日志的设计、日志创建追加等。</p>
+        <p>上一篇文章简单分析了<code>etcd-raft</code> 网络传输组件相关的源码。本文会简要分析<code>etcd-raft WAL</code>日志管理部分的源码。<code>WAL</code>(<code>Write-Ahead Logging</code>)即为预写式日志，即在真正执行写操作之前先写日志，这在数据库系统和分布式系统领域很常见。它是为了保证数据的可靠写。日志对于利用一致性协议构建高可用的分布式系统而言至关重要，在<code>etcd raft</code>中，日志也会在各节点之间同步。并且<code>etcd</code>提供了一个<code>WAL</code>的日志库，它暴露日志管理相关的接口以方便应用程序具体操作日志的逻辑。本文从应用调用 <code>WAL</code>库执行日志追加逻辑切入，重点分析<code>etcd</code>提供的<code>WAL</code>日志库的相关接口实现逻辑细则，包括<code>WAL</code>日志的设计、日志创建追加等。</p>
 <a id="more"></a>
 <h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2><p>同之前的文章类似，希望读者能够主动查看源码（主要涉及目录<code>/etcd/wal</code>），文章作为参考。按惯例，先来观察与<code>WAL</code>相关的重要数据结构的设计。从最核心的数据结构切入<code>WAL</code>：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// WAL 是持久化存在的逻辑表示。并且要么处于读模式要么处于追加模式。</span></span><br><span class="line"><span class="comment">// 新创建的 WAL 处于追加模式，可用于记录追加。</span></span><br><span class="line"><span class="comment">// 刚打开的 WAL 处于读模式，可用于记录读取。</span></span><br><span class="line"><span class="comment">// 当读完之前所有的 WAL 记录后，WAL 才可用于记录追加。</span></span><br><span class="line"><span class="keyword">type</span> WAL <span class="keyword">struct</span> &#123;</span><br><span class="line">	lg *zap.Logger</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 日志存储目录</span></span><br><span class="line">	dir <span class="keyword">string</span> <span class="comment">// the living directory of the underlay files</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// dirFile is a fd for the wal directory for syncing on Rename</span></span><br><span class="line">	<span class="comment">// 文件描述符，用于 WAL 目录同步重命名操作</span></span><br><span class="line">	dirFile *os.File</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 元数据，在创建日志文件时，在写在文件头位置</span></span><br><span class="line">	metadata []<span class="keyword">byte</span>           <span class="comment">// metadata recorded at the head of each WAL</span></span><br><span class="line">	state    raftpb.HardState <span class="comment">// hardstate recorded at the head of WAL</span></span><br><span class="line"></span><br><span class="line">	start     walpb.Snapshot <span class="comment">// snapshot to start reading</span></span><br><span class="line">	decoder   *decoder       <span class="comment">// decoder to decode records</span></span><br><span class="line">	readClose <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">error</span>   // <span class="title">closer</span> <span class="title">for</span> <span class="title">decode</span> <span class="title">reader</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">	<span class="title">mu</span>      <span class="title">sync</span>.<span class="title">Mutex</span></span></span><br><span class="line"><span class="function">    // <span class="title">WAL</span> 中保存的最后一条日志的索引</span></span><br><span class="line"><span class="function">	<span class="title">enti</span>    <span class="title">uint64</span>   // <span class="title">index</span> <span class="title">of</span> <span class="title">the</span> <span class="title">last</span> <span class="title">entry</span> <span class="title">saved</span> <span class="title">to</span> <span class="title">the</span> <span class="title">wal</span></span></span><br><span class="line"><span class="function">	<span class="title">encoder</span> *<span class="title">encoder</span> // <span class="title">encoder</span> <span class="title">to</span> <span class="title">encode</span> <span class="title">records</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">	// <span class="title">LockedFile</span> 封装了 <span class="title">os</span>.<span class="title">File</span> 的结构，具备文件锁定功能</span></span><br><span class="line"><span class="function">	<span class="title">locks</span> []*<span class="title">fileutil</span>.<span class="title">LockedFile</span> // <span class="title">the</span> <span class="title">locked</span> <span class="title">files</span> <span class="title">the</span> <span class="title">WAL</span> <span class="title">holds</span> <span class="params">(the name is increasing)</span></span></span><br><span class="line"><span class="function">	<span class="title">fp</span>    *<span class="title">filePipeline</span></span></span><br><span class="line"><span class="function">&#125; // <span class="title">wal</span>.<span class="title">go</span></span></span><br></pre></td></tr></table></figure>
@@ -551,6 +551,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2019/01/12/etcd-raft-存储模块源码简析/" rel="prev" title="etcd-raft 存储模块源码简析">
+                etcd-raft 存储模块源码简析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -636,7 +640,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -735,7 +739,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">57.0k</span>
+    <span title="Site words total count">67.1k</span>
   
 </div>
 
