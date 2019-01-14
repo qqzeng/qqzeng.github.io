@@ -308,6 +308,206 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://www.qqzeng.top/2019/01/14/etcd-raft-snapshot实现源码简析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/01/14/etcd-raft-snapshot实现源码简析/" itemprop="url">etcd-raft snapshot实现源码简析</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-14T14:49:40+08:00">
+                2019-01-14
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式系统</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/分布式系统协调服务/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式系统协调服务</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/01/14/etcd-raft-snapshot实现源码简析/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/01/14/etcd-raft-snapshot实现源码简析/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  6,103
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  26
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>上一篇文章阐述了<code>etcd-raft</code>存储模块相关逻辑源码，准确而言是与日志存储相关，主要是围绕<code>raftLog</code>、<code>unstable</code>以及<code>Storage/MemoryStorage</code>展开，涉及流程较多，且结合流程逻辑阐述得比较详细。本文主题是<code>snapshot</code>，快照也属于存储的范畴，因此本文内容与上一篇文章存在重叠。不同的是，本文是围绕<code>snapshot</code>展开相关逻辑的分析。具体而言，首先简要介绍<code>snapshot</code>数据结构及重要接口实现，然后重点分析<code>snapshot</code>的全局逻辑（大部分源码已在上篇文章中分析），这主要包括如下四个子问题：其一，<code>leader</code>节点何时执行<code>snapshot</code>同步复制，其二，（应用程序）何时触发<code>snapshot</code>操作及，其三，（应用程序）如何应用<code>snapshot</code>数据，最后，<code>follower</code>节点何时以及如何应用<code>snapshot</code>数据事实上，第一、四两点是从底层协议的角度阐述与<code>snapshot</code>的相关操作，而第二、三点是从应用程序的角度来阐述<code>snapshot</code>相关操作（这其实涵盖了所有节点的操作）。但总的原则不变，目的是从整体上把握<code>snapshot</code>的逻辑，希望读者不要混淆。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/01/14/etcd-raft-snapshot实现源码简析/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://www.qqzeng.top/2019/01/12/etcd-raft-存储模块源码简析/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -352,6 +552,39 @@
           </span>
 
           
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式系统</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/分布式协调服务/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式协调服务</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
 
           
             
@@ -383,7 +616,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  10,148
+                  10,144
                 </span>
               words
 
@@ -421,7 +654,7 @@
 
       
         
-          <p>上一篇文章简单分析了<code>etcd-raft WAL</code>日志管理模块相关的源码。文章集中在<code>WAL</code>库提供的相关接口的阐述，而未将其与<code>raft</code>协议核心库关联起来，即尚未阐述<code>raft</code>协议核心库如何使用<code>WAL</code>日志库，并且上一篇文章虽然是以应用程序使用<code>WAL</code>库为切入点分析，但并没有阐述清楚<code>WAL</code>、<code>Storage</code>以及<code>unstable</code>三者的关联，鉴于三者提供日志存储的功能。本文的重点是分析<code>etcd-raft 存储模块</code>，它包括<code>Storage</code>及其实现<code>memoryStorage</code>（<code>etcd</code>为应用程序提供的一个<code>Storage</code>实现的范例）、<code>unstable</code>以及<code>raftLog</code>三个核心数据结构。另外，阐述<code>Storage</code>同应用程序的交互的细节以及<code>raft</code>协议库与<code>raftLog</code>的交互相关的逻辑，后者包括<code>raftLog</code>重要接口的实现，以及<code>raft</code>协议库的一个典型的简单的日志追加流程（即从<code>leader</code>追加日志，然后广播给<code>follower</code>节点，然后<code>follower</code>节点同样进行日志项的追加，最后<code>leader</code>节点处理<code>follower</code>节点的响应各个环节中日志追加的具体逻辑）。</p>
+          <p>上一篇文章简单分析了<code>etcd-raft WAL</code>日志管理模块相关的源码。文章集中在<code>WAL</code>库提供的相关接口的阐述，而未将其与<code>raft</code>协议核心库关联起来，即尚未阐述<code>raft</code>协议核心库如何使用<code>WAL</code>日志库，并且上一篇文章虽然是以应用程序使用<code>WAL</code>库为切入点分析，但并没有阐述清楚<code>WAL</code>、<code>Storage</code>以及<code>unstable</code>三者的关联，鉴于三者提供日志存储的功能。本文的重点是分析<code>etcd-raft</code> 存储模块，它包括<code>Storage</code>及其实现<code>memoryStorage</code>（<code>etcd</code>为应用程序提供的一个<code>Storage</code>实现的范例）、<code>unstable</code>以及<code>raftLog</code>三个核心数据结构。另外，阐述<code>Storage</code>同应用程序的交互的细节以及<code>raft</code>协议库与<code>raftLog</code>的交互相关的逻辑，后者包括<code>raftLog</code>重要接口的实现，以及<code>raft</code>协议库的一个典型的简单的日志追加流程（即从<code>leader</code>追加日志，然后广播给<code>follower</code>节点，然后<code>follower</code>节点同样进行日志项的追加，最后<code>leader</code>节点处理<code>follower</code>节点的响应各个环节中日志追加的具体逻辑）。</p>
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2019/01/12/etcd-raft-存储模块源码简析/#more" rel="contents">
@@ -583,7 +816,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  7,694
+                  7,698
                 </span>
               words
 
@@ -2062,206 +2295,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://www.qqzeng.top/2018/11/16/MapReduce-原型实现/">
-
-    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="qqzeng">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/11/16/MapReduce-原型实现/" itemprop="url">MapReduce 原型实现</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-16T22:53:42+08:00">
-                2018-11-16
-              </time>
-            
-
-            
-
-            
-
-
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式系统</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/分布式计算框架/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式计算框架</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/11/16/MapReduce-原型实现/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/11/16/MapReduce-原型实现/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  2,147
-                </span>
-              words
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  8
-                </span>
-              mins
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p><code>MapReduce</code> 最早是由谷歌于 2004 年在操作系统顶会 OSDI 上发表的一篇面向大规模数据处理的分布式计算框架（并行计算模型）论文中提出。<code>MapReduce</code>使用 <code>Google File System</code> 作为数据存储，支撑起了谷歌全网搜索等大规模数据存储与处理业务。<code>MapReduce</code> 对于大规模数据的高效处理体现在三个方面：其一，大规模数据并行处理，分而治之；其二，<code>MapReduce</code>编程模型；最后，<code>MapReduce</code>运行时环境（失败恢复、任务调度以及负载均衡等）。它简化了并行编程，使得开发人员很容易编写出高效且具备容错能力的并行化程序。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2018/11/16/MapReduce-原型实现/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2312,7 +2345,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">16</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2323,7 +2356,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2334,7 +2367,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -2395,7 +2428,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">67.1k</span>
+    <span title="Site words total count">73.2k</span>
   
 </div>
 
