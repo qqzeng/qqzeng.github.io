@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上一篇文章阐述了etcd-raft存储模块相关逻辑源码，准确而言是与日志存储相关，主要是围绕raftLog、unstable以及Storage/MemoryStorage展开，涉及流程较多，且结合流程逻辑阐述得比较详细。本文主题是snapshot，快照也属于存储的范畴，因此本文内容与上一篇文章存在重叠。不同的是，本文是围绕snapshot展开相关逻辑的分析。具体而言，首先简要介绍snapshot数">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-01-14T14:32:12.629Z">
+<meta property="og:updated_time" content="2019-01-14T14:37:20.609Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="etcd-raft snapshot实现源码简析">
 <meta name="twitter:description" content="上一篇文章阐述了etcd-raft存储模块相关逻辑源码，准确而言是与日志存储相关，主要是围绕raftLog、unstable以及Storage/MemoryStorage展开，涉及流程较多，且结合流程逻辑阐述得比较详细。本文主题是snapshot，快照也属于存储的范畴，因此本文内容与上一篇文章存在重叠。不同的是，本文是围绕snapshot展开相关逻辑的分析。具体而言，首先简要介绍snapshot数">
@@ -415,7 +415,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  6,103
+                  6,122
                 </span>
               words
 
@@ -482,6 +482,8 @@
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *raft)</span> <span class="title">restore</span><span class="params">(s pb.Snapshot)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">	<span class="comment">// 1. 若快照消息中的快照索引小于已提交的日志项的日志索引，则不能应用此快照（之前已应用）</span></span><br><span class="line">	<span class="keyword">if</span> s.Metadata.Index &lt;= r.raftLog.committed &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 2. 否则，若此索引与任期匹配</span></span><br><span class="line">	<span class="keyword">if</span> r.raftLog.matchTerm(s.Metadata.Index, s.Metadata.Term) &#123;</span><br><span class="line">		r.logger.Infof(<span class="string">"%x [commit: %d, lastindex: %d, lastterm: %d] fast-forwarded commit to snapshot [index: %d, term: %d]"</span>,</span><br><span class="line">			r.id, r.raftLog.committed, r.raftLog.lastIndex(), r.raftLog.lastTerm(), s.Metadata.Index, s.Metadata.Term)</span><br><span class="line">		<span class="comment">// 2.1 则更新 raftLog 中的 commited 字段，因为 committed 之前的日志代表已经提交</span></span><br><span class="line">		r.raftLog.commitTo(s.Metadata.Index)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// The normal peer can't become learner.</span></span><br><span class="line">	<span class="comment">// 3. 这里是更新当前节点的集群的拓扑结构信息，即集群中包含哪些节点，它们各自的角色是什么</span></span><br><span class="line">	<span class="keyword">if</span> !r.isLearner &#123;</span><br><span class="line">		<span class="keyword">for</span> _, id := <span class="keyword">range</span> s.Metadata.ConfState.Learners &#123;</span><br><span class="line">			<span class="keyword">if</span> id == r.id &#123;</span><br><span class="line">				r.logger.Errorf(<span class="string">"%x can't become learner when restores snapshot [index: %d, term: %d]"</span>, r.id, s.Metadata.Index, s.Metadata.Term)</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	r.logger.Infof(<span class="string">"%x [commit: %d, lastindex: %d, lastterm: %d] starts to restore snapshot [index: %d, term: %d]"</span>,</span><br><span class="line">		r.id, r.raftLog.committed, r.raftLog.lastIndex(), r.raftLog.lastTerm(), s.Metadata.Index, s.Metadata.Term)</span><br><span class="line"> 	<span class="comment">// 4. 更新 raftLog 的 commited 为快照消息中的索引，以及更换 unstable 中的 snapshot 实例为快照消息中的快照实例</span></span><br><span class="line"> 	<span class="comment">// 并更新 unstable 的 offset 为 快照消息索引+1，更新 ents 字段为空</span></span><br><span class="line">	r.raftLog.restore(s)</span><br><span class="line">	<span class="comment">// 5. 以下同样是重构节点的拓扑信息</span></span><br><span class="line">	r.prs = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">uint64</span>]*Progress)</span><br><span class="line">	r.learnerPrs = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">uint64</span>]*Progress)</span><br><span class="line">	r.restoreNode(s.Metadata.ConfState.Nodes, <span class="literal">false</span>)</span><br><span class="line">	r.restoreNode(s.Metadata.ConfState.Learners, <span class="literal">true</span>)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">&#125; <span class="comment">// /etcd/raft/raft.go</span></span><br></pre></td></tr></table></figure>
 <p>至此，关于<code>snapshot</code>的逻辑已经阐述完毕。</p>
 <p>简单小结，本文先是简单介绍了<code>Snapshot</code>的数据结构及接口实现（该<code>Snapshot</code>为重启的快照数据加载来源，并配合<code>WAL</code>日志重放记录，以重构节点宕机前的状态），然后围绕<code>unstable</code>及<code>Storage</code>总结了关于<code>snapshot</code>的流程逻辑，以在总体上把握<code>snapshot</code>的核心设计流程。最后，结合代码分析从四个方面梳理<code>snapshot</code>的相关流程，目的是加深读者对整个系统中如何使用<code>snapshot</code>的印象，并且需要理解为何如此设计。</p>
+<p>参考文献</p>
+<p>[1]. <a href="https://github.com/etcd-io/etcd" target="_blank" rel="noopener">https://github.com/etcd-io/etcd</a><br>[2]. <a href="https://zhuanlan.zhihu.com/p/29865583" target="_blank" rel="noopener">etcd-raft snapshot实现分析</a></p>
 
       
     </div>
@@ -708,7 +710,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">73.2k</span>
+    <span title="Site words total count">73.3k</span>
   
 </div>
 
