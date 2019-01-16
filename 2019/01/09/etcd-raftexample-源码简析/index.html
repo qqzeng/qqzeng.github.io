@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="最近集中了解了ZAB、Raft及Paxos协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现Raft协议，并基于Raft构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的Raft协议的实现内幕，故选择etcd进行解读。etcd是 CoreOS 基于Raft协议使用 go 开发的分布式 kv 存储系统，可用于">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-01-10T08:48:33.565Z">
+<meta property="og:updated_time" content="2019-01-16T09:03:12.122Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="etcd raftexample 源码简析">
 <meta name="twitter:description" content="最近集中了解了ZAB、Raft及Paxos协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现Raft协议，并基于Raft构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的Raft协议的实现内幕，故选择etcd进行解读。etcd是 CoreOS 基于Raft协议使用 go 开发的分布式 kv 存储系统，可用于">
@@ -415,7 +415,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  6,527
+                  6,547
                 </span>
               words
 
@@ -454,7 +454,7 @@
       
         <p>最近集中了解了<code>ZAB</code>、<code>Raft</code>及<code>Paxos</code>协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现<code>Raft</code>协议，并基于<code>Raft</code>构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的<code>Raft</code>协议的实现内幕，故选择<code>etcd</code>进行解读。<code>etcd</code>是 CoreOS 基于<code>Raft</code>协议使用 go 开发的分布式 kv 存储系统，可用于服务发现、共享配置及其它利用一致性保障的功能（如<code>leader</code>选举及分布式锁、队列等）。这些功能<code>ZooKeeper</code>不也有提供？没错。它们都可以作为其它分布式应用的独立协调服务，这通过通用的一致性元信息存储来实现。但在易用性上，<code>etcd</code>可谓略胜一筹。因此，后续的一系列博客会简单对<code>etcd</code>各重要组成部分的源码进行简要分析（重点在<code>Raft</code>实现）。本文主要是分析<code>etcd</code>的<code>raftexample</code>的代码。它是<code>etcd</code>官方提供的如何使用<code>etcd</code>内部的<code>Raft</code>协议组件来构建分布式应用的一个简单示例。</p>
 <a id="more"></a>
-<p><code>etcd</code>内部使用<code>Raft</code>协议对集群各节点的状态（数据、日志及快照等）进行同步。类似于<code>ZooKeeper</code>利用<code>ZAB</code>协议作为底层的可靠的事务广播协议。但<code>etcd</code>对<code>Raft</code>的实现有点特殊，它底层的<code>Raft</code>组件库只实现了<code>Raft</code>协议最核心的部分，这主要包括选主逻辑、一致性具体实现以及成员关系变化。而将诸如<code>WAL</code>、<code>snapshot</code>以及网络传输等模块让用户来实现，这明显增加了使用的难度，但对于应用本质上也更灵活。</p>
+<p>（阐述<code>etcd-raft</code>的系列文章使用的<code>etcd-raft</code>的版本为 3.3.11）<code>etcd</code>内部使用<code>Raft</code>协议对集群各节点的状态（数据、日志及快照等）进行同步。类似于<code>ZooKeeper</code>利用<code>ZAB</code>协议作为底层的可靠的事务广播协议。但<code>etcd</code>对<code>Raft</code>的实现有点特殊，它底层的<code>Raft</code>组件库只实现了<code>Raft</code>协议最核心的部分，这主要包括选主逻辑、一致性具体实现以及成员关系变化。而将诸如<code>WAL</code>、<code>snapshot</code>以及网络传输等模块让用户来实现，这明显增加了使用的难度，但对于应用本质上也更灵活。</p>
 <p>本文会简单分析<code>etcd</code>提供的如何其核心的<code>Raft</code>协议组件来构建一个简单的高可用内存 kv 存储（其本质是一个状态机），用户可以通过 http 协议来访问应用（kv 存储系统），以对数据进行读写操作，在对日志进行读写过程中，<code>Raft</code>组件库能够保证各节点数据的一致性。其对应的源码目录为<code>/etcd-io/etcd/tree/master/contrib/raftexample</code>。另外，需要强调的是，本文的主题是利用<code>Raft</code>协议库来构建一个简单的 kv 存储，关于<code>Raft</code>协议库实现的细节不会过多阐述。若读者想继续了解此文，个人建议<code>clone</code>源代码，在阅读源代码的过程中，参考本文效果可能会更好，如果有理解错误的地方，欢迎指正！</p>
 <h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2><p>在按<code>raftexample/main</code>的示例完整解读整个流程之前，先熟悉几个重要的数据结构会有好处。此示例构建的应用为 kv 存储系统，因此，先来了解 <code>kvstore</code>定义的相关字段：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// a key-value store backed by raft</span></span><br><span class="line"><span class="keyword">type</span> kvstore <span class="keyword">struct</span> &#123;</span><br><span class="line">	proposeC    <span class="keyword">chan</span>&lt;- <span class="keyword">string</span> <span class="comment">// channel for proposing updates</span></span><br><span class="line">	mu          sync.RWMutex</span><br><span class="line">	kvStore     <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span> <span class="comment">// current committed key-value pairs</span></span><br><span class="line">	snapshotter *snap.Snapshotter</span><br><span class="line">&#125; <span class="comment">// kvstore.go</span></span><br></pre></td></tr></table></figure>
@@ -655,7 +655,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -754,7 +754,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">83.8k</span>
+    <span title="Site words total count">85.9k</span>
   
 </div>
 

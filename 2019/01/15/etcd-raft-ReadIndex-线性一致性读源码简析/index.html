@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上篇文章阐述了etcd-raft集群配置变更源码的相关逻辑，同时，在理论层面，从正反两个方面简要y论述了一次集群配置变更只能涉及到一个节点的原因。本文的主题为etcd-raft使用ReadIndex来实现线性一致性(linearizability)的实现原理。这包括两个方面，首先简要阐述线性一致性的理论知识，其次是结合etcd-raft的源码来简单梳理其如何使用ReadIndex来保证读请求的线性">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-01-16T06:40:58.032Z">
+<meta property="og:updated_time" content="2019-01-16T08:54:41.340Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="etcd-raft ReadIndex 线性一致性读源码简析">
 <meta name="twitter:description" content="上篇文章阐述了etcd-raft集群配置变更源码的相关逻辑，同时，在理论层面，从正反两个方面简要y论述了一次集群配置变更只能涉及到一个节点的原因。本文的主题为etcd-raft使用ReadIndex来实现线性一致性(linearizability)的实现原理。这包括两个方面，首先简要阐述线性一致性的理论知识，其次是结合etcd-raft的源码来简单梳理其如何使用ReadIndex来保证读请求的线性">
@@ -415,7 +415,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  6,185
+                  6,435
                 </span>
               words
 
@@ -431,7 +431,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  25
+                  26
                 </span>
               mins
             </div>
@@ -502,6 +502,8 @@
 <p>至此，关于<code>leader</code>节点处理<code>ReadIndex</code>请求的流程已经阐述完毕，总的流程比较简单，即<code>leader</code>通过一轮心跳消息来确认自己仍然是<code>leader</code>。另外，若客户端将读请求发送给了<code>follower</code>节点，<code>etcd-raft</code>的实现是：应用层会调用协议的核心库的<code>ReadIndex</code>()方法，然后让<code>follower</code>节点先将<code>ReadIndex</code>消息发送给<code>leader</code>，接下来<code>leader</code>同样走一圈上面的流程，在确认自己依旧为<code>leader</code>后，将确认的<code>ReadIndex</code>通过<code>MsgReadIndexResp</code>消息发送给<code>follower</code>节点，最后同样，<code>follower</code>节点将构造<code>ReadState</code>并记录<code>commit index</code>，最后由上层应用收到<code>Ready</code>结构后，从中取出<code>ReadState</code>。因此，综合来看，若<code>ReadIndex</code>请求发送给了<code>follower</code>，则<code>follower</code>先要去问<code>leader</code>查询<code>commit index</code>，然后同样构造<code>ReadState</code>返回给上层应用，这和<code>leader</code>的处理是一样的。关于<code>follower</code>收到<code>MsgReadIndex</code>消息的核心代码如下：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">stepFollower</span><span class="params">(r *raft, m pb.Message)</span></span> &#123;</span><br><span class="line">    <span class="keyword">switch</span> m.Type &#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">case</span> pb.MsgReadIndex:</span><br><span class="line">        <span class="keyword">if</span> r.lead == None &#123;</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line">        m.To = r.lead </span><br><span class="line">        r.send(m) <span class="comment">// 先将消息转发给 leader</span></span><br><span class="line">    <span class="keyword">case</span> pb.MsgReadIndexResp: <span class="comment">// 最后收到 leader 的 MsgReadIndexResp 消息回复后，</span></span><br><span class="line">        <span class="comment">// 追加到其 ReadStates 结构中，以通过 Ready 返回给上层应用程序</span></span><br><span class="line">        r.readStates = <span class="built_in">append</span>(r.readStates, ReadState&#123;Index: m.Index, RequestCtx: m.Entries[<span class="number">0</span>].Data&#125;)</span><br><span class="line">    ......</span><br><span class="line">&#125; <span class="comment">// /etcd/raft/raf.go</span></span><br></pre></td></tr></table></figure>
 <p>至此，关于<code>etcd-raft</code>如何处理<code>ReadIndex</code>线性一致性读的相关逻辑已经分析完毕。</p>
+<p>最后，简单提一点，当节点刚被选举成为<code>leader</code>时，如果其未在新的<code>term</code>中提交过日志，那么其所在的任期内的<code>commit index</code>是无法得知的，因此，在<code>etcd-raft</code>具体实现中，会在<code>leader</code>刚选举成功后，马上提交追加提交一个<code>no-op</code>的日志（代码如下所示），在这之前所有客户端（应用程序）发送的读请求都会被阻塞（写请求肯定不会，其实若是有写请求了，也就不用提交空日志了）。通过此种方式可以确定新的<code>term</code>的<code>commit index</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *raft)</span> <span class="title">becomeLeader</span><span class="params">()</span></span> &#123;</span><br><span class="line">	r.step = stepLeader</span><br><span class="line">	r.reset(r.Term)</span><br><span class="line">	r.tick = r.tickHeartbeat</span><br><span class="line">	r.lead = r.id</span><br><span class="line">	r.state = StateLeader</span><br><span class="line">	r.prs[r.id].becomeReplicate()</span><br><span class="line">	r.pendingConfIndex = r.raftLog.lastIndex()</span><br><span class="line">	<span class="comment">// 提交了一条 no-op 日志</span></span><br><span class="line">	emptyEnt := pb.Entry&#123;Data: <span class="literal">nil</span>&#125;</span><br><span class="line">	<span class="keyword">if</span> !r.appendEntry(emptyEnt) &#123;</span><br><span class="line">		r.logger.Panic(<span class="string">"empty entry was dropped"</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	r.reduceUncommittedSize([]pb.Entry&#123;emptyEnt&#125;)</span><br><span class="line">	r.logger.Infof(<span class="string">"%x became leader at term %d"</span>, r.id, r.Term)</span><br><span class="line">&#125; <span class="comment">// /etcd/raft/raft.go</span></span><br></pre></td></tr></table></figure>
 <p>简单小结，本文先是从理论角度阐述了什么是线性一致性，并且它具备什么特征。相比于顺序一致性，它们的不同点在哪里，最后线性一致性结合顺序一致性，即为严格一致性。关于这部分理论内容，读者若有兴趣，可以参考参考文献的[1]-[5]，讲得更完备和精确。后一部分内容就结合<code>etcd</code> 的代码阐述了其具体如何保证<code>ReadIndex</code>线性一致性，大概的流程为：先执行应用程序层对读请求的控制，它类似于一把锁的功能，在底层协议库未完成线性一致性相关的逻辑处理之前，会阻塞应用的读请求的处理，直至底层协议库走一圈后返回，才能继续处理，然后继续判断此时<code>ReadIndex</code>处的日志是否有被应用（若状态机已应用到<code>ReadIndex</code>之后的日志也完全可以），直至<code>ReadIndex</code>日志被提交才能返回，即才能释放锁，允许应用程序读取状态机。</p>
 <p>参考文献</p>
 <p>[1]. <a href="https://pingcap.com/blog-cn/linearizability-and-raft/" target="_blank" rel="noopener">线性一致性和 Raft</a><br>[2]. <a href="https://medium.com/p/6e579965c4ce/edit" target="_blank" rel="noopener">On Ways To Agree, Part 2: Path to Atomic Broadcast</a><br>[3]. <a href="http://www.bailis.org/blog/linearizability-versus-serializability/" target="_blank" rel="noopener">Linearizability versus Serializability</a><br>[4]. <a href="https://aphyr.com/posts/313-strong-consistency-models" target="_blank" rel="noopener">Strong consistency models</a><br>[5]. <a href="https://cs.brown.edu/~mph/HerlihyW90/p463-herlihy.pdf" target="_blank" rel="noopener">Linearizability: Correctness Condition for Concurrent Objects</a><br>[6]. <a href="https://github.com/etcd-io/etcd" target="_blank" rel="noopener">https://github.com/etcd-io/etcd</a></p>
@@ -548,6 +550,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/16/etcd-raft-LeaseRead-线性一致性源码简析/" rel="prev" title="etcd-raft LeaseRead 线性一致性源码简析">
+                etcd-raft LeaseRead 线性一致性源码简析 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -634,7 +640,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -733,7 +739,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">83.8k</span>
+    <span title="Site words total count">85.9k</span>
   
 </div>
 
