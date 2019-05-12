@@ -12,9 +12,9 @@ tags:
 
 <!--More-->
 
-考虑到`nsqlookupd`本身所提供的功能比较简单，代码结构并不复杂，因此就以`nsqlookupd`作为分析入口。个人建议，查看或分析源码最好从某个业务逻辑流程切入，这样更具针对性，忽略某些旁支或细节，先从整体上把握整个流程。另外，同之前一样，若有兴趣，读者可以自己`clone`源码进行分析，本文分析`nsqlookupd`的关键流程，较为完整的[`nsq`源码注释](https://github.com/qqzeng/nsq.git)可在这里找到，仅供参考。
+考虑到`nsqlookupd`本身所提供的功能比较简单，代码结构并不复杂，因此以`nsqlookupd`为分析入口。个人建议，查看或分析源码最好从某个业务逻辑流程切入，这样更具针对性，忽略某些旁支或细节，先从宏观上把握整个流程。按照惯例，读者可以自己`clone`源码进行分析。本文分析`nsqlookupd`关键流程，较为完整的[`nsq`源码注释](https://github.com/qqzeng/nsqio/tree/master/nsq)可在这里找到，其注释源码版本为`v1.1.0`，仅供参考。
 
-本文主要从三个方面来阐述`nsqlookupd`：其一，以`nsqlookupd`命令为切入点，介绍其启动流程；其二，通过启动流程，继续追溯到`NSQLookupd`的创建及初始化过程。最后，阐述初始化过程中`tcp`和`http`请求处理器相关逻辑，并示例分析几个典型请求的详细处理逻辑，比如，`nsqd`通过`tcp`协议订阅`topic`。另外，`nsqd`通过`http`协议请求`nsqlookupd`执行`topic`的创建过程，以及客户端（消费者）请求`nsqlookupd`执行`topic`的查询过程。本文所涉及到源码主要为`/nsq/apps/nsqlookupd/`、`/nsq/nsqlookupd/`和`/nsq/internal/`下的若干子目录，`/nsq/apps`目录是官方提供的一些工具包，而`/nsq/nsqlookupd`会对应具体的实现，`/nsq/internal`则为`nsq`内部的核心（公共）库，目录结构比较简单，不再过多阐述。
+本文主要从三个方面来阐述`nsqlookupd`：其一，以`nsqlookupd`命令为切入点，介绍其启动流程；其二，通过启动流程，继续追溯到`NSQLookupd`的创建及初始化过程。最后，阐述初始化过程中`tcp`和`http`请求处理器相关逻辑，并示例分析几个典型请求的详细处理逻辑，比如，`nsqd`通过`tcp`协议订阅`topic`。另外，`nsqd`通过`http`协议请求`nsqlookupd`执行`topic`的创建过程，以及客户端（消费者）请求`nsqlookupd`执行`topic`的查询过程。本文所涉及到源码主要为`/nsq/apps/nsqlookupd/`、`/nsq/nsqlookupd/`和`/nsq/internal/`下的若干子目录，`/nsq/apps`目录是官方提供的一些工具包，而`/nsq/nsqlookupd`会对应具体的实现，`/nsq/internal`则为`nsq`内部的核心（公共）库，目录结构比较简单，不多阐述。
 
 当我们在命令行执行`nsqlookupd`命令时（同时可指定参数），相当于运行了`nsq/apps/nsqlookupd`程序的`main`方法。此方法启动了一个进程（服务），并且通过创建`NSQLookupd`并调用其`Main`方法执行启动逻辑。
 
@@ -31,8 +31,8 @@ type program struct { // 代表此进程结构，包装了一个 nsqlookupd 实�
 // nsqlookupd 服务程序执行入口
 func main() 
 	prg := &program{}
-	// 1. 利用 svc 启动一个进程/服务，在 svc.Run 方法中会依次调用 Init 和 Start 方法，Init 和 Start 方法都是 no-blocking的；
-	// 2. Run 方法会阻塞直到接收到 SIGINT(程序终止，如ctrl+c)或SIGTERM(程序结束信号，如kill -15 PID)，然后调用 stop方法后退出；
+	// 1. 利用 svc 启动一个进程，在 svc.Run 方法中会依次调用 Init 和 Start 方法，Init 和 Start 方法都是 no-blocking的；
+	// 2. Run 方法会阻塞直到接收到 SIGINT(程序终止)或SIGTERM(程序结束信号)，然后调用stop方法后退出；
 	// 3. 这是通过传递一个 channel 及感兴趣信号集(SIGINT&SGITERM)给 signal.Notify 方法实现；
 	// 4. Run方法中阻塞等待从 channel 中接收消息，一旦收到消息，则调用 stop 方法返回，进程退出。
 	if err := svc.Run(prg, syscall.SIGINT, syscall.SIGTERM); err != nil {
@@ -119,7 +119,7 @@ func Run(service Service, sig ...os.Signal) error {
 
 ## NSQLookupd 启动初始化
 
-在介绍构造方法前，简要贴出`NSQLookupd`结构：
+在介绍构造方法前，先贴出`NSQLookupd`结构：
 
 ```go
 type NSQLookupd struct {
@@ -127,7 +127,8 @@ type NSQLookupd struct {
 	opts         *Options              // 参数配置信息
 	tcpListener  net.Listener          // tcp 监听器用于监听 tcp 连接
 	httpListener net.Listener          // 监听 http 连接
-	waitGroup    util.WaitGroupWrapper // sync.WaitGroup 增强体，功能类似于 sync.WaitGroup，一般用于等待所有的 goroutine 全部退出
+    // sync.WaitGroup 增强体，功能类似于 sync.WaitGroup，一般用于等待所有的 goroutine 全部退出
+	waitGroup    util.WaitGroupWrapper 
     DB           *RegistrationDB       // 生产者注册信息(topic、channel及producer) DB
 }
 ```
@@ -177,7 +178,7 @@ func (l *NSQLookupd) Main() error {
 		})
 	}
 	// 3. 创建用于处理 tcp 连接的 handler，并开启 tcp 连接的监听动作
-    // 事实上，tcp协议处理函数其实是 LookupProtocolV1.IOLoop,  它支持 IDENTIFY、REGISTER、 UNREGISTER 等命令请求的处理
+    // tcp协议处理函数其实是 LookupProtocolV1.IOLoop, 它支持 IDENTIFY、REGISTER及UNREGISTER等命令请求的处理
 	tcpServer := &tcpServer{ctx: ctx}
 	l.waitGroup.Wrap(func() {
 		// 3.1 在 protocol.TCPServer 方法中统一处理监听
@@ -306,8 +307,10 @@ func (p *LookupProtocolV1) IOLoop(conn net.Conn) error {
 	if client.peerInfo != nil {
 		registrations := p.ctx.nsqlookupd.DB.LookupRegistrations(client.peerInfo.id)
 		for _, r := range registrations {
-			if removed, _ := p.ctx.nsqlookupd.DB.RemoveProducer(r, client.peerInfo.id); removed {
-				p.ctx.nsqlookupd.logf(LOG_INFO, "DB: client(%s) UNREGISTER category:%s key:%s subkey:%s",
+			if removed, _ := p.ctx.nsqlookupd.DB.RemoveProducer(
+                r, client.peerInfo.id); removed {
+				p.ctx.nsqlookupd.logf(LOG_INFO, 
+                    "DB: client(%s) UNREGISTER category:%s key:%s subkey:%s",
 					client, r.Category, r.Key, r.SubKey)
 			}
 		}
@@ -319,7 +322,8 @@ func (p *LookupProtocolV1) IOLoop(conn net.Conn) error {
 先了解`Exec`如何处理请求的。其实比较简单，对于通过`tcp`连接所发送请求，只支持`PING`、`IDENTIFY`、`REGISTER`和`UNREGISTER`这四种类型。针对每一种类型的请求，分别调用它们所关联的请求处理函数。如下：
 
 ```go
-func (p *LookupProtocolV1) Exec(client *ClientV1, reader *bufio.Reader, params []string) ([]byte, error) {
+func (p *LookupProtocolV1) Exec(client *ClientV1, reader *bufio.Reader, 
+                                params []string) ([]byte, error) {
 	switch params[0] {
 	case "PING":
 		return p.PING(client, params)
@@ -330,7 +334,8 @@ func (p *LookupProtocolV1) Exec(client *ClientV1, reader *bufio.Reader, params [
 	case "UNREGISTER":
 		return p.UNREGISTER(client, reader, params[1:])
 	}
-	return nil, protocol.NewFatalClientErr(nil, "E_INVALID", fmt.Sprintf("invalid command %s", params[0]))
+	return nil, protocol.NewFatalClientErr(nil, "E_INVALID", 
+                fmt.Sprintf("invalid command %s", params[0]))
 }
 ```
 
@@ -350,8 +355,8 @@ type Registration struct {
 type Registrations []Registration
 // PeerInfo 封装了 client/sqsd 中与网络通信相关的字段，即client 在 NSQLookupd 端的逻辑视图
 type PeerInfo struct {
-	lastUpdate       int64								// nsqd 上一次向 NSQLookupd 发送心跳的 timestamp
-	id               string								// nsqd 实例的 id
+	lastUpdate       int64		// nsqd 上一次向 NSQLookupd 发送心跳的 timestamp
+	id               string			// nsqd 实例的 id
 	RemoteAddress    string `json:"remote_address"`		// ip 地址
 	Hostname         string `json:"hostname"`			// 主机名
 	BroadcastAddress string `json:"broadcast_address"`	// 广播地址
@@ -377,7 +382,8 @@ func (r *RegistrationDB) AddProducer(k Registration, p *Producer) bool
 // 从 Registration 对应的 ProducerMap 移除指定的 client/peer
 func (r *RegistrationDB) RemoveProducer(k Registration, id string) (bool, int) 
 
-// 删除 DB 中指定的 Registration 实例（若此 channel 为 ephemeral，则当其对应的 producer/client 集合为空时，会被移除）所对应的 producerMap
+// 删除 DB 中指定的 Registration 实例（若此 channel 为 ephemeral，
+// 则当其对应的 producer/client 集合为空时，会被移除）所对应的 producerMap
 func (r *RegistrationDB) RemoveRegistration(k Registration)
 
 // 根据 category、key和 subkey 来查找 Registration 集合。注意 key 或 subkey 中可能包含 通配符*
@@ -387,7 +393,8 @@ func (r *RegistrationDB) FindRegistrations(category string, key string, subkey s
 func (r *RegistrationDB) FindProducers(category string, key string, subkey string) Producers
 
 // 根据 peer id 来查找 Registration 集合。
-func (r *RegistrationDB) LookupRegistrations(id string) Registrations // /nsq/nsqlookupd/registration_db.go
+func (r *RegistrationDB) LookupRegistrations(id string) Registrations 
+// /nsq/nsqlookupd/registration_db.go
 ```
 
 接下来具体介绍各具体的命令请求是如下处理的，其中`PING`命令用于维持`nsqd`与`nsqlookupd`实例之间的连接通信，其处理也比较简单，更新一下此客户端的活跃时间`lastUpdate`，并回复`OK`。当我们使用`nsqd --lookupd-tcp-address=127.0.0.1:4160`启动一个`nsqd`实例时，它会在它的`Main`方法中使用一个额外的`goroutine`来开启`lookupd`扫描。当第一次执行时，它会向它知道的`nsqlookupd`地址（通过配置文件或命令行指定）建立连接。当`nsqd`与`nsqlookupd`连接建立成功后，会向`nsqlookupd`发送一个`MagicV1`的命令请求以校验目前自己所使用的协议版本，然后，会向`nsqlookupd`发送一个`IDENTIFY`命令请求，以认证自己身份，在此处理方法中会将客户端构造成`Producer`添加到`RegistrationDB`，并且返回自己的一些信息，当`nsqd`收到这些信息后，会遍历自己所有的`topic`，针对每一个`topic`，若其没有关联的`channel`，则发送只包含`topic`的`REGISTER`命令请求，否则还会遍历`topic`所关联的`channel`集合，针对每一个`channel`，发送一个包含`topic`和`channel`的`REGISTER`命令。所谓的`REGISTER`命令请求表示`nsqd`向 `nsqlookupd` 发送注册 `topic`的请求，当`nsqlookupd`收到`REGISTER`命令请求时，且若消息中带有`channel`时，会为此客户端会注册两个`producer`，即分别针对`channel`和`topic`构建。注意，在这里个人对`nsqd`启动后与`nsqdlookupd`建立连接以及`REGISTER`的过程阐述得比较详细，希望读者能够对一个二者的交互有一个全局的把握，但这里面涉及到`nsqd`启动的过程，会在后续的文章中详细阐述。而各命令请求处理逻辑则比较简单：
@@ -410,7 +417,8 @@ func (p *LookupProtocolV1) PING(client *ClientV1, params []string) ([]byte, erro
 }  // /nsq/nsqlookup/lookup_protocol_v1.go
 
 // client 向 NSQLookupd 发送认证身份的消息。 注意在此过程中会将客户端构造成Producer添加到 Registration DB中。
-func (p *LookupProtocolV1) IDENTIFY(client *ClientV1, reader *bufio.Reader, params []string) ([]byte, error) {
+func (p *LookupProtocolV1) IDENTIFY(client *ClientV1, reader *bufio.Reader, 
+                                    params []string) ([]byte, error) {
 	var err error
 
 	// 1. client 不能重复发送 IDENTIFY 消息
@@ -431,13 +439,15 @@ func (p *LookupProtocolV1) IDENTIFY(client *ClientV1, reader *bufio.Reader, para
 	// ...
 	peerInfo.RemoteAddress = client.RemoteAddr().String()
 	// 5. 检验属性不能为空，同时更新上一次PING的时间
-	if peerInfo.BroadcastAddress == "" || peerInfo.TCPPort == 0 || peerInfo.HTTPPort == 0 || peerInfo.Version == "" {
+	if peerInfo.BroadcastAddress == "" || peerInfo.TCPPort == 0 
+    || peerInfo.HTTPPort == 0 || peerInfo.Version == "" {
 		return nil, protocol.NewFatalClientErr(nil, "E_BAD_BODY", "IDENTIFY missing fields")
 	}
 	atomic.StoreInt64(&peerInfo.lastUpdate, time.Now().UnixNano())
 	// 6. 将此 client 构建成一个 Producer 注册到 DB中
 	client.peerInfo = &peerInfo
-	if p.ctx.nsqlookupd.DB.AddProducer(Registration{"client", "", ""}, &Producer{peerInfo: client.peerInfo}) {
+	if p.ctx.nsqlookupd.DB.AddProducer(Registration{"client", "", ""},
+                                       &Producer{peerInfo: client.peerInfo}) {
 		p.ctx.nsqlookupd.logf(LOG_INFO, "DB: client(%s) REGISTER category:%s key:%s subkey:%s", client, "client", "", "")
 	}
 	// 7. 构建响应消息，包含 NSQLookupd 的 hostname、port及 version
@@ -457,7 +467,8 @@ func (p *LookupProtocolV1) IDENTIFY(client *ClientV1, reader *bufio.Reader, para
 }  // /nsq/nsqlookup/lookup_protocol_v1.go
 
 //  Client 向 NSQLookupd 发送取消注册/订阅 topic 的消息。即为 REGISTER 的逆过程
-func (p *LookupProtocolV1) UNREGISTER(client *ClientV1, reader *bufio.Reader, params []string) ([]byte, error) {
+func (p *LookupProtocolV1) UNREGISTER(client *ClientV1, reader *bufio.Reader, 
+                                      params []string) ([]byte, error) {
 	// 1. 必须先要发送 IDENTIFY 消息进行身份认证
 	if client.peerInfo == nil {
 		return nil, protocol.NewFatalClientErr(nil, "E_INVALID", "client must IDENTIFY")
@@ -465,18 +476,21 @@ func (p *LookupProtocolV1) UNREGISTER(client *ClientV1, reader *bufio.Reader, pa
 	// 2. 获取 client 注册的 topic 和 channel(若有的话)
 	topic, channel, err := getTopicChan("UNREGISTER", params)
 	// ...
-	// 3. 若 channel 不为空，则在 DB 中移除一个 Producer 实例，其键(Category)为 channel 类型的 Registration。
+	// 3. 若 channel 不为空，则在 DB 中移除一个 Producer 实例，
+    // 其键(Category)为 channel 类型的 Registration。
 	if channel != "" {
 		key := Registration{"channel", topic, channel}
 		removed, left := p.ctx.nsqlookupd.DB.RemoveProducer(key, client.peerInfo.id)
 		// ...
-		// 对于 ephemeral 类型的 channel，若它没有被任何 Producer 订阅，则需要移除此 channel 代表的 Registration 对象
+		// 对于 ephemeral 类型的 channel，
+        // 若它未被任何 Producer 订阅，则需要移除此 channel 代表的 Registration 对象
 		// for ephemeral channels, remove the channel as well if it has no producers
 		if left == 0 && strings.HasSuffix(channel, "#ephemeral") {
 			p.ctx.nsqlookupd.DB.RemoveRegistration(key)
 		}
 	} else {
-		// 4. 取消注册 topic。因此它会删除掉 类型(Category)为 channel 且 Key 为 topic 且 subKey不限的　Registration 集合
+		// 4. 取消注册 topic。因此它会删除掉 类型(Category)为 channel 
+        // 且 Key 为 topic 且 subKey不限的　Registration 集合；
 		// 也会删除 Category 为 topic 且 Key 为 topic且 subKey为""的　Registration集合
 		registrations := p.ctx.nsqlookupd.DB.FindRegistrations("channel", topic, "*")
 		for _, r := range registrations {
@@ -485,7 +499,8 @@ func (p *LookupProtocolV1) UNREGISTER(client *ClientV1, reader *bufio.Reader, pa
 		key := Registration{"topic", topic, ""}
 		removed, left := p.ctx.nsqlookupd.DB.RemoveProducer(key, client.peerInfo.id)
 		// ...
-		// 同样，对于 ephemeral 类型的 topic，若它没有被任何 Producer 订阅，则需要移除此 channel 代表的 Registration 对象。
+		// 同样，对于 ephemeral 类型的 topic，若它没有被任何 Producer 订阅，
+            // 则需要移除此 channel 代表的 Registration 对象。
 		if left == 0 && strings.HasSuffix(topic, "#ephemeral") {
 			p.ctx.nsqlookupd.DB.RemoveRegistration(key)
 		}
@@ -499,8 +514,10 @@ func (p *LookupProtocolV1) UNREGISTER(client *ClientV1, reader *bufio.Reader, pa
 这里简要阐述`REGISTER`请求处理的过程：当`nsqlookupd`收到`REGISTER`命令请求后，它首先确认对方是否已经发送过`IDENTIFY`命令请求，确认完成后，解析请求中的`topic`名称和`channel`名称，然后，进一步检查`topic`和`channel`命名的合法性，最后若`channel`不为空，则向`RegistrationDB`中添加一个`Producer` 实例，其`Category`为`channel`类型的`Registration`。同样，若`topic`不为空，则还需要向`RegistrationDB`中添加一个`Producer`实例，其`Category`为` topic` 类型的 `Registration`。最后返回`OK`。
 
 ```go
-//  Client 向 NSQLookupd 发送注册 topic 的消息。注意，当消息中带有 channel 时，对于此 client会注册两个 producer，分别针对 channel 和 topic
-func (p *LookupProtocolV1) REGISTER(client *ClientV1, reader *bufio.Reader, params []string) ([]byte, error) {
+//  Client 向 NSQLookupd 发送注册 topic 的消息。注意，当消息中带有 channel 时，
+// 对于此 client会注册两个 producer，分别针对 channel 和 topic
+func (p *LookupProtocolV1) REGISTER(client *ClientV1, reader *bufio.Reader, 
+                                    params []string) ([]byte, error) {
 	// 1. 必须先要发送 IDENTIFY 消息进行身份认证。
 	if client.peerInfo == nil {
 		return nil, protocol.NewFatalClientErr(nil, "E_INVALID", "client must IDENTIFY")
@@ -512,14 +529,16 @@ func (p *LookupProtocolV1) REGISTER(client *ClientV1, reader *bufio.Reader, para
 	if channel != "" {
 		key := Registration{"channel", topic, channel}
 		if p.ctx.nsqlookupd.DB.AddProducer(key, &Producer{peerInfo: client.peerInfo}) {
-			p.ctx.nsqlookupd.logf(LOG_INFO, "DB: client(%s) REGISTER category:%s key:%s subkey:%s",
+			p.ctx.nsqlookupd.logf(
+                LOG_INFO, "DB: client(%s) REGISTER category:%s key:%s subkey:%s",
 				client, "channel", topic, channel)
 		}
 	}
 	// 4. 若 topic 不为空，则还需要向 DB 中添加一个 Producer 实例，其键(Category)为 topic 类型的 Registration
 	key := Registration{"topic", topic, ""}
 	if p.ctx.nsqlookupd.DB.AddProducer(key, &Producer{peerInfo: client.peerInfo}) {
-		p.ctx.nsqlookupd.logf(LOG_INFO, "DB: client(%s) REGISTER category:%s key:%s subkey:%s",
+		p.ctx.nsqlookupd.logf(
+            LOG_INFO, "DB: client(%s) REGISTER category:%s key:%s subkey:%s",
 			client, "topic", topic, "")
 	}
 	// 5. 返回 OK
@@ -607,34 +626,46 @@ func (s *httpServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // PING 请求处理器
-func (s *httpServer) pingHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) 
+func (s *httpServer) pingHandler(w http.ResponseWriter, req *http.Request, 
+                                 ps httprouter.Params) (interface{}, error) 
 
 // INFO（版本信息）查询请求处理器
-func (s *httpServer) doInfo(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error)
+func (s *httpServer) doInfo(w http.ResponseWriter, req *http.Request, 
+                            ps httprouter.Params) (interface{}, error)
 
 // 查询所有 Category 为 topic的 Registration 的集合所包含的 Key 集合（topic名称集合）
-func (s *httpServer) doTopics(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error)
+func (s *httpServer) doTopics(w http.ResponseWriter, req *http.Request, 
+                              ps httprouter.Params) (interface{}, error)
 
-// 查询所有 Category 为 channel，且 topic 为请求参数中指定的 topic 的 Registration 的集合包含的 SubKey 集合（channel名称集合）
-func (s *httpServer) doChannels(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) 
+// 查询所有 Category 为 channel，
+// 且 topic 为请求参数中指定的 topic 的 Registration 的集合包含的 SubKey 集合（channel名称集合）
+func (s *httpServer) doChannels(w http.ResponseWriter, req *http.Request, 
+                                ps httprouter.Params) (interface{}, error) 
 
 // 查询所有 Category 为 topic的 channels 的集合以及producers集合。
-func (s *httpServer) doLookup(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) 
+func (s *httpServer) doLookup(w http.ResponseWriter, req *http.Request, 
+                              ps httprouter.Params) (interface{}, error) 
 
 // 根据 topic 来添加注册信息 Registration
-func (s *httpServer) doCreateTopic(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error)
+func (s *httpServer) doCreateTopic(w http.ResponseWriter, req *http.Request, 
+                                   ps httprouter.Params) (interface{}, error)
 
 // 根据 topic 来删移除注册信息 Registration
-func (s *httpServer) doDeleteTopic(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) 
+func (s *httpServer) doDeleteTopic(w http.ResponseWriter, req *http.Request, 
+                                   ps httprouter.Params) (interface{}, error) 
 
 // 为指定 topic 关联的 producer 设置为 tombstone 状态。
-func (s *httpServer) doTombstoneTopicProducer(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) 
+func (s *httpServer) doTombstoneTopicProducer(w http.ResponseWriter, req *http.Request, 
+                    ps httprouter.Params) (interface{}, error) 
 
 // 根据 topic 和 channel 的名称添加注册信息
-func (s *httpServer) doCreateChannel(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error)
+func (s *httpServer) doCreateChannel(w http.ResponseWriter, 
+                                     req *http.Request, ps httprouter.Params) (interface{}, error)
 
 // 根据 topic 和 channel 的名称移除注册信息
-func (s *httpServer) doDeleteChannel(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) // /nsq/nsqlookupd/http.go
+func (s *httpServer) doDeleteChannel(w http.ResponseWriter, req *http.Request, 
+                                     ps httprouter.Params) (interface{}, error) 
+// /nsq/nsqlookupd/http.go
 ```
 
 #### http 请求 topic 创建/查询处理过程
@@ -643,7 +674,8 @@ func (s *httpServer) doDeleteChannel(w http.ResponseWriter, req *http.Request, p
 
 ```go
 // 查询所有 Category 为 topic的 channels 的集合以及producers集合。
-func (s *httpServer) doLookup(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) {
+func (s *httpServer) doLookup(w http.ResponseWriter, req *http.Request, 
+                              ps httprouter.Params) (interface{}, error) {
 	reqParams, err := http_api.NewReqParams(req) // 1. 解析请求参数
 	// ...
 	topicName, err := reqParams.Get("topic") // 2. 获取请求查询的 topic
@@ -669,7 +701,8 @@ func (s *httpServer) doLookup(w http.ResponseWriter, req *http.Request, ps httpr
 
 ```go
 // 根据 topic 来添加注册信息 Registration
-func (s *httpServer) doCreateTopic(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) {
+func (s *httpServer) doCreateTopic(w http.ResponseWriter, req *http.Request, 
+                                   ps httprouter.Params) (interface{}, error) {
 	reqParams, err := http_api.NewReqParams(req) // 1. 解析请求参数
 	// ... 
 	topicName, err := reqParams.Get("topic") // 2. 获取请求创建的 topic
@@ -684,7 +717,7 @@ func (s *httpServer) doCreateTopic(w http.ResponseWriter, req *http.Request, ps 
 
 至此，关于`nsqlookupd`相关的逻辑的源码已经分析完毕。相比`nsqd`要简单，没有复杂的流程。
 
-简单小结，本文以执行`nsqlookupd`命令为切入点，先是简要分析了`nsqlookupd`其利用`svc`启动一个进程的过程。进而分析了`NSQLookupd`的`Main`方法的执行流程，其核心逻辑为创建了`tcp`及`http`请求的处理器，并注册了监听函数。本文的重点在于分析`tcp`请求处理器的详细内容，附带阐述了`nsqd`实例启动后与`nsqlookupd`实例的一个交互过程，具体包括`IDENTIFY`、`REGISTER`及`PING`等命令请求。然后，对于`http`请求处理器也进行了简要分析，侧重于处理器的创建过程。最后，对于`http`请求的方式，以两个示例分别阐述了客户端（消费者）及`nsqd`请求`nsqlookupd`完成`topic`查询和`topic`注册过程。更详细内容可以参考笔者简要注释的源码。
+简单小结，本文以执行`nsqlookupd`命令为切入点，先是简要分析了`nsqlookupd`其利用`svc`启动一个进程的过程。进而分析了`NSQLookupd`的`Main`方法的执行流程，其核心逻辑为创建了`tcp`及`http`请求的处理器，并注册了监听函数。本文的重点在于分析`tcp`请求处理器的详细内容，附带阐述了`nsqd`实例启动后与`nsqlookupd`实例的一个交互过程，具体包括`IDENTIFY`、`REGISTER`及`PING`等命令请求。然后，对于`http`请求处理器也进行了简要分析，侧重于处理器的创建过程。最后，对于`http`请求的方式，以两个示例分别阐述了客户端（消费者）及`nsqd`请求`nsqlookupd`完成`topic`查询和`topic`注册过程。更详细内容可以参考笔者简要[注释的源码](https://github.com/qqzeng/nsqio/tree/master/nsq)。
 
 
 
