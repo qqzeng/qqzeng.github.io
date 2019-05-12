@@ -50,6 +50,7 @@ tags:
 
 
 参考文献
+
 [1]. [nsq Features & Guarantees](https://nsq.io/overview/features_and_guarantees.html)
 [2]. [nsq Design](https://nsq.io/overview/design.html)
 [3]. [nsq Quick Start](https://nsq.io/overview/quick_start.html) 
