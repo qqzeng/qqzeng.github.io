@@ -20,7 +20,7 @@ tags:
 
 ## 利用 svc 启动进程
 
-具体而言，其利用 [`svc`](https://github.com/judwhite/go-svc/svc)的`Run`方法启动一个进程（守护进程或服务），在 `svc.Run` 方法中依次调用 `Init` 和 `Start` 方法，`Init` 和 `Start` 方法都是 `no-blocking`的；`Run` 方法会阻塞直到接收到 `SIGINT`(程序终止信号，如`ctrl+c`)或`SIGTERM`（程序结束信号，如`kill -15 PID`），然后调用 `stop`方法后退出，这通过传递一个`channel`及感兴趣的信号集(`SIGINT&SGITERM`)给 `signal.Notify` 方法实现；`Run`方法中阻塞等待从`channel`中接收消息，一旦收到消息，则调用`stop`方法返回，进程退出。更多可以查看 `golang` 标准包的`signal.Notify`以及`svc`包是如何协助启动一个进程。相关的代码如下：
+具体而言，其利用 [`svc`](https://github.com/judwhite/go-svc/svc)的`Run`方法启动一个进程（守护进程或服务），在 `svc.Run` 方法中依次调用 `Init` 和 `Start` 方法，`Init` 和 `Start` 方法都是 `no-blocking`的；`Run` 方法会阻塞直到接收到 `SIGINT`(程序终止信号，如`ctrl+c`)或`SIGTERM`（程序结束信号，如`kill -15 PID`），然后调用 `stop`方法后退出，这通过传递一个`channel`及感兴趣的信号集(`SIGINT&SGITERM`)给 `signal.Notify` 方法实现；`Run`方法中阻塞等待从`channel`中接收消息，一旦收到消息，则调用`stop`方法返回，进程退出。更多可以查看 `golang` 标准包的`signal.Notify`以及`svc`包是如何协助启动一个进程。相关代码如下：
 
 ```go
 type program struct { // 代表此进程结构，包装了一个 nsqlookupd 实例
