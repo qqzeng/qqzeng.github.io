@@ -40,7 +40,7 @@ type Channel struct {
 	exitMutex     sync.RWMutex
 	// state tracking
 	clients        map[int64]Consumer// 与此 channel关联的client集合，即订阅的Consumer 集合
-	paused         int32			// 若其 paused属性被设置，则那些订阅了此`channel`的客户端不会被推送消息
+	paused         int32 // 若paused属性被设置，则那些订阅了此channel的客户端不会被推送消息
 	ephemeral      bool				// 标记此 channel 是否是临时的
 	deleteCallback func(*Channel)	// 删除回调函数（同 topic 的 deleteCallback 作用类似）
 	deleter        sync.Once
