@@ -23,9 +23,9 @@ tags:
 ```go
 type Topic struct {
 	// 64bit atomic vars need to be first for proper alignment on 32bit platforms
-	messageCount uint64							// 此 topic 所包含的消息的总数（内存+磁盘）
-	messageBytes uint64							// 此 topic 所包含的消息的总大小（内存+磁盘）
-	sync.RWMutex								// guards channelMap
+	messageCount uint64			// 此 topic 所包含的消息的总数（内存+磁盘）
+	messageBytes uint64			// 此 topic 所包含的消息的总大小（内存+磁盘）
+	sync.RWMutex				// guards channelMap
 	name              string					// topic 名称
 	channelMap        map[string]*Channel		// topic 所包含的 channel 集合
 	backend           BackendQueue				// 代表持久化存储的通道
@@ -46,13 +46,13 @@ type Topic struct {
 	// 标记此 topic 是否有被 paused，若被 paused，则其不会将消息写入到其关联的 channel 的消息队列
 	paused    int32
 	pauseChan chan int
-	ctx *context								// nsqd 实例的 wrapper
+	ctx *context					// nsqd 实例的 wrapper
 } // /nsq/nsqd/topic.go
 ```
 
 ## 创建 topic 实例
 
-先简单了解`topic`的构造方法，其大概涉及到这么几个步骤：先初始化实例结构，然后若此`topic`为`ephemeral`的，则设置标记，并且为此`topic`关联一个`DummyBackendQueue`作为其持久化存储，事实上，`DummyBackendQueue`表示不执行任何有效动作，显然这是考虑到临时的`topic`不用被持久化。对于正常的`topic`，则为其创建一个[`diskqueue`](https://github.com/nsqio/go-diskqueue)实例作为后端存储消息队列，通过`nsqd`配置参数进行初始化（`diskqueue`在后面单独开一篇文章解析）。最后异步开启`topic`的消息处理主循环`messagePump`，并通知`nsqlookupd`有新的`topic`实例产生。它会在`nsqd.Notify`方法中被接收，然后将此`topic`实例压入到`nsqd.notifyChan`管道，相应地，此`topic`实例在`nsqd.lookupLoop`方法中被取出，然后构建并发送`REGISTER`命令请求给`nsqd`所维护的所有`nsqlookupd`实例。最后，通过调用`PersistMetadata`方法将此`topic`元信息持久化。（方法调用链为：`NewTopic -> nsqd.Notify -> nsqd.lookupLoop -> nsqd.PersistMetadata`）相关代码如下：
+先简单了解`topic`的构造方法，其大概涉及到这么几个步骤：先初始化实例结构，然后若此`topic`为`ephemeral`的，则设置标记，并且为此`topic`关联一个`DummyBackendQueue`作为其持久化存储，事实上，`DummyBackendQueue`表示不执行任何有效动作，显然这是考虑到临时的`topic`不用被持久化。对于正常的`topic`，则为其创建一个[`diskqueue`](https://github.com/nsqio/go-diskqueue)实例作为后端存储消息队列，通过`nsqd`配置参数进行初始化（`diskqueue`在后面单独开一篇文章解析）。最后异步开启`topic`的消息处理主循环`messagePump`，并通知`nsqlookupd`有新的`topic`实例产生。它会在`nsqd.Notify`方法中被接收，然后将此`topic`实例压入到`nsqd.notifyChan`管道，相应地，此`topic`实例在`nsqd.lookupLoop`方法中被取出，然后构建并发送`REGISTER`命令请求给`nsqd`所维护的所有`nsqlookupd`实例。最后，通过调用`PersistMetadata`方法将此`topic`元信息持久化。（方法调用链为：`NewTopic->nsqd.Notify->nsqd.lookupLoop->nsqd.PersistMetadata`）相关代码如下：
 
 ```go
 // topic 的构造函数
@@ -83,16 +83,16 @@ func NewTopic(topicName string, ctx *context, deleteCallback func(*Topic)) *Topi
 		}
 		// 3. 通过 diskqueue (https://github.com/nsqio/go-diskqueue) 构建持久化队列实例
 		t.backend = diskqueue.New(
-			topicName,												// topic 名称
-			ctx.nsqd.getOpts().DataPath,							// 数据存储路径
-			ctx.nsqd.getOpts().MaxBytesPerFile,						// 存储文件的最大字节数
-			int32(minValidMsgLength),								// 最小的有效消息的长度
+			topicName,						// topic 名称
+			ctx.nsqd.getOpts().DataPath,	// 数据存储路径
+			ctx.nsqd.getOpts().MaxBytesPerFile,		// 存储文件的最大字节数
+			int32(minValidMsgLength),				// 最小的有效消息的长度
 			int32(ctx.nsqd.getOpts().MaxMsgSize)+minValidMsgLength, // 最大的有效消息的长度
 			// 单次同步刷新消息的数量，即当消息数量达到 SyncEvery 的数量时，
 			// 需要执行刷新动作（否则会留在操作系统缓冲区）
 			ctx.nsqd.getOpts().SyncEvery,
 			ctx.nsqd.getOpts().SyncTimeout,	// 两次同步刷新的时间间隔，即两次同步操作的最大间隔
-			dqLogf,													// 日志
+			dqLogf,							// 日志
 		)
 	}
 	// 4. 执行 messagePump 方法，即 开启消息监听 go routine
@@ -123,11 +123,11 @@ func (n *NSQD) Notify(v interface{}) {
 }
 ```
 
-最后，简单分析下，程序中哪些地方会调用此构造方法。前文提到`topic`不会被提前创建，一定是因为某个生产者在注册`topic`时临时被创建的。其实通过追踪方法调用，发现只有`nsqd.GetTopic`方法调用了`NewTopic`构造方法。因此，程序中存在以下几条调用链：其一，`nsqd.Start -> nsqd.PersistMetadata -> nsqd.GetTopic -> NewTopic`；其二，`httpServer.getTopicFromQuery -> nsqd.GetTopic ->  NewTopic`；以及`protocolV2.PUB/SUB -> nsqd.GetTopic`这三条调用路径。相信读者已经非常清楚了。
+最后，简单分析下，程序中哪些地方会调用此构造方法。前文提到`topic`不会被提前创建，一定是因为某个生产者在注册`topic`时临时被创建的。其实通过追踪方法调用，发现只有`nsqd.GetTopic`方法调用了`NewTopic`构造方法。因此，程序中存在以下几条调用链：其一，`nsqd.Start->nsqd.PersistMetadata->nsqd.GetTopic->NewTopic`；其二，`httpServer.getTopicFromQuery->nsqd.GetTopic->NewTopic`；以及`protocolV2.PUB/SUB->nsqd.GetTopic`这三条调用路径。相信读者已经非常清楚了。
 
 ## 删除或关闭 topic 实例
 
-`topic`删除的方法(`topic.Delete`)与其被关闭的方法(`topic.Close`)相似，都调用了`topic.exit`方法，区别有三点：一是前者还显式调用了`nsqd.Notify`以通知`nsqlookupd`有`topic`实例被删除，同时重新持久化元数据。二是前者还需要递归删除`topic`关联的`channel`集合，且显式调用了`channel.Delete`方法（此方法同`topic.Delete`方法相似）。最后一点区别为前者还显式清空了`memoryMsgChan`和`backend`两个消息队列中的消息。因此，若只是关闭或退出`topic`，则纯粹退出`messagePump`消息处理循环，并将`memoryMsgChan`中的消息刷盘，最后关闭持久化存储消息队列。（方法调用链为：`topic.Delete -> topic.exit -> nsqd.Notify -> nsqd.PersistMetadata -> chanel.Delete -> topic.Empty -> topic.backend.Empty ->topic.backend.Delete `，以及`topic.Close -> topic.exit -> topic.flush -> topic.backend.Close `）相关代码如下：
+`topic`删除的方法(`topic.Delete`)与其被关闭的方法(`topic.Close`)相似，都调用了`topic.exit`方法，区别有三点：一是前者还显式调用了`nsqd.Notify`以通知`nsqlookupd`有`topic`实例被删除，同时重新持久化元数据。二是前者还需要递归删除`topic`关联的`channel`集合，且显式调用了`channel.Delete`方法（此方法同`topic.Delete`方法相似）。最后一点区别为前者还显式清空了`memoryMsgChan`和`backend`两个消息队列中的消息。因此，若只是关闭或退出`topic`，则纯粹退出`messagePump`消息处理循环，并将`memoryMsgChan`中的消息刷盘，最后关闭持久化存储消息队列。（方法调用链为：`topic.Delete->topic.exit->nsqd.Notify->nsqd.PersistMetadata->chanel.Delete->topic.Empty->topic.backend.Empty->topic.backend.Delete `，以及`topic.Close->topic.exit->topic.flush->topic.backend.Close `）相关代码如下：
 
 ```go
 // Delete 方法和 Close 方法都调用的是 exit 方法。
@@ -212,7 +212,7 @@ finish:
 } // /nsq/nsqd/topic.go
 ```
 
-最后同样简单分析程序中哪些地方会调用`Delete`方法。其一，`httpServer.doDeleteTopic -> nsqd.DeleteExistingTopic -> topic.Delete`；其二，`nsqd.GetTopic -> nsqd.DeleteExistingTopic -> topic.Delete`。而对于`topic.Close`方法，则比较直接：`nsqd.Exit -> topic.Close`。
+最后同样简单分析程序中哪些地方会调用`Delete`方法。其一，`httpServer.doDeleteTopic->nsqd.DeleteExistingTopic->topic.Delete`；其二，`nsqd.GetTopic->nsqd.DeleteExistingTopic->topic.Delete`。而对于`topic.Close`方法，则比较直接：`nsqd.Exit->topic.Close`。
 
 ## 查询 topic 实例
 
