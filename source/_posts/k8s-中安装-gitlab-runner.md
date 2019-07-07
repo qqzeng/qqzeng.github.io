@@ -28,7 +28,11 @@ tags:
 
 图1来自`gitlab`官网，阐述了`gitlab-ci`的一个典型工作流程。使用`gitlab`作为代码托管工具，你不需要额外的第三方`ci/cd`软件，并且，它提供整个流程的可视化界面。
 
-图2同样来自[`gitlab`官网](https://gitlab.com/gitlab-examples/spring-gitlab-cf-deploy-demo)，它是依赖`spring boot`的`java`应用服务的一个`.gitlab-ci.yml`示例。没有任何复杂的内容，整个`pipeline`中包含`test`和`build`两个`stage`。在全局`before_script`所定义的脚本会在所有`stage`执行之前被执行，`artifacts`表示此`stage`会生成一个`artifact`（比如一个`war`包或者可执行文件），最后`only`表示只会在对应的分支下执行。因此，当你将此`.gitlab-ci.yml`文件放到你的项目的根目录时，则表示此项目的`gitlab-ci`的功能已经开启，当你往版本库中`push`代码时，你会看到它会起作用了——自动执行你在`.gitlab-ci.yml`中定义的脚本（前提是你已经安装好了`gitlab`和`gitlab runner`，且将`runner`注册到了`gitlab`仓库中对应的项目，这会在后面提及）。你可以在[这里](https://gitlab.com/gitlab-examples)找到更多的`.gitlab-ci.yml`示例。
+![gitlab workflow example](<https://raw.githubusercontent.com/qqzeng/qqzeng.github.io/hexo/static/install-runner-in-k8s/gitlab_workflow_example_11_9.png>)
+
+图1 `gitlab workflow example`
+
+下面的`.gitlab-ci.yml`模板文件同样来自[`gitlab`官网](https://gitlab.com/gitlab-examples/spring-gitlab-cf-deploy-demo)，它是依赖`spring boot`的`java`应用服务的一个`.gitlab-ci.yml`示例。没有任何复杂的内容，整个`pipeline`中包含`test`和`build`两个`stage`。在全局`before_script`所定义的脚本会在所有`stage`执行之前被执行，`artifacts`表示此`stage`会生成一个`artifact`（比如一个`war`包或者可执行文件），最后`only`表示只会在对应的分支下执行。因此，当你将此`.gitlab-ci.yml`文件放到你的项目的根目录时，则表示此项目的`gitlab-ci`的功能已经开启，当你往版本库中`push`代码时，你会看到它会起作用了——自动执行你在`.gitlab-ci.yml`中定义的脚本（前提是你已经安装好了`gitlab`和`gitlab runner`，且将`runner`注册到了`gitlab`仓库中对应的项目，这会在后面提及）。你可以在[这里](https://gitlab.com/gitlab-examples)找到更多的`.gitlab-ci.yml`示例。
 
 ```shell
 image: java:8
@@ -89,11 +93,21 @@ production:
 
 前述提到`gitlab runner`只是一个使用`go`编写的程序。因此，理论上在任何安装了`go`的环境都能安装`gitlab runner`，不仅仅局限于`k8s`的环境，详解可参考[这里](https://docs.gitlab.com/runner/install/)。但若将`runner`安装在`k8s`中，其原理与其它方式还是略有区别，这个在后面阐述。另外，在前一小节中提到，`runner`会周期性的轮询`gitlab server`以确认当前是否有需要执行的`pipeline`，换言之，`runner`是可以安装在你本地环境的（不需要一个外网能够访问的ip），但`gitlab server`若安装在本地环境（主机或`docker`），你要确保它能够被`runner`访问到。
 
-官方提供的在`k8s`安装`runner`的[最新教程](https://docs.gitlab.com/runner/install/kubernetes.html)采用了[`helm`](https://helm.sh/docs/)，因此，在安装`runner`前需要提前在`k8s`集群中安装`helm`。简单而言，`helm`是一个在`k8s`环境下的软件包管理工具，类似于`ubuntu`下的`apt-get`或`centos`下的`yum`。`helm`会为我们管理一个软件包所包含的一系列配置文件，通过使用`helm`，应用发布者可以很方便地打包(`pakcage`)应用、管理应用依赖关系和应用版本，并将其发布应用到软件仓库。另外，`helm`还提供了`k8s`上的软件部署和卸载、应用回滚等高阶功能。`helm`是一个典型的`cs`架构，为了让`helm`帮助我们管理`k8s`中的软件包，它会将`tiller server`安装在`k8s`集群中，然后使用`helm client`与之通信来完成指定功能。在`helm`安装过程中，需要注意的就是`helm`的权限(`RBAC`)的配置，在笔者的实验中，为了方便测试，给予了`tiller`这个`ServiceAccount`的`role`为`cluster-admin`。图3为`helm`的相关安装配置。更多关于`helm`的中文资料可以参考[这里](https://zhaohuabing.com/2018/04/16/using-helm-to-deploy-to-kubernetes/)和[这里](https://whmzsu.github.io/helm-doc-zh-cn/quickstart/install-zh_cn.html)。
+官方提供的在`k8s`安装`runner`的[最新教程](https://docs.gitlab.com/runner/install/kubernetes.html)采用了[`helm`](https://helm.sh/docs/)，因此，在安装`runner`前需要提前在`k8s`集群中安装`helm`。简单而言，`helm`是一个在`k8s`环境下的软件包管理工具，类似于`ubuntu`下的`apt-get`或`centos`下的`yum`。`helm`会为我们管理一个软件包所包含的一系列配置文件，通过使用`helm`，应用发布者可以很方便地打包(`pakcage`)应用、管理应用依赖关系和应用版本，并将其发布应用到软件仓库。另外，`helm`还提供了`k8s`上的软件部署和卸载、应用回滚等高阶功能。`helm`是一个典型的`cs`架构，为了让`helm`帮助我们管理`k8s`中的软件包，它会将`tiller server`安装在`k8s`集群中，然后使用`helm client`与之通信来完成指定功能。在`helm`安装过程中，需要注意的就是`helm`的权限(`RBAC`)的配置，在笔者的实验中，为了方便测试，给予了`tiller`这个`ServiceAccount`的`role`为`cluster-admin`。图2为`helm`的相关安装配置。更多关于`helm`的中文资料可以参考[这里](https://zhaohuabing.com/2018/04/16/using-helm-to-deploy-to-kubernetes/)和[这里](https://whmzsu.github.io/helm-doc-zh-cn/quickstart/install-zh_cn.html)。
+
+![helm](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/install-runner-in-k8s/tiller.jpg)
+
+图2 `k8s`中安装`helm`的相关配置
 
 事实上，所谓的在`k8s`中安装`gitlab runner`，也就是将`gitlab runner`这个`helm chart`包安装在`k8s`中，`runner`具体是使用`kubernetes executor`执行`job`，`executor`会连接到`k8s`集群中的`kubernetes API`，并为每个`job`创建一个`pod`。`pod`是`k8s`中应用编排的最小单元（不是`container`），相当于一个逻辑/虚拟机主机，它包含了一组共享资源的`contaienr`，这些`container`共享相同的`network namespace`，可通过`localhost`通信，另外，这些`container`可声明共享同一个`volume`。通常而言，为`gitlab-ci`的每个`job`动态创建的`pod`至少包含两个`container`（也有三个的情况），分别是`build container`和`service container`，其中`build container`即用于构建`job`，而当在`.gitlab-ci.yml`中定义了[`service`标签](https://docs.gitlab.com/ce/ci/yaml/README.html#services)时，就会此`service container`来运行对应的`service`，以连接到`build container`，并协助它完成指定功能。这同`docker`中的[`link container`](https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/)原理类似。最后，当使用`docker/docker+machine/kubernetes`的`executors`时，`gitlab runner`会使用基于[`helper image`](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#helper-image)的`help container`，它的使用是处理`git`、` artifacts`以及`cache`相关操作。它包含了`gitlab-runner-helper`二进制包，提供了`git`、`git-lfs`、` SSL certificates store `等命令。但当使用`kubernetes executor`时，`runner`会临时从`gitlab/gitlab-runner-helper`下载镜像而并非从本地的归档文件中加载此二进制文件。
 
-现在可以执行正式的安装操作了。安装之前，通常我们需要配置`runner`，这通过在[`values.yaml`](https://gitlab.com/charts/gitlab-runner/blob/master/values.yaml)中自定义特定选项来实现，以覆盖默认选项值。配置过程也较为简单，唯一必须配置的选项是`gitlabUrl`和`runnerRegistrationToken`，前者即为`gitlab server`的`url`，它可以是一个完整域名（如`https://example.gitlab.com`），也可以是一个`ip`地址（记得不要漏掉端口号），而后者则为你的`gitlab`的`token`，以表明你具备向`gitlab`添加`runner`的权限。这两个值可以从`gitlab-project-settings-pipelines`下获取到（注意因为笔者的`gitlab`帐户只是普通帐户，意味着只能注册`specific runner`，它与`admin`的稍有不同）。确认了这两个最核心的配置选项后，如果你不需要覆盖其它的默认选项值，就可以开始[安装](https://docs.gitlab.com/runner/install/kubernetes.html#installing-gitlab-runner-using-the-helm-chart)了，非常简单。仅有两个步骤：
+现在可以执行正式的安装操作了。安装之前，通常我们需要配置`runner`，这通过在[`values.yaml`](https://gitlab.com/charts/gitlab-runner/blob/master/values.yaml)中自定义特定选项来实现，以覆盖默认选项值。配置过程也较为简单，唯一必须配置的选项是`gitlabUrl`和`runnerRegistrationToken`，前者即为`gitlab server`的`url`，它可以是一个完整域名（如`https://example.gitlab.com`），也可以是一个`ip`地址（记得不要漏掉端口号），而后者则为你的`gitlab`的`token`，以表明你具备向`gitlab`添加`runner`的权限。这两个值可以从`gitlab-project-settings-pipelines`下获取到（注意因为笔者的`gitlab`帐户只是普通帐户，意味着只能注册`specific runner`，它与`admin`的稍有不同）。图3显示了这两个选项参数。
+
+![gitlaburl and token](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/install-runner-in-k8s/gitlab-url-token.jpg)
+
+图3 `runner`所需的`gitlabUrl`和`token`参数
+
+确认了这两个最核心的配置选项后，如果你不需要覆盖其它的默认选项值，就可以开始[安装](https://docs.gitlab.com/runner/install/kubernetes.html#installing-gitlab-runner-using-the-helm-chart)了，非常简单。仅有两个步骤：
 
 其一，将`gitlab`这个`repository`添加到`helm repository list`中。执行下面的命令即可：
 `helm repo add gitlab https://charts.gitlab.io`
@@ -152,6 +166,16 @@ Your GitLab Runner should now be registered against the GitLab instance reachabl
 ```
 
 你也可以执行如图4中的命令，以确认是否安装成功，甚至使用`-o yaml`选项来查看各对象配置的详细内容。
+
+![gitlab runner install result](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/install-runner-in-k8s/gitlab-runner.jpg)
+
+图4 `k8s`中安装的`gitlab ruuner`详情
+
+安装成功后，如图5所示，我们可以到`gitlab`管理上查看已经有一个`runner`实例可供特定的项目使用了，记得在这之前先在`gitlab`上创建一个示例项目，不然，你可能找不到此页面的位置。
+
+![gitlab runner list](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/install-runner-in-k8s/gitlab-runner-list.jpg)
+
+图5 `gitlab` 特定项目所关联的 `runner` 列表
 
 在本小节的最后，我们来看一下`values.yml`文件中定义的核心配置选项。其它的配置在下一小节阐述。
 
