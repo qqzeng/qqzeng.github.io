@@ -25,23 +25,23 @@ tags:
 
 `docker run --privileged -it jpetazzo/dind`
 
-【此处有图】
+![run-jpetazzo/dind-with-privileged](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-privileged-1.png)
 
 它会从[`docker hub`](https://hub.docker.com/r/jpetazzo/dind/)下载一个特殊的`docker image`，此镜像包含了`docker client`和`docker daemon`，并且指明以特权模式来执行它，然后它启动一个本地`docker daemon`，并进入容器交互式`shell`。在此特殊容器中，你可以继续执行`docker run`启动容器：
 
 `docker run -it ubuntu bash`
 
-【此处有图】
+![run-in-dind](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-previliged.png)
 
 仔细观察你的容器`ID`，你的`hostname`发生了变化，说明你已经从外层容器进入到了内层容器了！值得注意的是，此时，内层容器与外层容器依然是隔离的。我们可以简单验证一下。
 
-【此处有图】
+![dind-islotation](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-privileged-3.png)
 
 ### docker-in-docker-in-docker?
 
 有读者可能会思考，既然我可以在容器中启动容器，即`docker-in-docker`，那么我是否可以做到`docker-in-docker-in-docker`呢？是的，这完全可以实现，甚至，理论上你可以无限递归下去，只要你在启动下一层容器时，开启特权选项即可。你可以实践下图的操作内容，观察容器`ID`，说明你确实做到了容器递归嵌套容器。而且你会发现每次执行`docker run`命令时，它都会去下载`jpetazzo/dind`这个镜像，这说明了各个层级的容器不会共享`image`，这也间接证明了各层级的容器确实处于隔离状态。
 
-
+![docker-in-docker-docker](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-in-docker-in-docker.png)
 
 ### 关于 privileged 特权模式
 
@@ -95,11 +95,13 @@ CMD ["wrapdocker"]
 
 `docker run --privileged -d -p 1234 -e PORT=1234 jpetazzo/dind`
 
-【此处有图】
+![docker-as-a-service](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/dokcer-as-as-service.png)
 
 如上的命令可以获取到容器的`ip`和`port`，如此便可为第三方提供`docker`实例的服务。简单而言，它们可直接连接到`docker`实例(`docker daemon`)执行与容器相关的操作。我们简单运行一个只安装了`docker clinet`的容器，然后设置其`DOCKER_HOST`为此提供`docker daemon`的容器的地址，然后简单实验一下是否成功连接，并使用作为服务的`docker daemon`。当然，你也可以参考[这里](https://hub.docker.com/_/docker)，使用`docker link`来做实验完成类似的效果。同样，考虑到此`docker`实例服务是以`priviliged`模式运行的，因此，它可能会因为获取了特权而造成不可预料的风险。
 
-【此处有图】
+![dind-host](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-as-a-servce-1.png)
+
+![dind-docker](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-as-a-service-2.png)
 
 ## socket-binding
 
@@ -115,23 +117,25 @@ CMD ["wrapdocker"]
 
 先使用下面的`Dockerfile`构建我们的实验镜像，注意，我们在容器中只安装了`docker client`。
 
-【此处有图】
+![sc-dockerfile](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-1.png)
 
 然后，构建一个名为`dind-sc`的镜像。
 
-【此处有图】
+![sc-image-build](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-2.png)
 
 使用`run`命令启动容器，并进入到容器中，执行`docker version`命令，可以同时输出了`docker client`和`docker engine`的信息！另外，执行`docker image`命令，发现输出一堆`image`，是的，这是宿主机上的镜像。
 
-【此处有图】
+![sc-docker-run](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-3.png)
 
 我们再一次在当前容器中基于此`Dockerfile`构建（有没有发现这次构建非常快，是的，使用了上一次的镜像缓存），然后运行此容器……，重复上述的操作。可以发现，所启动的容器的地位其实是一样的，它们都在同一个层级。
 
-【此处有图】
+![sc-dind-build](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-4.png)
+
+![sc-docker-2](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-5.png)
 
 最后，实验验证宿主机同各容器共享镜像`cache`。可以看到，我们在宿主机中构建的镜像可以在容器中看到，而在容器中拉到的`nginx`镜像，也能在宿主机中看到。
 
-【此处有图】
+![sc-docker-cache](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-6.png)
 
 ### 关于 docker volume
 
