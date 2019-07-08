@@ -101,10 +101,24 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上一篇文章详细阐述在k8s中安装gitlab runner的整个流程，并且也阐明了其中涉及的原理。原计划这一篇博文紧接着叙述基于k8s并集成gitlab-ci的持续集成部署方案的第二阶段——研究集成gitlab-ci和k8s来实现一个以build-&amp;gt;test-&amp;gt;deploy为核心的持续集成部署流程。第一阶段只是搭建好了环境，显然第二阶段要更重要。但考虑到个人在第二阶段实验过程涉及到至关">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-07-08T08:51:10.017Z">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-privileged-1.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-previliged.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-privileged-3.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-in-docker-in-docker.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/dokcer-as-as-service.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-as-a-servce-1.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-as-a-service-2.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-1.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-2.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-3.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-4.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-5.png">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-6.png">
+<meta property="og:updated_time" content="2019-07-08T09:09:00.749Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="浅析 docker-in-docker 和 socket-binding">
 <meta name="twitter:description" content="上一篇文章详细阐述在k8s中安装gitlab runner的整个流程，并且也阐明了其中涉及的原理。原计划这一篇博文紧接着叙述基于k8s并集成gitlab-ci的持续集成部署方案的第二阶段——研究集成gitlab-ci和k8s来实现一个以build-&amp;gt;test-&amp;gt;deploy为核心的持续集成部署流程。第一阶段只是搭建好了环境，显然第二阶段要更重要。但考虑到个人在第二阶段实验过程涉及到至关">
+<meta name="twitter:image" content="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-privileged-1.png">
 
 
 
@@ -415,7 +429,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  4,185
+                  4,145
                 </span>
               words
 
@@ -431,7 +445,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  16
+                  15
                 </span>
               mins
             </div>
@@ -458,13 +472,14 @@
 <h2 id="docker-in-docker"><a href="#docker-in-docker" class="headerlink" title="docker-in-docker"></a>docker-in-docker</h2><p><code>docker-in-docker</code>这种模式从最初作为新特性被引入<code>docker</code>，到当前的版本，功能确实日趋完善。但在这里仍旧只涉及其核心部分的实践及原理。</p>
 <h3 id="docker-in-docker-初步实践"><a href="#docker-in-docker-初步实践" class="headerlink" title="docker-in-docker 初步实践"></a>docker-in-docker 初步实践</h3><p>在<code>0.6</code>版的<code>Docker</code>在执行<code>docker run</code>命令时，增加了一项新特性——<code>privileged</code>选项参数，可以说就是此参数真正实现了在容器中运行容器的功能。如图1，当你执行如下命令：</p>
 <p><code>docker run --privileged -it jpetazzo/dind</code></p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-privileged-1.png" alt="run-jpetazzo/dind-with-privileged"></p>
 <p>它会从<a href="https://hub.docker.com/r/jpetazzo/dind/" target="_blank" rel="noopener"><code>docker hub</code></a>下载一个特殊的<code>docker image</code>，此镜像包含了<code>docker client</code>和<code>docker daemon</code>，并且指明以特权模式来执行它，然后它启动一个本地<code>docker daemon</code>，并进入容器交互式<code>shell</code>。在此特殊容器中，你可以继续执行<code>docker run</code>启动容器：</p>
 <p><code>docker run -it ubuntu bash</code></p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-previliged.png" alt="run-in-dind"></p>
 <p>仔细观察你的容器<code>ID</code>，你的<code>hostname</code>发生了变化，说明你已经从外层容器进入到了内层容器了！值得注意的是，此时，内层容器与外层容器依然是隔离的。我们可以简单验证一下。</p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/practice-privileged-3.png" alt="dind-islotation"></p>
 <h3 id="docker-in-docker-in-docker"><a href="#docker-in-docker-in-docker" class="headerlink" title="docker-in-docker-in-docker?"></a>docker-in-docker-in-docker?</h3><p>有读者可能会思考，既然我可以在容器中启动容器，即<code>docker-in-docker</code>，那么我是否可以做到<code>docker-in-docker-in-docker</code>呢？是的，这完全可以实现，甚至，理论上你可以无限递归下去，只要你在启动下一层容器时，开启特权选项即可。你可以实践下图的操作内容，观察容器<code>ID</code>，说明你确实做到了容器递归嵌套容器。而且你会发现每次执行<code>docker run</code>命令时，它都会去下载<code>jpetazzo/dind</code>这个镜像，这说明了各个层级的容器不会共享<code>image</code>，这也间接证明了各层级的容器确实处于隔离状态。</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-in-docker-in-docker.png" alt="docker-in-docker-docker"></p>
 <h3 id="关于-privileged-特权模式"><a href="#关于-privileged-特权模式" class="headerlink" title="关于 privileged 特权模式"></a>关于 privileged 特权模式</h3><p>关于<code>privileged</code>特权模式。我们知道<code>linux</code>进程包括<code>priviledged process</code>，即<code>root</code>用户（或者说<code>pid=0</code>的用户）创建的进程，和<code>unpriviledged process</code>，即普通用户创建的进程。<code>--privileged</code>选项实际上就是创建<code>priviledged container</code>进程。考虑到默认情况下<code>docker</code>容器运行模式为<code>unprivileged</code>，这使得在一个<code>docker</code>容器中跑另外一个<code>docker daemon</code>不被允许，因为容器不能访问宿主机的任何<code>device</code>。但一个具备<code>privileged</code>特权的容器则允许访问所有<code>device</code><a href="https://www.kernel.org/doc/Documentation/cgroup-v1/devices.txt" target="_blank" rel="noopener"><code>(cgroup device)</code></a>，即可以访问<code>/dev</code>下所有的目录。换言之，当容器被配置成<code>privileged</code>模式时，容器对宿主机的所有<code>device</code>具有完全控制权，同时通过修改<code>AppArmor</code>及<code>SELinux</code>相关的配置，使得容器几乎相当于运行在宿主机上的进程一样，具有完全访问宿主机的权限。</p>
 <p>虽然，在<code>Docker 0.6</code>版，纯粹只添加了<code>--privileged</code>选项。但当前的版本(<code>18.09.6</code>)其实限制容器对宿主机设备的访问权限的粒度已经控制得比较精确了。换言之，如果只想让容器访问部分设备，可以使用<code>--device</code>选项，这使得默认情况下，容器对这些设备具有<code>read</code>、<code>write</code>、和<code>mknod</code>权限，但可使用<code>:rwm</code>作出限制。</p>
 <p>除了使用<code>privileged</code>选项，也可使用<code>--cap-add</code>和<code>--cap-drop</code>选项以更细粒度的控制容器对宿主机访问的某些方面的权限。更多可参考<code>docker</code><a href="https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities" target="_blank" rel="noopener">官方文档</a>。</p>
@@ -484,23 +499,25 @@
 </ul>
 <h3 id="docker-as-a-service"><a href="#docker-as-a-service" class="headerlink" title="docker-as-a-service"></a>docker-as-a-service</h3><p>最后，需要补充的一点是，若你想使用<code>docker-in-docker</code>来作为一个服务（上述已提到<code>helper</code>脚本中最后一个操作，即判定<code>docker deamon</code>是监听指定端口，还是提供一个临时<code>shell</code>），即计划提供一个<code>Docker-as-a-Service</code>，注意不是<code>Containers-as-a-Service</code>，这两者在概念上是有区别的。因为我们提供的服务是一个<code>docker</code>实例。我们可以通过如下命令，通过让容器运行于后台模式，并对外暴露一个端口来实现：</p>
 <p><code>docker run --privileged -d -p 1234 -e PORT=1234 jpetazzo/dind</code></p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/dokcer-as-as-service.png" alt="docker-as-a-service"></p>
 <p>如上的命令可以获取到容器的<code>ip</code>和<code>port</code>，如此便可为第三方提供<code>docker</code>实例的服务。简单而言，它们可直接连接到<code>docker</code>实例(<code>docker daemon</code>)执行与容器相关的操作。我们简单运行一个只安装了<code>docker clinet</code>的容器，然后设置其<code>DOCKER_HOST</code>为此提供<code>docker daemon</code>的容器的地址，然后简单实验一下是否成功连接，并使用作为服务的<code>docker daemon</code>。当然，你也可以参考<a href="https://hub.docker.com/_/docker" target="_blank" rel="noopener">这里</a>，使用<code>docker link</code>来做实验完成类似的效果。同样，考虑到此<code>docker</code>实例服务是以<code>priviliged</code>模式运行的，因此，它可能会因为获取了特权而造成不可预料的风险。</p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-as-a-servce-1.png" alt="dind-host"></p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/docker-as-a-service-2.png" alt="dind-docker"></p>
 <h2 id="socket-binding"><a href="#socket-binding" class="headerlink" title="socket-binding"></a>socket-binding</h2><p><code>docker-in-docker</code>的方式可以实现在容器中启动另一个容器，但它确实存在安全风险，而且，也存在潜在的棘手问题，具体可以参考这篇<a href="http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/" target="_blank" rel="noopener">博文</a>。值得一提的是，使用<code>dind</code>的方式，无法让各内层容器之间或容器与主机之间共享缓存，这在基于<code>k8s</code>集成<code>gitlab</code>实现持续集成部署方案的用例中是一个比较严重的问题。因此，笔者考虑使用<code>socket-binding</code>的方式（<code>socket-binding</code>称呼源自<code>gitlab</code><a href="https://docs.gitlab.com/runner/executors/kubernetes.html#exposing-varrundockersock" target="_blank" rel="noopener">官方文档</a>，也可称之为<a href="https://docs.docker.com/storage/bind-mounts/" target="_blank" rel="noopener"><code>bind-mount</code></a>）。</p>
 <h3 id="socket-binding-实践"><a href="#socket-binding-实践" class="headerlink" title="socket-binding 实践"></a>socket-binding 实践</h3><p>事实上，很多情况下，我们并不真正需要在一个容器中运行另外一个容器（或许存在特例）。我们需要的可能只是想在<code>docker</code>容器中能够继续执行<code>docker</code>相关操作（如<code>docker build/pull/push</code>等），至少在笔者的使用案例中是这样的。因此，使用<code>dind</code>的方式是否显得小题大做了？事实上若要达到我们的目的（在容器中执行<code>docker</code>相关命令操作）是很简单的——在启动容器时使用<code>-v</code>选项以绑定挂载的方式(<code>binding mount</code>)将宿主机的<code>docker socket</code>挂载到容器，即执行如下命令：</p>
 <p><code>docker run -it -v /var/run/docker.sock:/var/run/docker.sock some-docker-image /bin/bash</code></p>
 <p>且此<code>docker run</code>命令中的使用的<code>some-docker-image</code>镜像则不必为<code>jpetazzo/dind</code>，它没有任何特殊之处。当然，此镜像必须包含<code>docker client</code>，而可以不用包含<code>docker engine</code>。因为，当我们以<code>socket-binding</code>的形式来<code>run</code>一个容器时，它实际上是将宿主机的<code>/var/run/docker.sock</code>挂载到了容器中<code>/var/run/docker.sock</code>，这使得在容器中执行<code>docker build/push/pull</code>命令真正使用的是宿主机的<code>docker daemon</code>，换言之，我们使用容器中的<code>docker client</code>和容器外的宿主机的<code>docker daemon</code>进行通信。这不同于<code>dind</code>，它并非真正实现了在容器中运行容器的功能。当使用<code>socket-binding</code>的方式时，所创建的容器和执行<code>docker</code>命令的当前容器处于同一层级（不是父子关系，而是兄弟关系），都是直接隶属于宿主机下的一层。因此，你可以推理得到，正因为所有的”内层”容器实际上都使用的是宿主机的<code>docker daemon</code>，这使得宿主机和所有有的容器可以共享镜像缓存！最后，同<code>docker-in-docker-in-docker...</code>类似，<code>socket-binding</code>的方式理论上也可以无限递归。我们简单通过如下的操作过程简单实践：</p>
 <p>先使用下面的<code>Dockerfile</code>构建我们的实验镜像，注意，我们在容器中只安装了<code>docker client</code>。</p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-1.png" alt="sc-dockerfile"></p>
 <p>然后，构建一个名为<code>dind-sc</code>的镜像。</p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-2.png" alt="sc-image-build"></p>
 <p>使用<code>run</code>命令启动容器，并进入到容器中，执行<code>docker version</code>命令，可以同时输出了<code>docker client</code>和<code>docker engine</code>的信息！另外，执行<code>docker image</code>命令，发现输出一堆<code>image</code>，是的，这是宿主机上的镜像。</p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-3.png" alt="sc-docker-run"></p>
 <p>我们再一次在当前容器中基于此<code>Dockerfile</code>构建（有没有发现这次构建非常快，是的，使用了上一次的镜像缓存），然后运行此容器……，重复上述的操作。可以发现，所启动的容器的地位其实是一样的，它们都在同一个层级。</p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-4.png" alt="sc-dind-build"></p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-5.png" alt="sc-docker-2"></p>
 <p>最后，实验验证宿主机同各容器共享镜像<code>cache</code>。可以看到，我们在宿主机中构建的镜像可以在容器中看到，而在容器中拉到的<code>nginx</code>镜像，也能在宿主机中看到。</p>
-<p>【此处有图】</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/dind%26socket-binding/socket-binding-6.png" alt="sc-docker-cache"></p>
 <h3 id="关于-docker-volume"><a href="#关于-docker-volume" class="headerlink" title="关于 docker volume"></a>关于 docker volume</h3><p>基于<code>socket-binding</code>来实现在容器中执行容器相关操作的命令的原理其实就是<code>docker volume</code>。<code>docker</code>为了能够保存（持久化）数据以及共享容器间的数据，引入了<code>volume</code>机制。简单而言，<code>volume</code>就是目录或者文件，它可以绕过默认的由多个只读层及一个读写层叠加而成的联合文件系统(<code>union file system</code>)，而以正常的文件或者目录的形式存在于宿主机上。<code>volume</code>机制隔离了容器自身与数据，这是为了保证数据对于容器的生命周期来说是持久化的，换言之，即使你删除了停止的容器数据也还在（除非显式加上<code>-v</code>选项）。</p>
 <p><code>volume</code>可以通过两种方式来创建：其一是在<code>Dockerfile</code>中指定<code>VOLUME /some/dir</code>；其二是执行<code>docker run -v /some/dir</code>命令来指定。这两种方式都是让<code>Docker</code>在主机上创建一个目录，注意默认情况下是在<code>/var/lib/docker</code>下的。并将其挂载到我们指定的路径(<code>/some/dir</code>)，当此路径在容器中不存在时，默认会自动创建它。值得注意的是，我们也可以显式指定将宿主机的某个目录或文件挂载到容器的指定位置（在上述实践环节正是这样操作的，这种方式也被称为是<code>bind-mount</code>）。最后强调一点，当删除使用<code>volume</code>的容器时，<code>volume</code>本身不受影响。</p>
 <p>更多关于<code>volume</code>的操作请查看<a href="https://docs.docker.com/storage/volumes/" target="_blank" rel="noopener">官方文档</a>。</p>
