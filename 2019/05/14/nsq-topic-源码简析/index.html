@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="分布式系统,消息队列,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上一篇文章阐述了nsqd模块的源码。准确而言是nsqd服务启动过程的部分源码。内容非常多，总共分为五个部分来分析，其中略讲的内容包括利用svc启动进程的流程、nsqd实例创建及初始化过程。重点阐述的内容包括nsqd异步开启nsqlookupd查询过程，以及nsqd与nsqlookupd通信的主循环逻辑。另外，还有nsqd建立的tcp连接处理器的相关内容，这点比较复杂，涉及两个过程：IOLoop主循">
+<meta name="keywords" content="分布式系统,消息队列">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nsq topic 源码简析">
+<meta property="og:url" content="https://www.qqzeng.top/2019/05/14/nsq-topic-源码简析/index.html">
+<meta property="og:site_name" content="Zeng Qiaoqiao">
+<meta property="og:description" content="上一篇文章阐述了nsqd模块的源码。准确而言是nsqd服务启动过程的部分源码。内容非常多，总共分为五个部分来分析，其中略讲的内容包括利用svc启动进程的流程、nsqd实例创建及初始化过程。重点阐述的内容包括nsqd异步开启nsqlookupd查询过程，以及nsqd与nsqlookupd通信的主循环逻辑。另外，还有nsqd建立的tcp连接处理器的相关内容，这点比较复杂，涉及两个过程：IOLoop主循">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-05-14T00:27:02.230Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="nsq topic 源码简析">
+<meta name="twitter:description" content="上一篇文章阐述了nsqd模块的源码。准确而言是nsqd服务启动过程的部分源码。内容非常多，总共分为五个部分来分析，其中略讲的内容包括利用svc启动进程的流程、nsqd实例创建及初始化过程。重点阐述的内容包括nsqd异步开启nsqlookupd查询过程，以及nsqd与nsqlookupd通信的主循环逻辑。另外，还有nsqd建立的tcp连接处理器的相关内容，这点比较复杂，涉及两个过程：IOLoop主循">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://www.qqzeng.top/2019/05/14/nsq-topic-源码简析/">
+
+
+
+
+
+  <title>nsq topic 源码简析 | Zeng Qiaoqiao</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zeng Qiaoqiao</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://www.qqzeng.top/2019/05/14/nsq-topic-源码简析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">nsq topic 源码简析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-14T13:48:03+08:00">
+                2019-05-14
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/消息队列/" itemprop="url" rel="index">
+                    <span itemprop="name">消息队列</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/05/14/nsq-topic-源码简析/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/05/14/nsq-topic-源码简析/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4,146
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  17
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上一篇文章阐述了<code>nsqd</code>模块的源码。准确而言是<code>nsqd</code>服务启动过程的部分源码。内容非常多，总共分为五个部分来分析，其中略讲的内容包括利用<code>svc</code>启动进程的流程、<code>nsqd</code>实例创建及初始化过程。重点阐述的内容包括<code>nsqd</code>异步开启<code>nsqlookupd</code>查询过程，以及<code>nsqd</code>与<code>nsqlookupd</code>通信的主循环逻辑。另外，还有<code>nsqd</code>建立的<code>tcp</code>连接处理器的相关内容，这点比较复杂，涉及两个过程：<code>IOLoop</code>主循环读取连接的请求内容，以及<code>messagePump</code>处理消息发送的核心逻辑。最后略讲<code>http</code>连接处理器的创建过程。本文的主题是<code>topic</code>，相对简单。<code>topic</code>可以看作是生产者投递消息的一个逻辑键，一个<code>nsqd</code>实例可以维护多个<code>topic</code>实例，每当生产者将消息投递到某个的<code>nsqd</code>上特定的<code>topic</code>时，它随即将消息拷贝后发送到与其关联的<code>channel</code>实例集合。与<code>channel</code>实例类似，<code>topic</code>实例存储消息也涉及到两个消息队列：内存消息队列和持久化消息队列，因此对于消息的存储维护，<code>topic</code>实例和<code>channel</code>实例分开管理。同样，为了方便读者理解，本文只论述到<code>topic</code>本身的相关逻辑，换言之，不涉及到<code>topic</code>收发消息的逻辑。</p>
+<a id="more"></a>
+<p>本文分析<code>nsq topic</code>模块的相关逻辑，更详细<code>nsq</code>源码注释可在<a href="https://github.com/qqzeng/nsqio/tree/master/nsq" target="_blank" rel="noopener">这里</a>找到，注释源码版本为<code>v1.1.0</code>，仅供参考。本文所涉及到源码主要为<code>/nsq/nsqd/</code>和<code>/nsq/internal/</code>下的若干子目录。</p>
+<p>本文侧重于分析<code>topic</code>模块本身相关源码，而关于<code>topic</code>如何从生产者收到消息、如何对消息进行存储处理，最后又如何将消息转发给<code>channel</code>实例，这部分会另外写一篇文章专门阐述，这也是<code>nsq</code>系统非常核心的处理流程。本文从四个方面来阐述<code>topic</code>：其一，简要介绍<code>topic</code>结构相关字段；其二，阐述创建<code>topic</code>相关逻辑；其三，分析删除<code>topic</code>的过程；最后阐述<code>topic</code>的查询过程。</p>
+<h2 id="topic-实例结构"><a href="#topic-实例结构" class="headerlink" title="topic 实例结构"></a>topic 实例结构</h2><p><code>topic</code>结构所包含的字段比较简单，其中重要的包括：<code>channelMap</code>表示<code>topic</code>实例所关联的<code>channel</code>实例集合；<code>backend</code>表示<code>topic</code>所使用的消息持久化队列接口；<code>memoryMsgChan</code>则表示内存消息队列；还有一个<code>channelUpdateChan</code>通道表示当消息被更新时（添加或删除），通知<code>topic</code>的消息处理主循环中执行相应的逻辑，即更新两个消息队列。<code>ephemeral</code>字段表示<code>topic</code>是否是临时的，所谓临时的<code>topic</code>（<code>#ephemeral</code>开头）不会被持久化(<code>PersistMetadata</code>)，且当<code>topic</code> 包含的所有<code>channel</code>都被删除后，此<code>topic</code>也会被删除。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Topic <span class="keyword">struct</span> &#123;</span><br><span class="line">	<span class="comment">// 64bit atomic vars need to be first for proper alignment on 32bit platforms</span></span><br><span class="line">	messageCount <span class="keyword">uint64</span>			<span class="comment">// 此 topic 所包含的消息的总数（内存+磁盘）</span></span><br><span class="line">	messageBytes <span class="keyword">uint64</span>			<span class="comment">// 此 topic 所包含的消息的总大小（内存+磁盘）</span></span><br><span class="line">	sync.RWMutex				<span class="comment">// guards channelMap</span></span><br><span class="line">	name              <span class="keyword">string</span>					<span class="comment">// topic 名称</span></span><br><span class="line">	channelMap        <span class="keyword">map</span>[<span class="keyword">string</span>]*Channel		<span class="comment">// topic 所包含的 channel 集合</span></span><br><span class="line">	backend           BackendQueue				<span class="comment">// 代表持久化存储的通道</span></span><br><span class="line">	memoryMsgChan     <span class="keyword">chan</span> *Message				<span class="comment">// 代表消息在内存中的通道</span></span><br><span class="line">	startChan         <span class="keyword">chan</span> <span class="keyword">int</span>					<span class="comment">// 消息处理循环开关</span></span><br><span class="line">	exitChan          <span class="keyword">chan</span> <span class="keyword">int</span>					<span class="comment">// topic 消息处理循环退出开关</span></span><br><span class="line">	channelUpdateChan <span class="keyword">chan</span> <span class="keyword">int</span>					<span class="comment">// 消息更新的开关</span></span><br><span class="line">	waitGroup         util.WaitGroupWrapper		<span class="comment">// waitGroup 的一个 wrapper</span></span><br><span class="line">	<span class="comment">// 其会在删除一个topic时被设置，且若被设置，则 putMessage(s)操作会返回错误，拒绝写入消息</span></span><br><span class="line">	exitFlag          <span class="keyword">int32</span></span><br><span class="line">	idFactory         *guidFactory				<span class="comment">// 用于生成客户端实例的ID</span></span><br><span class="line">	<span class="comment">// 临时的 topic（#ephemeral开头），此种类型的 topic 不会进行持久化，</span></span><br><span class="line">	<span class="comment">// 当此 topic 所包含的所有的 channel 都被删除后，被标记为ephemeral的topic也会被删除</span></span><br><span class="line">	ephemeral      <span class="keyword">bool</span></span><br><span class="line">	<span class="comment">// topic 被删除前的回调函数，且对 ephemeral 类型的 topic有效，并且它只在 DeleteExistingChannel 方法中被调用</span></span><br><span class="line">	deleteCallback <span class="function"><span class="keyword">func</span><span class="params">(*Topic)</span></span></span><br><span class="line"><span class="function">	<span class="title">deleter</span>        <span class="title">sync</span>.<span class="title">Once</span></span></span><br><span class="line"><span class="function">	// 标记此 <span class="title">topic</span> 是否有被 <span class="title">paused</span>，若被 <span class="title">paused</span>，则其不会将消息写入到其关联的 <span class="title">channel</span> 的消息队列</span></span><br><span class="line"><span class="function">	<span class="title">paused</span>    <span class="title">int32</span></span></span><br><span class="line"><span class="function">	<span class="title">pauseChan</span> <span class="title">chan</span> <span class="title">int</span></span></span><br><span class="line"><span class="function">	<span class="title">ctx</span> *<span class="title">context</span>					// <span class="title">nsqd</span> 实例的 <span class="title">wrapper</span></span></span><br><span class="line"><span class="function">&#125; // /<span class="title">nsq</span>/<span class="title">nsqd</span>/<span class="title">topic</span>.<span class="title">go</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="创建-topic-实例"><a href="#创建-topic-实例" class="headerlink" title="创建 topic 实例"></a>创建 topic 实例</h2><p>先简单了解<code>topic</code>的构造方法，其大概涉及到这么几个步骤：先初始化实例结构，然后若此<code>topic</code>为<code>ephemeral</code>的，则设置标记，并且为此<code>topic</code>关联一个<code>DummyBackendQueue</code>作为其持久化存储，事实上，<code>DummyBackendQueue</code>表示不执行任何有效动作，显然这是考虑到临时的<code>topic</code>不用被持久化。对于正常的<code>topic</code>，则为其创建一个<a href="https://github.com/nsqio/go-diskqueue" target="_blank" rel="noopener"><code>diskqueue</code></a>实例作为后端存储消息队列，通过<code>nsqd</code>配置参数进行初始化（<code>diskqueue</code>在后面单独开一篇文章解析）。最后异步开启<code>topic</code>的消息处理主循环<code>messagePump</code>，并通知<code>nsqlookupd</code>有新的<code>topic</code>实例产生。它会在<code>nsqd.Notify</code>方法中被接收，然后将此<code>topic</code>实例压入到<code>nsqd.notifyChan</code>管道，相应地，此<code>topic</code>实例在<code>nsqd.lookupLoop</code>方法中被取出，然后构建并发送<code>REGISTER</code>命令请求给<code>nsqd</code>所维护的所有<code>nsqlookupd</code>实例。最后，通过调用<code>PersistMetadata</code>方法将此<code>topic</code>元信息持久化。（方法调用链为：<code>NewTopic-&gt;nsqd.Notify-&gt;nsqd.lookupLoop-&gt;nsqd.PersistMetadata</code>）相关代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// topic 的构造函数</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewTopic</span><span class="params">(topicName <span class="keyword">string</span>, ctx *context, deleteCallback <span class="keyword">func</span>(*Topic)</span>) *<span class="title">Topic</span></span> &#123;</span><br><span class="line">	<span class="comment">// 1. 构造 topic 实例</span></span><br><span class="line">	t := &amp;Topic&#123;</span><br><span class="line">		name:              topicName,</span><br><span class="line">		channelMap:        <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]*Channel),</span><br><span class="line">		memoryMsgChan:     <span class="built_in">make</span>(<span class="keyword">chan</span> *Message, ctx.nsqd.getOpts().MemQueueSize),</span><br><span class="line">		startChan:         <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">int</span>, <span class="number">1</span>),</span><br><span class="line">		exitChan:          <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">int</span>),</span><br><span class="line">		channelUpdateChan: <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">int</span>),</span><br><span class="line">		ctx:               ctx,</span><br><span class="line">		paused:            <span class="number">0</span>,</span><br><span class="line">		pauseChan:         <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">int</span>),</span><br><span class="line">		deleteCallback:    deleteCallback,</span><br><span class="line">		idFactory:         NewGUIDFactory(ctx.nsqd.getOpts().ID),</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 2. 标记那些带有 ephemeral 的 topic，并为它们构建一个 Dummy BackendQueue，</span></span><br><span class="line">	<span class="comment">// 因为这些 topic 所包含的的消息不会被持久化，因此不需要持久化队列 BackendQueue。</span></span><br><span class="line">	<span class="keyword">if</span> strings.HasSuffix(topicName, <span class="string">"#ephemeral"</span>) &#123;</span><br><span class="line">		t.ephemeral = <span class="literal">true</span></span><br><span class="line">		t.backend = newDummyBackendQueue()</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		dqLogf := <span class="function"><span class="keyword">func</span><span class="params">(level diskqueue.LogLevel, f <span class="keyword">string</span>, args ...<span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">			opts := ctx.nsqd.getOpts()</span><br><span class="line">			lg.Logf(opts.Logger, opts.LogLevel, lg.LogLevel(level), f, args...)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 3. 通过 diskqueue (https://github.com/nsqio/go-diskqueue) 构建持久化队列实例</span></span><br><span class="line">		t.backend = diskqueue.New(</span><br><span class="line">			topicName,						<span class="comment">// topic 名称</span></span><br><span class="line">			ctx.nsqd.getOpts().DataPath,	<span class="comment">// 数据存储路径</span></span><br><span class="line">			ctx.nsqd.getOpts().MaxBytesPerFile,		<span class="comment">// 存储文件的最大字节数</span></span><br><span class="line">			<span class="keyword">int32</span>(minValidMsgLength),				<span class="comment">// 最小的有效消息的长度</span></span><br><span class="line">			<span class="keyword">int32</span>(ctx.nsqd.getOpts().MaxMsgSize)+minValidMsgLength, <span class="comment">// 最大的有效消息的长度</span></span><br><span class="line">			<span class="comment">// 单次同步刷新消息的数量，即当消息数量达到 SyncEvery 的数量时，</span></span><br><span class="line">			<span class="comment">// 需要执行刷新动作（否则会留在操作系统缓冲区）</span></span><br><span class="line">			ctx.nsqd.getOpts().SyncEvery,</span><br><span class="line">			ctx.nsqd.getOpts().SyncTimeout,	<span class="comment">// 两次同步刷新的时间间隔，即两次同步操作的最大间隔</span></span><br><span class="line">			dqLogf,							<span class="comment">// 日志</span></span><br><span class="line">		)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 4. 执行 messagePump 方法，即 开启消息监听 go routine</span></span><br><span class="line">	t.waitGroup.Wrap(t.messagePump)</span><br><span class="line">	<span class="comment">// 5. 通知 nsqlookupd 有新的 topic 产生</span></span><br><span class="line">	t.ctx.nsqd.Notify(t)</span><br><span class="line">	<span class="keyword">return</span> t</span><br><span class="line">&#125; <span class="comment">// /nsq/nsqd/topic.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 通知 nsqd 将 metadata 信息持久化到磁盘，若 nsqd 当前未处于启动过程</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n *NSQD)</span> <span class="title">Notify</span><span class="params">(v <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">    <span class="comment">// 考虑到若在 nsqd 刚启动处于加载元数据，则此时数据并不完整，因此不会在此时执行持久化操作</span></span><br><span class="line">	persist := atomic.LoadInt32(&amp;n.isLoading) == <span class="number">0</span></span><br><span class="line">	n.waitGroup.Wrap(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-n.exitChan:</span><br><span class="line">		<span class="keyword">case</span> n.notifyChan &lt;- v:</span><br><span class="line">			<span class="keyword">if</span> !persist &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			n.Lock()</span><br><span class="line">			<span class="comment">// 重新持久化 topic 及 channel 的元信息</span></span><br><span class="line">			err := n.PersistMetadata()</span><br><span class="line">			<span class="comment">// ...</span></span><br><span class="line">			n.Unlock()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后，简单分析下，程序中哪些地方会调用此构造方法。前文提到<code>topic</code>不会被提前创建，一定是因为某个生产者在注册<code>topic</code>时临时被创建的。其实通过追踪方法调用，发现只有<code>nsqd.GetTopic</code>方法调用了<code>NewTopic</code>构造方法。因此，程序中存在以下几条调用链：其一，<code>nsqd.Start-&gt;nsqd.PersistMetadata-&gt;nsqd.GetTopic-&gt;NewTopic</code>；其二，<code>httpServer.getTopicFromQuery-&gt;nsqd.GetTopic-&gt;NewTopic</code>；以及<code>protocolV2.PUB/SUB-&gt;nsqd.GetTopic</code>这三条调用路径。相信读者已经非常清楚了。</p>
+<h2 id="删除或关闭-topic-实例"><a href="#删除或关闭-topic-实例" class="headerlink" title="删除或关闭 topic 实例"></a>删除或关闭 topic 实例</h2><p><code>topic</code>删除的方法(<code>topic.Delete</code>)与其被关闭的方法(<code>topic.Close</code>)相似，都调用了<code>topic.exit</code>方法，区别有三点：一是前者还显式调用了<code>nsqd.Notify</code>以通知<code>nsqlookupd</code>有<code>topic</code>实例被删除，同时重新持久化元数据。二是前者还需要递归删除<code>topic</code>关联的<code>channel</code>集合，且显式调用了<code>channel.Delete</code>方法（此方法同<code>topic.Delete</code>方法相似）。最后一点区别为前者还显式清空了<code>memoryMsgChan</code>和<code>backend</code>两个消息队列中的消息。因此，若只是关闭或退出<code>topic</code>，则纯粹退出<code>messagePump</code>消息处理循环，并将<code>memoryMsgChan</code>中的消息刷盘，最后关闭持久化存储消息队列。（方法调用链为：<code>topic.Delete-&gt;topic.exit-&gt;nsqd.Notify-&gt;nsqd.PersistMetadata-&gt;chanel.Delete-&gt;topic.Empty-&gt;topic.backend.Empty-&gt;topic.backend.Delete</code>，以及<code>topic.Close-&gt;topic.exit-&gt;topic.flush-&gt;topic.backend.Close</code>）相关代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Delete 方法和 Close 方法都调用的是 exit 方法。</span></span><br><span class="line"><span class="comment">// 区别在于 Delete 还需要显式得通知 lookupd，让它删除此 topic 的注册信息</span></span><br><span class="line"><span class="comment">// 而　Close　方法是在　topic　关闭时调用，因此需要持久化所有未被处理/消费的消息，然后再关闭所有的 channel，退出</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Topic)</span> <span class="title">Delete</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> t.exit(<span class="literal">true</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Topic)</span> <span class="title">Close</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> t.exit(<span class="literal">false</span>)</span><br><span class="line">&#125; <span class="comment">// /nsq/nsqd/topic.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 使当前 topic 对象　exit，同时若指定删除其所关联的 channels 及 closes，则清空它们</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Topic)</span> <span class="title">exit</span><span class="params">(deleted <span class="keyword">bool</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// 1. 保证目前还处于运行的状态</span></span><br><span class="line">	<span class="keyword">if</span> !atomic.CompareAndSwapInt32(&amp;t.exitFlag, <span class="number">0</span>, <span class="number">1</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span> errors.New(<span class="string">"exiting"</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 2. 当被　Delete　调用时，则需要先通知 lookupd 删除其对应的注册信息</span></span><br><span class="line">	<span class="keyword">if</span> deleted &#123;</span><br><span class="line">		t.ctx.nsqd.logf(LOG_INFO, <span class="string">"TOPIC(%s): deleting"</span>, t.name)</span><br><span class="line">		t.ctx.nsqd.Notify(t) <span class="comment">// 通知 nsqlookupd 有 topic 更新，并重新持久化元数据</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		t.ctx.nsqd.logf(LOG_INFO, <span class="string">"TOPIC(%s): closing"</span>, t.name)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 3. 关闭 exitChan，保证所有的循环全部会退出，比如消息处理循环 messagePump 会退出</span></span><br><span class="line">	<span class="built_in">close</span>(t.exitChan)</span><br><span class="line">	<span class="comment">// 4. 同步等待消息处理循环 messagePump 方法的退出，</span></span><br><span class="line">    <span class="comment">// 才继续执行下面的操作（只有消息处理循环退出后，才能删除对应的 channel集合）</span></span><br><span class="line">	t.waitGroup.Wait()</span><br><span class="line">	<span class="comment">// 4. 若是被 Delete 方法调用，则需要清空 topic 所包含的 channel（同 topic 的操作类似）</span></span><br><span class="line">	<span class="keyword">if</span> deleted &#123;</span><br><span class="line">		t.Lock()</span><br><span class="line">		<span class="keyword">for</span> _, channel := <span class="keyword">range</span> t.channelMap &#123;</span><br><span class="line">			<span class="built_in">delete</span>(t.channelMap, channel.name)</span><br><span class="line">			channel.Delete()</span><br><span class="line">		&#125;</span><br><span class="line">		t.Unlock()</span><br><span class="line">		t.Empty() <span class="comment">// 清空 memoryMsgChan 和 backend 中的消息</span></span><br><span class="line">		<span class="keyword">return</span> t.backend.Delete()</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 5. 否则若是被 Close 方法调用，则只需要关闭所有的 channel，</span></span><br><span class="line">    <span class="comment">// 不会将所有的 channel 从 topic 的 channelMap 中删除</span></span><br><span class="line">	<span class="keyword">for</span> _, channel := <span class="keyword">range</span> t.channelMap &#123;</span><br><span class="line">		err := channel.Close()</span><br><span class="line">		<span class="comment">// ...</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 6. 将内存中的消息，即 t.memoryMsgChan 中的消息刷新到持久化存储</span></span><br><span class="line">	t.flush()</span><br><span class="line">	<span class="keyword">return</span> t.backend.Close()</span><br><span class="line">&#125; <span class="comment">// /nsq/nsqd/topic.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 清空内存消息队列和持久化存储消息队列中的消息</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Topic)</span> <span class="title">Empty</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-t.memoryMsgChan:</span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line">			<span class="keyword">goto</span> finish</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">finish:</span><br><span class="line">	<span class="keyword">return</span> t.backend.Empty()</span><br><span class="line">&#125; <span class="comment">// /nsq/nsqd/topic.go</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 刷新内存消息队列即 t.memoryMsgChan 中的消息到持久化存储 backend</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Topic)</span> <span class="title">flush</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> msgBuf bytes.Buffer</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> msg := &lt;-t.memoryMsgChan:</span><br><span class="line">			err := writeMessageToBackend(&amp;msgBuf, msg, t.backend)</span><br><span class="line">			<span class="comment">// ...</span></span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line">			<span class="keyword">goto</span> finish</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">finish:</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125; <span class="comment">// /nsq/nsqd/topic.go</span></span><br></pre></td></tr></table></figure>
+<p>最后同样简单分析程序中哪些地方会调用<code>Delete</code>方法。其一，<code>httpServer.doDeleteTopic-&gt;nsqd.DeleteExistingTopic-&gt;topic.Delete</code>；其二，<code>nsqd.GetTopic-&gt;nsqd.DeleteExistingTopic-&gt;topic.Delete</code>。而对于<code>topic.Close</code>方法，则比较直接：<code>nsqd.Exit-&gt;topic.Close</code>。</p>
+<h2 id="查询-topic-实例"><a href="#查询-topic-实例" class="headerlink" title="查询 topic 实例"></a>查询 topic 实例</h2><p>即依据名称查询（获取）<code>topic</code>实例，包含了两个方法，都被定义为<code>nsqd</code>实例的方法。我们重点阐述<code>nsqd.GetTopic</code>方法。查询逻辑的关键是，若此<code>topic</code>不存在<code>nsqd</code>的<code>topic</code>集合中，则需要创建一个新的实例。同时，为其注册<code>topic</code>实例的删除回调函数。接下来，若此<code>nsqd</code>并非处于启动过程（还记得<code>nsqd.LoadMetadata</code>会调用<code>nsqd.GetTopic</code>方法吗），则还要进一步填充此<code>topic</code>所关联的<code>channel</code>，即<code>nsqd</code>实例向<code>nsqlookupd</code>实例查询指定<code>topic</code>所关联的<code>channel</code>集合，然后更新<code>topic.channelMap</code>，同时也要更新<code>topic.memoryMsgChan</code>和<code>topoc.backendChan</code>结构（因为<code>channel</code>集合更新了）。最后，启动此<code>topic</code>，即开启<code>topic</code>处理消息的主循环<code>topic.messagePump</code>。相关代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// GetTopic 是一个线程安全的方法，其根据 topic 名称返回指向一个 topic 对象的指针，</span></span><br><span class="line"><span class="comment">// 此 topic 对象有可能是新创建的</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n *NSQD)</span> <span class="title">GetTopic</span><span class="params">(topicName <span class="keyword">string</span>)</span> *<span class="title">Topic</span></span> &#123;</span><br><span class="line">	<span class="comment">// 1. 通常，此 topic 已经被创建，因此（使用读锁）先从 nsqd 的 topicMap 中查询指定指定的 topic</span></span><br><span class="line">	n.RLock()</span><br><span class="line">	t, ok := n.topicMap[topicName]</span><br><span class="line">	n.RUnlock()</span><br><span class="line">	<span class="keyword">if</span> ok &#123;</span><br><span class="line">		<span class="keyword">return</span> t</span><br><span class="line">	&#125;</span><br><span class="line">	n.Lock()</span><br><span class="line">	<span class="comment">// 2. 因为上面查询指定的 topic 是否存在时，使用的是读锁，</span></span><br><span class="line">	<span class="comment">// 因此有线程可能同时进入到这里，执行了创建同一个 topic 的操作，因此这里还需要判断一次。</span></span><br><span class="line">	t, ok = n.topicMap[topicName]</span><br><span class="line">	<span class="keyword">if</span> ok &#123;</span><br><span class="line">		n.Unlock()</span><br><span class="line">		<span class="keyword">return</span> t</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 3. 创建删除指定 topic 的回调函数，即在删除指定的 topic 之前，需要做的一些清理工作，</span></span><br><span class="line">	<span class="comment">// 比如关闭 与此 topic 所关联的channel，同时判断删除此 topic 所包含的所有 channel</span></span><br><span class="line">	deleteCallback := <span class="function"><span class="keyword">func</span><span class="params">(t *Topic)</span></span> &#123;</span><br><span class="line">		n.DeleteExistingTopic(t.name)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 4. 通过 nsqd、topicName 和删除回调函数创建一个新的　topic，并将此 topic　添加到 nsqd 的 topicMap中</span></span><br><span class="line">	<span class="comment">// 创建 topic 过程中会初始化 diskqueue, 同时开启消息协程</span></span><br><span class="line">	t = NewTopic(topicName, &amp;context&#123;n&#125;, deleteCallback)</span><br><span class="line">	n.topicMap[topicName] = t</span><br><span class="line">	n.Unlock()</span><br><span class="line">	n.logf(LOG_INFO, <span class="string">"TOPIC(%s): created"</span>, t.name)</span><br><span class="line">	<span class="comment">// 此时内存中的两个消息队列 memoryMsgChan 和 backend 还未开始正常工作</span></span><br><span class="line">	<span class="keyword">if</span> atomic.LoadInt32(&amp;n.isLoading) == <span class="number">1</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> t</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 对于新建的 topic还要查询channel集合的原因，只能是 nsqd 实例重启，丢失了topic和channel信息</span></span><br><span class="line">    <span class="comment">// TODO</span></span><br><span class="line">	lookupdHTTPAddrs := n.lookupdHTTPAddrs()</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(lookupdHTTPAddrs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// 5.1 从指定的 nsqlookupd 及 topic 所获取的 channel 的集合</span></span><br><span class="line">		<span class="comment">// nsqlookupd 存储所有之前此 topic 创建的 channel 信息，因此需要加载消息</span></span><br><span class="line">		channelNames, err := n.ci.GetLookupdTopicChannels(t.name, lookupdHTTPAddrs)</span><br><span class="line">		<span class="comment">// ...</span></span><br><span class="line">		<span class="comment">// 5.2 对那些非 ephemeral 的 channel，</span></span><br><span class="line">        <span class="comment">// 创建对应的实例（因为没有使用返回值，因此纯粹是更新了内在中的memoryMsgChan和backend结构）</span></span><br><span class="line">		<span class="keyword">for</span> _, channelName := <span class="keyword">range</span> channelNames &#123;</span><br><span class="line">			<span class="comment">// 对于临时的 channel，则不需要创建，使用的时候再创建</span></span><br><span class="line">			<span class="keyword">if</span> strings.HasSuffix(channelName, <span class="string">"#ephemeral"</span>) &#123;</span><br><span class="line">				<span class="keyword">continue</span> <span class="comment">// do not create ephemeral channel with no consumer client</span></span><br><span class="line">			&#125; <span class="comment">// 5.3 根据 channel name 获取 channel 实例，且有可能是新建的</span></span><br><span class="line">			<span class="comment">// 若是新建了一个 channel，则通知 topic 的后台消息协程去处理 channel 的更新事件</span></span><br><span class="line">			<span class="comment">// 之所以在查询到指定 channel 的情况下，新建 channel，是为了保证消息尽可能不被丢失，</span></span><br><span class="line">			<span class="comment">// 比如在 nsq 重启时，需要在重启的时刻创建那些 channel，避免生产者生产的消息</span></span><br><span class="line">			<span class="comment">// 不能被放到 channel 中，因为在这种情况下，</span></span><br><span class="line">            <span class="comment">// 只能等待消费者来指定的 channel 中获取消息才会创建。</span></span><br><span class="line">			t.GetChannel(channelName)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="built_in">len</span>(n.getOpts().NSQLookupdTCPAddresses) &gt; <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// ...</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 6. 启动了消息处理的循环，往 startChan 通道中 push 了一条消息，</span></span><br><span class="line">	<span class="comment">// 此时会内存消息队列 memoryMsgChan，以及持久化的消息队列 backendChan 就开始工作。</span></span><br><span class="line">	<span class="comment">// 即能处理内存中消息更新的的事件了。</span></span><br><span class="line">	t.Start()</span><br><span class="line">	<span class="keyword">return</span> t</span><br><span class="line">&#125; <span class="comment">// /nsq/nsqd/nsqd.go</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *Topic)</span> <span class="title">Start</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> t.startChan &lt;- <span class="number">1</span>:</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">	&#125;</span><br><span class="line">&#125; <span class="comment">// /nsq/nsqd/topic.go</span></span><br></pre></td></tr></table></figure>
+<p>关于<code>ClusterInfo.GetLookupdTopicChannels</code>方法没有展开分析了，比较简单，纯粹就构建查询请求，并获得响应内容，最后对<code>channel</code>集合执行合并操作。另外，程序中关于<code>nsqd.GetTopic</code>的逻辑，在前面已阐述过。</p>
+<p>简单小结，本文内容相比上一篇文章较少，逻辑性也相对较弱，因此较容易理解消化。文章围绕<code>topic</code>展开，从四个方面对<code>topic</code>进行介绍，其中<code>topic</code>实例所包含的字段比较简单。而<code>topic</code>实例化方法也很直接，关键在于从一条主线来把握方法，即结合系统调用逻辑，理解涉及到的整个调用方法链。删除或关闭<code>topic</code>的核心是对两个消息队列的操作。最后查询<code>topic</code>实例的方法<code>GetTopic</code>方法比较关键。</p>
+<p>参考文献</p>
+<p>[1]. <a href="https://github.com/nsqio/nsq" target="_blank" rel="noopener">https://github.com/nsqio/nsq</a><br>[2]. <a href="https://nsq.io/overview/quick_start.html" target="_blank" rel="noopener">https://nsq.io/overview/quick_start.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
+          
+            <a href="/tags/消息队列/" rel="tag"># 消息队列</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/13/nsq-nsqd-服务启动源码简析/" rel="next" title="nsq nsqd 服务启动源码简析">
+                <i class="fa fa-chevron-left"></i> nsq nsqd 服务启动源码简析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/14/nsq-channel-源码简析/" rel="prev" title="nsq channel 源码简析">
+                nsq channel 源码简析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">qqzeng</p>
+              <p class="site-description motion-element" itemprop="description">你好呀</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">43</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#topic-实例结构"><span class="nav-number">1.</span> <span class="nav-text">topic 实例结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建-topic-实例"><span class="nav-number">2.</span> <span class="nav-text">创建 topic 实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#删除或关闭-topic-实例"><span class="nav-number">3.</span> <span class="nav-text">删除或关闭 topic 实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查询-topic-实例"><span class="nav-number">4.</span> <span class="nav-text">查询 topic 实例</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">qqzeng</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">148.3k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://qqzeng.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://www.qqzeng.top/2019/05/14/nsq-topic-源码简析/';
+          this.page.identifier = '2019/05/14/nsq-topic-源码简析/';
+          this.page.title = 'nsq topic 源码简析';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://qqzeng.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
