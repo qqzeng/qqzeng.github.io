@@ -135,7 +135,7 @@ executor) 和 b.executeUploadArtifacts(ctx, err, executor
 
 下面是一张完整的`GitLab Server`同`GitLab Runner`的交互图。其中，最左边的表示客户端执行的`Runner`的命令（注册，启动和取消注册）。中间用红色标示的表示各个详细的阶段。右边中绿色标注的表示`Runner`同`GitLab Server`的`Http`通信细节，这个是最重要的。右边的黑色和蓝色标示的表示`Runner`自身内部执行的一些操作。
 
-
+![Runner-GitLab-communication](https://github.com/qqzeng/qqzeng.github.io/raw/hexo/static/GitLab-Runner/Runner%26GitLabServer_meitu_1.jpg)
 
 简单小结，本文主要阐述了三个方面的内容：一是阐述`Runner`相关的知识，特别要清楚`Runner`的本质是什么，以及提高`GitLab CI`构建效率的三个方面的知识，最后补充了`Runner`相关的细节知识点；二是阐述`Executor`相关的知识，包括`Executor`的本质，与`Runner`的关系，并且简要阐述了各种`Executor`，需要重点关注`Kubernetes Executor`。最后，阐述`GitLab Server`同`GitLab Runner`基本交互逻辑，主要是包括四个阶段（没包括最后的取消注册），这几个阶段都挺重要，读者可以借助二者的交互图来理解，重点关注二者之间的`Http`交互的各阶段。这有助于理解`Runner`的执行原理。
 
