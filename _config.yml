@@ -13,7 +13,7 @@ timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: https://www.qqzeng.top
+url: https://qtozeng.top
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -80,6 +80,9 @@ theme: next
 deploy:
 - type: git
   repo: git@github.com:qqzeng/qqzeng.github.io.git
+  branch: master
+- type: git
+  repo: git@git.dev.tencent.com:qqzeng/qqzeng.git
   branch: master
 - type: baidu_url_submitter ## 添加这里内容即可
 
