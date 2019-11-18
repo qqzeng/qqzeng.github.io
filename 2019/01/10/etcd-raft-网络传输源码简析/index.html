@@ -97,7 +97,7 @@
 <meta name="keywords" content="分布式系统,网络传输">
 <meta property="og:type" content="article">
 <meta property="og:title" content="etcd-raft 网络传输源码简析">
-<meta property="og:url" content="https://www.qqzeng.top/2019/01/10/etcd-raft-网络传输源码简析/index.html">
+<meta property="og:url" content="https://qtozeng.com/2019/01/10/etcd-raft-网络传输源码简析/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上一篇文章简单分析了etcd raftexample的源码。我们知道，etcd raft只实现了raft协议核心部分，而将诸如日志、快照及消息的网络传输交给应用来管理。本文会简单分析raft集群用来实现消息在节点之间传输部分的相关逻辑。因为etcd raft会在节点之间传递各种消息指令，包括日志复制、快照拷贝等，这都需要通过应用来将对应的消息转发到集群中其它节点。简单而言，raft实现的节点之间的">
 <meta property="og:locale" content="zh-Hans">
@@ -134,7 +134,7 @@
 
 
 
-  <link rel="canonical" href="https://www.qqzeng.top/2019/01/10/etcd-raft-网络传输源码简析/">
+  <link rel="canonical" href="https://qtozeng.com/2019/01/10/etcd-raft-网络传输源码简析/">
 
 
 
@@ -309,7 +309,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://www.qqzeng.top/2019/01/10/etcd-raft-网络传输源码简析/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/01/10/etcd-raft-网络传输源码简析/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="qqzeng">
@@ -850,7 +850,7 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://www.qqzeng.top/2019/01/10/etcd-raft-网络传输源码简析/';
+          this.page.url = 'https://qtozeng.com/2019/01/10/etcd-raft-网络传输源码简析/';
           this.page.identifier = '2019/01/10/etcd-raft-网络传输源码简析/';
           this.page.title = 'etcd-raft 网络传输源码简析';
         };

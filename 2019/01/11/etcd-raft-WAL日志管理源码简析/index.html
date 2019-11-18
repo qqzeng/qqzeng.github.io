@@ -97,7 +97,7 @@
 <meta name="keywords" content="分布式系统,WAL 日志">
 <meta property="og:type" content="article">
 <meta property="og:title" content="etcd-raft WAL日志管理源码简析">
-<meta property="og:url" content="https://www.qqzeng.top/2019/01/11/etcd-raft-WAL日志管理源码简析/index.html">
+<meta property="og:url" content="https://qtozeng.com/2019/01/11/etcd-raft-WAL日志管理源码简析/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上一篇文章简单分析了etcd-raft 网络传输组件相关的源码。本文会简要分析etcd-raft WAL日志管理部分的源码。WAL(Write-Ahead Logging)即为预写式日志，即在真正执行写操作之前先写日志，这在数据库系统和分布式系统领域很常见。它是为了保证数据的可靠写。日志对于利用一致性协议构建高可用的分布式系统而言至关重要，在etcd raft中，日志也会在各节点之间同步。并且et">
 <meta property="og:locale" content="zh-Hans">
@@ -134,7 +134,7 @@
 
 
 
-  <link rel="canonical" href="https://www.qqzeng.top/2019/01/11/etcd-raft-WAL日志管理源码简析/">
+  <link rel="canonical" href="https://qtozeng.com/2019/01/11/etcd-raft-WAL日志管理源码简析/">
 
 
 
@@ -309,7 +309,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://www.qqzeng.top/2019/01/11/etcd-raft-WAL日志管理源码简析/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/01/11/etcd-raft-WAL日志管理源码简析/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="qqzeng">
@@ -881,7 +881,7 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://www.qqzeng.top/2019/01/11/etcd-raft-WAL日志管理源码简析/';
+          this.page.url = 'https://qtozeng.com/2019/01/11/etcd-raft-WAL日志管理源码简析/';
           this.page.identifier = '2019/01/11/etcd-raft-WAL日志管理源码简析/';
           this.page.title = 'etcd-raft WAL日志管理源码简析';
         };
