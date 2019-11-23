@@ -2005,7 +2005,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  6,559
+                  6,876
                 </span>
               words
 
@@ -2021,7 +2021,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  29
+                  30
                 </span>
               mins
             </div>
@@ -2043,7 +2043,7 @@
 
       
         
-          <p>最近集中了解了<code>ZAB</code>、<code>Raft</code>及<code>Paxos</code>协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现<code>Raft</code>协议，并基于<code>Raft</code>构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的<code>Raft</code>协议的实现内幕，故选择<code>etcd</code>进行解读。<code>etcd</code>是 CoreOS 基于<code>Raft</code>协议使用 go 开发的分布式 kv 存储系统，可用于服务发现、共享配置及其它利用一致性保障的功能（如<code>leader</code>选举及分布式锁、队列等）。这些功能<code>ZooKeeper</code>不也有提供？没错。它们都可以作为其它分布式应用的独立协调服务，这通过通用的一致性元信息存储来实现。但在易用性上，<code>etcd</code>可谓略胜一筹。因此，后续的一系列博客会简单对<code>etcd</code>各重要组成部分的源码进行简要分析（重点在<code>Raft</code>实现）。本文主要是分析<code>etcd</code>的<code>raftexample</code>的代码。它是<code>etcd</code>官方提供的如何使用<code>etcd</code>内部的<code>Raft</code>协议组件来构建分布式应用的一个简单示例。</p>
+          <p>最近集中了解了<code>ZAB</code>、<code>Raft</code>及<code>Paxos</code>协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现<code>Raft</code>协议，并基于<code>Raft</code>构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的<code>Raft</code>协议的实现内幕，故选择<code>etcd</code>进行解读。<code>etcd</code>是 CoreOS 基于<code>Raft</code>协议使用 go 开发的分布式 kv 存储系统，可用于服务发现、共享配置及其它利用一致性保障的功能（如<code>leader</code>选举及分布式锁、队列等）。这些功能<code>ZooKeeper</code>不也有提供？没错。它们都可以作为其它分布式应用的独立协调服务，这通过通用的一致性元信息存储来实现。但在易用性上，<code>etcd</code>可谓略胜一筹。因此，后续的一系列博客会简单对<code>etcd</code>各重要组成部分的源码进行简要分析（重点在<code>Raft</code>实现）。本文主要是分析<code>etcd</code>的<code>raftexample</code>的代码。它是<code>etcd</code>官方提供的如何使用<code>etcd</code>内部的<code>Raft</code>协议组件来构建分布式应用的一个简单示例最近集中了解了<code>ZAB</code>、<code>Raft</code>及<code>Paxos</code>协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现<code>Raft</code>协议，并基于<code>Raft</code>构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的<code>Raft</code>协议的实现内幕，故选择<code>etcd</code>进行解读。<code>etcd</code>是 CoreOS 基于<code>Raft</code>协议使用 go 开发的分布式 kv 存储系统，可用于服务发现、共享配置及其它利用一致性保障的功能（如<code>leader</code>选举及分布式锁、队列等）。这些功能<code>ZooKeeper</code>不也有提供？没错。它们都可以作为其它分布式应用的独立协调服务，这通过通用的一致性元信息存储来实现。但在易用性上，<code>etcd</code>可谓略胜一筹。因此，后续的一系列博客会简单对<code>etcd</code>各重要组成部分的源码进行简要分析（重点在<code>Raft</code>实现）。本文主要是分析<code>etcd</code>的<code>raftexample</code>的代码。它是<code>etcd</code>官方提供的如何使用<code>etcd</code>内部的<code>Raft</code>协议组件来构建分布式应用的一个简单示。</p>
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2019/01/09/etcd-raftexample-源码简析/#more" rel="contents">
@@ -2417,7 +2417,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">152.5k</span>
+    <span title="Site words total count">152.8k</span>
   
 </div>
 
