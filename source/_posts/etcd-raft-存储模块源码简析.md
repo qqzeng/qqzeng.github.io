@@ -262,7 +262,7 @@ func (ms *MemoryStorage) Append(entries []pb.Entry) error {
 	} // raft.go
 ```
 
-同样，重点关注与`memoryStorage`相关的逻辑（其余的逻辑在【[etcd raftexample 源码简析](https://qqzeng.top/2019/01/09/etcd-raftexample-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)】中已阐述）。在步骤 3 中，当`Ready`结构中的快照不为空时，需要保存快照至一系列地方。其中步骤 3.1 的调用代码如下：
+同样，重点关注与`memoryStorage`相关的逻辑（其余的逻辑在【[etcd raftexample 源码简析](https://qtozeng.top/2019/01/09/etcd-raftexample-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)】中已阐述）。在步骤 3 中，当`Ready`结构中的快照不为空时，需要保存快照至一系列地方。其中步骤 3.1 的调用代码如下：
 
 ```go
 func (rc *raftNode) saveSnap(snap raftpb.Snapshot) error {
@@ -770,7 +770,7 @@ func (r *raft) maybeSendAppend(to uint64, sendIfEmpty bool) bool {
 
 ##### follower 节点追加日志
 
-在分析具体的`follower`节点追加`leader`节点给它发送的消息中的日志之前，我们把这个过程阐述得更完整一些。当应用程序调用`transport`网络传输组件将`MsgApp`类型的消息由传至`follower`节点时，更准确而言，`transport`组件的接收器在接收到消息后，会调用其`Raft`组件的`Process()`方法（此部分逻辑不再展示相关代码，在上上篇文章【[etcd-raft 网络传输源码简析](https://qqzeng.top/2019/01/10/etcd-raft-%E7%BD%91%E7%BB%9C%E4%BC%A0%E8%BE%93%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)】中包含了此部分逻辑）。而应用程序会实现此`Process()`接口，在`raftexample`示例程序中，其实现逻辑也较为简单：
+在分析具体的`follower`节点追加`leader`节点给它发送的消息中的日志之前，我们把这个过程阐述得更完整一些。当应用程序调用`transport`网络传输组件将`MsgApp`类型的消息由传至`follower`节点时，更准确而言，`transport`组件的接收器在接收到消息后，会调用其`Raft`组件的`Process()`方法（此部分逻辑不再展示相关代码，在上上篇文章【[etcd-raft 网络传输源码简析](https://qtozeng.top/2019/01/10/etcd-raft-%E7%BD%91%E7%BB%9C%E4%BC%A0%E8%BE%93%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)】中包含了此部分逻辑）。而应用程序会实现此`Process()`接口，在`raftexample`示例程序中，其实现逻辑也较为简单：
 
 ```go
 func (rc *raftNode) Process(ctx context.Context, m raftpb.Message) error {

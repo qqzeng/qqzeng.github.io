@@ -20,7 +20,7 @@ tags:
 
 ## 利用 svc 启动进程
 
-同[`nsqlookupd`进程启动](https://qqzeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E5%88%A9%E7%94%A8-svc-%E5%90%AF%E5%8A%A8%E8%BF%9B%E7%A8%8B)类似，`nsqd`进程的启动，同样是简单包装 [`svc`](https://github.com/judwhite/go-svc/svc)的`Run`方法以启动一个进程（守护进程或服务），然后在 `svc.Run` 方法中依次调用 `Init` 和 `Start` 方法，并阻塞直到接收到 `SIGINT`或`SIGTERM`，最后调用 `stop`方法后退出进程。更多可以查看 `golang` 标准包的`signal.Notify`以及`svc`包是如何协助启动一个进程。启动过程中，首先加载、设置并解析配置参数实例`opts`，然后由此配置实例化`NSQD`。接下来调用`nsqd`的`LoadMetaData`方法加载元数据信息，所谓的元数据信息即包括了`nsqd`所维护的`topic`及`channel`信息（重点是其名称及`paused`状态）。加载完成后，立即就重新将元信息存盘（个人暂时也没完全想明白原因 `#TODO`）。最后异步调用`nsqd.Main`方法完成启动过程的核心逻辑，同时在退出时先调用了`nsqd.Exit`方法。下面对这些过程一一展开叙述。启动过程代码如下：
+同[`nsqlookupd`进程启动](https://qtozeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E5%88%A9%E7%94%A8-svc-%E5%90%AF%E5%8A%A8%E8%BF%9B%E7%A8%8B)类似，`nsqd`进程的启动，同样是简单包装 [`svc`](https://github.com/judwhite/go-svc/svc)的`Run`方法以启动一个进程（守护进程或服务），然后在 `svc.Run` 方法中依次调用 `Init` 和 `Start` 方法，并阻塞直到接收到 `SIGINT`或`SIGTERM`，最后调用 `stop`方法后退出进程。更多可以查看 `golang` 标准包的`signal.Notify`以及`svc`包是如何协助启动一个进程。启动过程中，首先加载、设置并解析配置参数实例`opts`，然后由此配置实例化`NSQD`。接下来调用`nsqd`的`LoadMetaData`方法加载元数据信息，所谓的元数据信息即包括了`nsqd`所维护的`topic`及`channel`信息（重点是其名称及`paused`状态）。加载完成后，立即就重新将元信息存盘（个人暂时也没完全想明白原因 `#TODO`）。最后异步调用`nsqd.Main`方法完成启动过程的核心逻辑，同时在退出时先调用了`nsqd.Exit`方法。下面对这些过程一一展开叙述。启动过程代码如下：
 
 ```go
 type program struct {  
@@ -341,7 +341,7 @@ func (n *NSQD) Main() error {
 
 ## nsqd 开启 nsqlookupd 查询过程
 
-这一小节介绍`NSQD.lookupLoop`方法，它代表`nsqd`开启`nsqlookupd`查询过程（这在[一篇文章](https://qqzeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)有介绍）。在`nsqd`刚创建时，通过读取配置文件中所配置的`nsqlookupd`实例地址(`nsqlookupd_tcp_addresses`)集合（一个`nsqd`可连接到多个`nsqlookupd`实例），建立对应的网络连接的抽象实体(`lookupPeer`实例)，设置自己的状态为`stateDisconnected`，同时传入连接建立成功后的一个回调函数(`connectCallback`)。接下来，则调用`lookupPeer.Command`方法向指定`nsqlookupd`发起连接建立过程。此时，连接建立成功后，立即向对方发送一个`MagicV1`的消息以声明自己的通信协议版本（官方称这有用于协议升级），并忽略响应。并判断若此前的连接状态为`stateDisconnected`，则调用其连接成功的回调函数`connectCallback`。上述逻辑相关的代码如下：
+这一小节介绍`NSQD.lookupLoop`方法，它代表`nsqd`开启`nsqlookupd`查询过程（这在[一篇文章](https://qtozeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)有介绍）。在`nsqd`刚创建时，通过读取配置文件中所配置的`nsqlookupd`实例地址(`nsqlookupd_tcp_addresses`)集合（一个`nsqd`可连接到多个`nsqlookupd`实例），建立对应的网络连接的抽象实体(`lookupPeer`实例)，设置自己的状态为`stateDisconnected`，同时传入连接建立成功后的一个回调函数(`connectCallback`)。接下来，则调用`lookupPeer.Command`方法向指定`nsqlookupd`发起连接建立过程。此时，连接建立成功后，立即向对方发送一个`MagicV1`的消息以声明自己的通信协议版本（官方称这有用于协议升级），并忽略响应。并判断若此前的连接状态为`stateDisconnected`，则调用其连接成功的回调函数`connectCallback`。上述逻辑相关的代码如下：
 
 ```go
 // 开启 lookup 循环
@@ -601,7 +601,7 @@ exit:
 
 ## nsqd 的 tcp & http 连接处理器
 
-`nsqd`为客户端（包括生产者和消费者）建立的`tcp/http`连接的请求处理器的逻辑，和`nsqlookupd`为客户端（包括`nsqd`和消费者）建立的`tcp/http`连接请求处理器是类似的。因此这里不会详细阐述。可参考[这里](https://qqzeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#tcp-amp-http-%E8%AF%B7%E6%B1%82%E5%A4%84%E7%90%86)。另外，监听`tcp`连接请求的处理器（用于`accpet`连接）与`nsqlookupd`的建立的都是`tcpServer`，另外，当`accpet`到连接后，首先从连接中读取一个`4byte`的协议版本号，且目前源码中只支持`V2`，真正处理连接请求的方法为`protocolV2.IOLoop`。而`http`连接请求，则同样复用`httprouter`作为请求路由器。
+`nsqd`为客户端（包括生产者和消费者）建立的`tcp/http`连接的请求处理器的逻辑，和`nsqlookupd`为客户端（包括`nsqd`和消费者）建立的`tcp/http`连接请求处理器是类似的。因此这里不会详细阐述。可参考[这里](https://qtozeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#tcp-amp-http-%E8%AF%B7%E6%B1%82%E5%A4%84%E7%90%86)。另外，监听`tcp`连接请求的处理器（用于`accpet`连接）与`nsqlookupd`的建立的都是`tcpServer`，另外，当`accpet`到连接后，首先从连接中读取一个`4byte`的协议版本号，且目前源码中只支持`V2`，真正处理连接请求的方法为`protocolV2.IOLoop`。而`http`连接请求，则同样复用`httprouter`作为请求路由器。
 
 ### tcp 连接处理器
 

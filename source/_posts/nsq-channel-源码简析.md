@@ -132,7 +132,7 @@ func (pq *PriorityQueue) PeekAndShift(max int64) (*Item, int64) {
 
 ## 创建 topic 实例
 
-`channel`的构造方法同`topic`的构造方法所涉及的逻辑非常相似，只不过`channel`还初始化了前面阐述的两个用于存储发送消息的优先级队列`inFlightPQ`和`deferredPQ`。因此就不再阐述，读者若需参考，可以看[这里](https://qqzeng.top/2019/05/14/nsq-topic-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E5%88%9B%E5%BB%BA-topic-%E5%AE%9E%E4%BE%8B)。注意，它同样会通过`nsqd.Notify`通知`nsqlookupd`有新的`channel`创建，因此需要重新调用`PersistMetadata`以持久化元数据。（方法调用链为：`NewChannel->nsqd.Notify->nsqd.lookupLoop->nsqd.PersistMetadata`）相关代码如下：
+`channel`的构造方法同`topic`的构造方法所涉及的逻辑非常相似，只不过`channel`还初始化了前面阐述的两个用于存储发送消息的优先级队列`inFlightPQ`和`deferredPQ`。因此就不再阐述，读者若需参考，可以看[这里](https://qtozeng.top/2019/05/14/nsq-topic-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E5%88%9B%E5%BB%BA-topic-%E5%AE%9E%E4%BE%8B)。注意，它同样会通过`nsqd.Notify`通知`nsqlookupd`有新的`channel`创建，因此需要重新调用`PersistMetadata`以持久化元数据。（方法调用链为：`NewChannel->nsqd.Notify->nsqd.lookupLoop->nsqd.PersistMetadata`）相关代码如下：
 
 ```go
 // channel 构造函数
@@ -190,7 +190,7 @@ func NewChannel(topicName string, channelName string, ctx *context,
 
 ## 删除或关闭 channel 实例
 
-删除(`Delete`)或者关闭(`Close`)`channel`实例的方法逻辑同`topic`也非常类似。相似部分不多阐述，读者若需要参考，可以看[这里](https://qqzeng.top/2019/05/14/nsq-topic-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E5%88%A0%E9%99%A4%E6%88%96%E5%85%B3%E9%97%AD-topic-%E5%AE%9E%E4%BE%8B)。这里重点阐述两个不同点：其一，无论是关闭还是删除`channel`都会显式地将订阅了此`channel`的客户端强制关闭（当然是关闭客户端在服务端的实体）；其二，关闭和删除`channel`都会显式刷新`channel`，即将`channel`所维护的三个消息队列：内存消息队列`memoryMsgChan`、正在发送的优先级消息队列`inFlightPQ`以及被推迟发送的优先级消息队列`deferredPQ`，将它们的消息显式写入到持久化存储消息队列。
+删除(`Delete`)或者关闭(`Close`)`channel`实例的方法逻辑同`topic`也非常类似。相似部分不多阐述，读者若需要参考，可以看[这里](https://qtozeng.top/2019/05/14/nsq-topic-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E5%88%A0%E9%99%A4%E6%88%96%E5%85%B3%E9%97%AD-topic-%E5%AE%9E%E4%BE%8B)。这里重点阐述两个不同点：其一，无论是关闭还是删除`channel`都会显式地将订阅了此`channel`的客户端强制关闭（当然是关闭客户端在服务端的实体）；其二，关闭和删除`channel`都会显式刷新`channel`，即将`channel`所维护的三个消息队列：内存消息队列`memoryMsgChan`、正在发送的优先级消息队列`inFlightPQ`以及被推迟发送的优先级消息队列`deferredPQ`，将它们的消息显式写入到持久化存储消息队列。
 
 ```go
 // 删除此 channel，清空所有消息，然后关闭

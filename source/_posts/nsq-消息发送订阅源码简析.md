@@ -481,7 +481,7 @@ func (p *protocolV2) PUB(client *clientV2, params [][]byte) ([]byte, error) {
 
 ### 消费者订阅消息
 
-当消费者通过`tcp`发送订阅消息的请求时，请求同样是首先从`protocolV2.IOLoop`方法中被接收，然后交由`Exec`方法处理。最后进入到`SUB`方法的流程，它首先执行必要的请求校验工作，其中容易被忽略的一点是，只有当`client`处于`stateInit`状态才能订阅某个`topic`的`channel`，换言之，当一个`client`订阅了某个`channel`后，它的状态会被更新为`stateSubscribed`，因此不能再订阅其它`channel`了。总而言之，**一个 `client`同一时间只能订阅一个`channel`**。之后，获取并校验订阅的`topic`名称、`channel`名称，然后，客户端是否有订阅的权限，权限检查通过后，通过`topic`和`channel`名称获取对应的实例，并将此`client`实例添加到其订阅的`channel`的客户端集合中。最后，也是最关键的步骤是，它将订阅的`channel`实例传递给了`client`，同时将`channel`发送到了`client.SubEventChan`管道中，因此在`protocolV2.messagePump`方法中就能够根据，此客户端可以利用`channel.memoryMsgChan`和`channel.backend`来获取`channel`实例从`topic`实例接收到的消息，具体过程可以参考[这里](https://qqzeng.top/2019/05/13/nsq-nsqd-%E6%9C%8D%E5%8A%A1%E5%90%AF%E5%8A%A8%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E6%B6%88%E6%81%AF%E5%8F%91%E9%80%81%E5%A4%84%E7%90%86)。
+当消费者通过`tcp`发送订阅消息的请求时，请求同样是首先从`protocolV2.IOLoop`方法中被接收，然后交由`Exec`方法处理。最后进入到`SUB`方法的流程，它首先执行必要的请求校验工作，其中容易被忽略的一点是，只有当`client`处于`stateInit`状态才能订阅某个`topic`的`channel`，换言之，当一个`client`订阅了某个`channel`后，它的状态会被更新为`stateSubscribed`，因此不能再订阅其它`channel`了。总而言之，**一个 `client`同一时间只能订阅一个`channel`**。之后，获取并校验订阅的`topic`名称、`channel`名称，然后，客户端是否有订阅的权限，权限检查通过后，通过`topic`和`channel`名称获取对应的实例，并将此`client`实例添加到其订阅的`channel`的客户端集合中。最后，也是最关键的步骤是，它将订阅的`channel`实例传递给了`client`，同时将`channel`发送到了`client.SubEventChan`管道中，因此在`protocolV2.messagePump`方法中就能够根据，此客户端可以利用`channel.memoryMsgChan`和`channel.backend`来获取`channel`实例从`topic`实例接收到的消息，具体过程可以参考[这里](https://qtozeng.top/2019/05/13/nsq-nsqd-%E6%9C%8D%E5%8A%A1%E5%90%AF%E5%8A%A8%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/#%E6%B6%88%E6%81%AF%E5%8F%91%E9%80%81%E5%A4%84%E7%90%86)。
 
 ```go
 // 客户端在指定的 topic 上订阅消息
@@ -690,13 +690,13 @@ func (c *Channel) RequeueMessage(clientID int64, id MessageID, timeout time.Dura
 
 简单小结，本文的重点在两个方面：`topic`消息处理逻辑，即消息是如何从`topic`实例流向`channel`实例的，实际上就是将从`topic.memoryMsgChan`或`topic.backend`收到的消息的副本依次压入到其关联的`channel`的`in-flight queue`（对于正常的消息）或者`deferred queue`（对于延时消息）。另一个方面，`nsqd`消息处理处理逻辑，`nsqd`负责`in-flight queue`中的消息超时的处理工作，以及`deferred queue`中的消息延时时间已到的处理工作。另外，也阐述了一些有关客户端的命令请求的核心处理逻辑，包括生产者发布消息的流程，消费者订阅消息，以及发送`RDY/FIN/REQ`命令请求的实现逻辑。
 
-至此，整个`nsq`实时消息队列的源码基本已经分析完毕，总共包括[6篇文章](https://qqzeng.top/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/)。这里简单总结：
-1. [nsq 简介和特性理解](https://qqzeng.top/2019/05/11/nsq-%E7%AE%80%E4%BB%8B%E5%92%8C%E7%89%B9%E6%80%A7%E7%90%86%E8%A7%A3/)简要介绍`nsq`的各个组件及系统的核心工作流程，并重点阐述几个值得关注的特性；
-2. [nsq nsqlookupd 源码简析](https://qqzeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)是以`nsqlookupd`命令为切入点，详细阐述`nsqlookupd`启动过程，其重点在于分析`nsqlookupd`的`tcp`请求处理器的相关逻辑，并梳理了`topic`查询和创建这两个典型的流程；
-3. [nsq nsqd 服务启动源码简析](https://qqzeng.top/2019/05/13/nsq-nsqd-%E6%9C%8D%E5%8A%A1%E5%90%AF%E5%8A%A8%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)同样是以`nsqd`命令为切入点，行文逻辑同上一篇类似，即阐述`nsqd`服务启动的一系列流程，并详述`nsqd`与`nsqlookupd`交互的主循环逻辑，以及`nsqd`为客户端建立的`tcp`请求处理器；
-4. [nsq topic 源码简析](https://qqzeng.top/2019/05/14/nsq-topic-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)内容相对简单，以`topic`为核心，阐述`topic`实例结构组成以及`topic`实例的创建、删除、关闭和查询流程；
-5. [nsq channel 源码简析](https://qqzeng.top/2019/05/14/nsq-channel-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)文章的行文同上一篇文章类似，以`channel`为核心，阐述`channel`实例结构组成以及`channel`实例的创建、删除、关闭和查询流程，并附带分析了`Message`实例结构；
-6. [nsq 消息发送订阅源码简析](https://qqzeng.top/2019/05/15/nsq-%E6%B6%88%E6%81%AF%E5%8F%91%E9%80%81%E8%AE%A2%E9%98%85%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)，是这一系列文章中最重要的一篇，它对于理解`nsq`分布式实时消息消息队列的关键工作原理至关重要。它重点阐述`topic`实例如何将消息发送给它所关联的`channel`集合，以及`nsqd`实例如何处理消息处理超时和被延迟的消息处理。另外，简要分析了客户端执行的几条命令请求，如生产者发布消息流程和消费者订阅消息流程。
+至此，整个`nsq`实时消息队列的源码基本已经分析完毕，总共包括[6篇文章](https://qtozeng.top/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/)。这里简单总结：
+1. [nsq 简介和特性理解](https://qtozeng.top/2019/05/11/nsq-%E7%AE%80%E4%BB%8B%E5%92%8C%E7%89%B9%E6%80%A7%E7%90%86%E8%A7%A3/)简要介绍`nsq`的各个组件及系统的核心工作流程，并重点阐述几个值得关注的特性；
+2. [nsq nsqlookupd 源码简析](https://qtozeng.top/2019/05/12/nsq-nsqlookupd-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)是以`nsqlookupd`命令为切入点，详细阐述`nsqlookupd`启动过程，其重点在于分析`nsqlookupd`的`tcp`请求处理器的相关逻辑，并梳理了`topic`查询和创建这两个典型的流程；
+3. [nsq nsqd 服务启动源码简析](https://qtozeng.top/2019/05/13/nsq-nsqd-%E6%9C%8D%E5%8A%A1%E5%90%AF%E5%8A%A8%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)同样是以`nsqd`命令为切入点，行文逻辑同上一篇类似，即阐述`nsqd`服务启动的一系列流程，并详述`nsqd`与`nsqlookupd`交互的主循环逻辑，以及`nsqd`为客户端建立的`tcp`请求处理器；
+4. [nsq topic 源码简析](https://qtozeng.top/2019/05/14/nsq-topic-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)内容相对简单，以`topic`为核心，阐述`topic`实例结构组成以及`topic`实例的创建、删除、关闭和查询流程；
+5. [nsq channel 源码简析](https://qtozeng.top/2019/05/14/nsq-channel-%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)文章的行文同上一篇文章类似，以`channel`为核心，阐述`channel`实例结构组成以及`channel`实例的创建、删除、关闭和查询流程，并附带分析了`Message`实例结构；
+6. [nsq 消息发送订阅源码简析](https://qtozeng.top/2019/05/15/nsq-%E6%B6%88%E6%81%AF%E5%8F%91%E9%80%81%E8%AE%A2%E9%98%85%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/)，是这一系列文章中最重要的一篇，它对于理解`nsq`分布式实时消息消息队列的关键工作原理至关重要。它重点阐述`topic`实例如何将消息发送给它所关联的`channel`集合，以及`nsqd`实例如何处理消息处理超时和被延迟的消息处理。另外，简要分析了客户端执行的几条命令请求，如生产者发布消息流程和消费者订阅消息流程。
 
 完整的源码注释可以参考[这里](https://github.com/qqzeng/nsqio/tree/master/nsq)。考虑到个人能力有限，因此无论文章内容或源码注释存在错误，欢迎留言指正！
 
