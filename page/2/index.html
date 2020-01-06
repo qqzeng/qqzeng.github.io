@@ -308,6 +308,195 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/05/12/nsq-nsqlookupd-源码简析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/05/12/nsq-nsqlookupd-源码简析/" itemprop="url">nsq nsqlookupd 源码简析</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-12T10:17:39+08:00">
+                2019-05-12
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/消息队列/" itemprop="url" rel="index">
+                    <span itemprop="name">消息队列</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/05/12/nsq-nsqlookupd-源码简析/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/05/12/nsq-nsqlookupd-源码简析/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  7,940
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  36
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>上一篇文章简要介绍了<code>nsq</code>以及它的几个值得注意的特性，以对<code>nsq</code>有大体认识，并在整体上把握<code>nsq</code>的工作流程。这对于后面的源码分析工作会有帮助。本文重点阐述<code>nsqlookup</code>组件设计实现相关的源码。<code>nsqlookupd</code>是一个中心管理服务，负责管理集群(<code>nsqd</code>)的拓扑信息，并且为客户端（消费者）提供最终一致性的发现服务。具体而言，<code>nsqlookupd</code>用作解耦消费者和生产者(<code>nsqd</code>)。因为<code>nsqd</code>节点会将<code>topic</code>和<code>channel</code>的信息通过<code>tcp</code>广播到<code>nsqlookupd</code>节点（允许水平扩展）以实施服务注册，而客户端或<code>nsqadmin</code>通过<code>http</code>接口查询<code>nsqlookupd</code>来发现指定<code>topic</code>的生产者。引入<code>nsqlookupd</code>使得整个系统的模块更加清晰，且维护起来更加方便。值得注意的是，<code>nsqlookupd</code>本身对存储在其上的数据不做任何持久化。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/05/12/nsq-nsqlookupd-源码简析/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/05/11/nsq-简介和特性理解/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -2073,206 +2262,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/01/09/etcd-raftexample-源码简析/">
-
-    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="qqzeng">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/01/09/etcd-raftexample-源码简析/" itemprop="url">etcd raftexample 源码简析</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-09T19:55:11+08:00">
-                2019-01-09
-              </time>
-            
-
-            
-
-            
-
-
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式系统</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/分布式协调服务/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式协调服务</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2019/01/09/etcd-raftexample-源码简析/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/01/09/etcd-raftexample-源码简析/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  6,876
-                </span>
-              words
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  30
-                </span>
-              mins
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>最近集中了解了<code>ZAB</code>、<code>Raft</code>及<code>Paxos</code>协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现<code>Raft</code>协议，并基于<code>Raft</code>构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的<code>Raft</code>协议的实现内幕，故选择<code>etcd</code>进行解读。<code>etcd</code>是 CoreOS 基于<code>Raft</code>协议使用 go 开发的分布式 kv 存储系统，可用于服务发现、共享配置及其它利用一致性保障的功能（如<code>leader</code>选举及分布式锁、队列等）。这些功能<code>ZooKeeper</code>不也有提供？没错。它们都可以作为其它分布式应用的独立协调服务，这通过通用的一致性元信息存储来实现。但在易用性上，<code>etcd</code>可谓略胜一筹。因此，后续的一系列博客会简单对<code>etcd</code>各重要组成部分的源码进行简要分析（重点在<code>Raft</code>实现）。本文主要是分析<code>etcd</code>的<code>raftexample</code>的代码。它是<code>etcd</code>官方提供的如何使用<code>etcd</code>内部的<code>Raft</code>协议组件来构建分布式应用的一个简单示例最近集中了解了<code>ZAB</code>、<code>Raft</code>及<code>Paxos</code>协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现<code>Raft</code>协议，并基于<code>Raft</code>构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的<code>Raft</code>协议的实现内幕，故选择<code>etcd</code>进行解读。<code>etcd</code>是 CoreOS 基于<code>Raft</code>协议使用 go 开发的分布式 kv 存储系统，可用于服务发现、共享配置及其它利用一致性保障的功能（如<code>leader</code>选举及分布式锁、队列等）。这些功能<code>ZooKeeper</code>不也有提供？没错。它们都可以作为其它分布式应用的独立协调服务，这通过通用的一致性元信息存储来实现。但在易用性上，<code>etcd</code>可谓略胜一筹。因此，后续的一系列博客会简单对<code>etcd</code>各重要组成部分的源码进行简要分析（重点在<code>Raft</code>实现）。本文主要是分析<code>etcd</code>的<code>raftexample</code>的代码。它是<code>etcd</code>官方提供的如何使用<code>etcd</code>内部的<code>Raft</code>协议组件来构建分布式应用的一个简单示。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/01/09/etcd-raftexample-源码简析/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2323,7 +2312,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-count">32</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2406,7 +2395,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">157.5k</span>
+    <span title="Site words total count">160.4k</span>
   
 </div>
 
