@@ -28,19 +28,19 @@ tags:
 
 根据磁盘自身的构造特点，`FFS`首先将整个磁盘划分成一组`cylinder group`，其中`cylinder group`是由若干个相邻的`cylinder`构成。下面是一个示意图。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578319315/blog/ffs-cylinder-group_rlu6wc.png" alt="磁盘的 cylinder group 结构" style="zoom:50%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-cylinder-group_jbeomr.png" alt="磁盘的 cylinder group 结构" style="zoom:50%;" />
 
 但考虑到现代磁盘并没有将磁盘本身构造细节暴露给上层文件系统，因此文件系统也无法利用这些细节。但类似地，现代的一些文件系统（包括`ext2`、`ext3`和`ext4`）将整个磁盘抽象后的大数组划分为若干个`block group`，其中每个`block group`包含若干个连续数据块。换言之，文件系统将`cylinder group`抽象成`block group`，它是`FFS`提升文件访问效率的一个核心设计。而且，`FFS`将每个`block group`作为一个独立的区域，即其中包含了所存储文件相关的所有信息（同`vsfs`设计类似，包括`data blocks`、`inodes`、`i-bmap`、`d-bmap`和一个`superblock`）。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578319314/blog/ffs-block-group_z7kigq.png" alt="文件系统使用的 block group 结构" style="zoom:50%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-block-group_ioiafd.png" alt="文件系统使用的 block grouop 结构" style="zoom:67%;" />
 
 `FFS`引入`block group`的设计结构是为了优化数据块的布局方式。`FFS`对数据块的组织布局的核心原则是：`keep related stuff together`，即将相关的数据结构存储在一起。这主要包含两个方面：一对于同一文件其所涉及的数据结构存储在同一`block group`；另外，对于同一目录下的文件和目录项所涉及的数据结构存储在同一`block group`。以一个实例来阐述。比如存在四个文件`/a/c`、`/a/d`、`/a/e`和`/b/f`，那么`FFS`会将`a`、`c`、`d`和`e`存储到同一`block group`，而将`b`和`f`共同存储到另一个`block group`，示意图如下。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578319315/blog/ffs-layout-related_holhzg.png" alt="FFS 所改进的数据块布局方式" style="zoom:50%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-layout-related_sozltf.png" alt="FFS 所改进的数据块布局方式" style="zoom:50%;" />
 
 作为一个错误的设计示例。原有的旧的文件系统为了提升磁盘的利用空间，会尽量保证数据块的均匀分布，因此它更倾向于将不同的文件分散存储在不同的`block group`中。在这种情况下，当访问同一目录下的文件，会引发较多寻道操作，降低了访问效率。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578319315/blog/ffs-layout-mess.png_og2l6k.png" alt="一种糟糕的数据块布局方式" style="zoom:50%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-layout-mess.png_gjk3iz.png" alt="一种糟糕的数据块布局方式" style="zoom:50%;" />
 
 事实上，`FFS`所遵循的这两种数据块存放策略存在相应依据。换言之，文件系统的使用中存在大量的对应使用场景。一方面，将文件的`inode`及其对应`data blocks`存放在同一`block group`这是显然的。其次，同一目录下的文件通常会被同时访问，比如使用`gcc`编译项目目录下的源文件。本质上是因为同一目录下的文件或目录其相关性较大。
 

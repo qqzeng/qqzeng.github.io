@@ -40,11 +40,11 @@ tags:
 
 下面以一个实例来直观描述文件系统对硬盘抽象后的详细布局。下图是一个典型的简化后的磁盘布局，假设磁盘的数据块大小为 4kb，则从文件系统的角度而言，整个磁盘就是一个以 4kb 为寻址单位且总大小为 256kb（共64个数据块） 的数组。数组的后 56 个数据块作为`data`区域，`inodes`区域靠近`data`区域，占据 5 个数据块大小，共 20kb，假设一个`inode`的大小为  256b，那么一个块可以包含 16 个 `inode`，因此，整个`inodes`区域(`inode table`)包含了 80 个`inode`，这对于我们的实例是足够的（我们只有 64 个`data block`）。在`indoes`区域前的是`i-bmap`和`d-bmap`区域，各占 1 个数据块的大小。最后数组的第一个数据块被设置成`superblock`。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-disk-structure-layout-outline_ktfvzm.png" alt="vsfs 的磁盘布局" style="zoom:67%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578413457/blog/31-vsfs/vsfs-disk-structure-layout-outline_z8cwso.png" alt="vsfs 磁盘布局" style="zoom:67%;" />
 
 每个`inode`都有唯一编号，即`inode number`。且在`vsfs`中，通过`inode number`可以直接得出对应的`inode`所在磁盘位置。下图中，`inodes`从 12kb 位置开始直至 32kb 处，占据 5 个数据块空间。因此，若读取`inode number`为 32 的`inode`，则可通过`blk=(inumber * sizeof(inode_t))/blockSize` 得到起始的 `block`编号（相对于`inodes`区域的`block`编号），但考虑到物理磁盘通过扇区寻址，因此进一步计算，`sector=((blk*blockSize)+inodeStartAddr)/sectorSize`以得出最后的全局扇区编号。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-disk-structure-layout_jiku0x.png" alt="vsfs inode table布局" style="zoom:67%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578413459/blog/31-vsfs/vsfs-disk-structure-layout_us9zno.png" alt="vsfs inode 磁盘布局" style="zoom:67%;" />
 
 ### 关于 inode
 
@@ -66,13 +66,13 @@ tags:
 
 以一个简单的实例阐述。若文件系统读取一个大小为 12kb(3个数据块)的文件`/foo/bar`。读取过程所涉及的相应数据结构的操作类型及顺序如下图。几个关键点L：`/`目录所对应的`inode`的编号必须是全局的，因为一般的文件或目录的`inode`编号是通过在其父目录中检索得到，而考虑到`/`处在最顶级的层级，因此，其`inode`编号必须是全局的。另外，访问一个文件的某个数据块时，需要更新文件所对应的`inode`中存储的元数据信息（访问时间）。最后注意到，目标文件所处的层级越深，其访问也越耗时，因为理论上它需要一层层递归下去，而且在递归过程中，若某一目录所包含的项非常多，则会严重降低指定目录项的检索效率。但为了提高文件访问的效率，文件系统一般会采用缓存那些频繁访问的数据块。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-access-read_kearc3.png" alt="vsfs 文件读取流程" style="zoom:50%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578413458/blog/31-vsfs/vsfs-access-read_wvmans.png" alt="vsfs 文件读取流程" style="zoom:50%;" />
 
 ### 文件写入
 
 同样以一个简单的实例阐述。文件的写入流程和文件读取的流程存在相似部分。显然，文件首先需要被打开，因此定位文件的过程是类似的。写入文件可能涉及到新数据块分配，当然，也有可能是已有数据块被覆盖。如果考虑写入额外内容，则需要更新`d-bmap`和`inode`。具体而言，每次对文件写入新数据块，需要对`d-bmap`读取和写入各一次，对`inode`读取和写入各一次，以及对新数据块的写入操作。另外，若创建文件，则流程更为复杂，因为它涉及到文件所在目录的相关操作，比如在目录所关联的数据块中分配对应的`entry`记录。具体而言，对`d-bmap`读取和写入各一次，对文件所对应`inode`的写入，对文件所在目录所关联的数据块的写入，以及对文件所在的目录所对应的`inode`的读取和写入各一次，即总共包含了 5 次IO。而且可能还需要对创建后的文件写入新数据块。同文件读取类似，文件写入所需要的磁盘操作甚至更多，因此，大部分情况下，文件系统也会对文件的写入进行缓冲，以执行批量写入，批量写入也有助于磁盘调度器的调度优化。
 
-<img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-access-write_vqmw7i.png" alt="vsfs 文件创建流程" style="zoom:50%;" />
+<img src="https://res.cloudinary.com/turalyon/image/upload/v1578413457/blog/31-vsfs/vsfs-access-write_z5v5ql.png" alt="vsfs 文件创建流程" style="zoom:50%;" />
 
 简单小结。本文先指出关于磁盘本身的一些重要点，这是考虑到这些关键点与文件系统的设计，甚至上层应用程序对文件系统的使用密切相关。另外，从两个方面简单介绍了简单文件系统(`vsfs`)，其一是`vsfs`为了有效组织和管理磁盘上的数据，所采用的重要数据结构，其次结合这些数据结构，简单介绍文件读取和创建两个典型操作流程中对相应的数据结构的操作类型和顺序。理解这两点有助于对一个文件系统的原理的整体把握。本文的定位是一篇总结和启发性的文章（文章中的插图全部出自参考资料中的[1]），希望通过对一个极其简单的文件系统的了解，能够有助于学习那些更加先进复杂的文件系统。
 
