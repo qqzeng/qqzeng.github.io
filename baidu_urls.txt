@@ -1,3 +1,4 @@
+https://qtozeng.com/2020/01/07/简单文件系统的崩溃一致性和日志/
 https://qtozeng.com/2020/01/06/The-Fast-File-System/
 https://qtozeng.com/2020/01/05/简单文件系统-vsfs/
 https://qtozeng.com/2019/07/25/简析-GitLab-Runner/

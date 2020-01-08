@@ -101,15 +101,15 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="目前 unix/linux 所采用的文件系统类型，如ext2和ext3，甚至ext4都已经实现得较为完善成熟，其实现细节也比较复杂。但事实上，它们的实现也是经过一步步对已有文件系统的不足进行改进和扩展得来。本文内容指在简要阐述如何设计一个非常简单的文件系统Very Simple File System (vsfs)，它需要重点考虑的因素，以及一些设计准则。通过这个文件系统原型，抓住文件系统设计的核">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-disk-structure-layout-outline_ktfvzm.png">
-<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-disk-structure-layout_jiku0x.png">
-<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-access-read_kearc3.png">
-<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-access-write_vqmw7i.png">
-<meta property="og:updated_time" content="2020-01-06T14:07:09.809Z">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578413457/blog/31-vsfs/vsfs-disk-structure-layout-outline_z8cwso.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578413459/blog/31-vsfs/vsfs-disk-structure-layout_us9zno.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578413458/blog/31-vsfs/vsfs-access-read_wvmans.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578413457/blog/31-vsfs/vsfs-access-write_z5v5ql.png">
+<meta property="og:updated_time" content="2020-01-07T16:13:53.880Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="简单文件系统 vsfs">
 <meta name="twitter:description" content="目前 unix/linux 所采用的文件系统类型，如ext2和ext3，甚至ext4都已经实现得较为完善成熟，其实现细节也比较复杂。但事实上，它们的实现也是经过一步步对已有文件系统的不足进行改进和扩展得来。本文内容指在简要阐述如何设计一个非常简单的文件系统Very Simple File System (vsfs)，它需要重点考虑的因素，以及一些设计准则。通过这个文件系统原型，抓住文件系统设计的核">
-<meta name="twitter:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-disk-structure-layout-outline_ktfvzm.png">
+<meta name="twitter:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578413457/blog/31-vsfs/vsfs-disk-structure-layout-outline_z8cwso.png">
 
 
 
@@ -457,18 +457,18 @@
 <h2 id="基本数据结构"><a href="#基本数据结构" class="headerlink" title="基本数据结构"></a>基本数据结构</h2><p>首先了解一个典型的文件系统，为了存储用户数据，包含了哪些基本的数据结构，以及它们是如何被有有效组织的。</p>
 <h3 id="磁盘组织布局"><a href="#磁盘组织布局" class="headerlink" title="磁盘组织布局"></a>磁盘组织布局</h3><p>一个最简单的文件系统的布局是容易得到的。整个磁盘，准确而言是整个分区（因为不同分区可以挂载不同的文件系统，各分区独立）可划分成用户数据区(<code>data</code>)和元数据区(<code>inodes</code>)，数据区即存储实际数据块的磁盘区域，而元数据区则用来索引数据块和记录数据块元信息的磁盘区域（准确而言，索引的方式一般是通过指针，可以是多级指针；而元信息则包括时间类，文件权限类，以及文件大小等属性类）。为了重复使用<code>inodes</code>和<code>data</code>区域，需要使用一块区域来记录它们是否已被占用，常见是采用位图来完成，位图占用空间小，检索也方便，即使用<code>i-bmap</code>和<code>d-bmap</code>来分别跟踪<code>inodes</code>和<code>data</code>所包含区域的数据块的使用情况。最后对于一个文件系统而言，需要有一个关键的全局已知区域来存放文件系统级别的信息，即是超级块<code>superblock</code>，它存储的信息包括整个文件系统<code>data</code>和<code>inodes</code>所包含的数据块的数目以及它们各自的索引起始位置，另外也会存储一个<code>magic number</code>来检测文件系统类型。<code>superblock</code>至关重要，一旦损坏，则整个文件系统变为不可用，因为一些会多副本存储。另外，在整个文件系统正常工作前，需要先将<code>superblock</code>加载到内存，换言之，在系统挂载文件系统时，其首先将读取<code>superblock</code>的内容并初始化全局信息，然后才将文件系统的其它部分附加到系统文件系统层级树。</p>
 <h3 id="一个实例"><a href="#一个实例" class="headerlink" title="一个实例"></a>一个实例</h3><p>下面以一个实例来直观描述文件系统对硬盘抽象后的详细布局。下图是一个典型的简化后的磁盘布局，假设磁盘的数据块大小为 4kb，则从文件系统的角度而言，整个磁盘就是一个以 4kb 为寻址单位且总大小为 256kb（共64个数据块） 的数组。数组的后 56 个数据块作为<code>data</code>区域，<code>inodes</code>区域靠近<code>data</code>区域，占据 5 个数据块大小，共 20kb，假设一个<code>inode</code>的大小为  256b，那么一个块可以包含 16 个 <code>inode</code>，因此，整个<code>inodes</code>区域(<code>inode table</code>)包含了 80 个<code>inode</code>，这对于我们的实例是足够的（我们只有 64 个<code>data block</code>）。在<code>indoes</code>区域前的是<code>i-bmap</code>和<code>d-bmap</code>区域，各占 1 个数据块的大小。最后数组的第一个数据块被设置成<code>superblock</code>。</p>
-<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-disk-structure-layout-outline_ktfvzm.png" alt="vsfs 的磁盘布局" style="zoom:67%;"></p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578413457/blog/31-vsfs/vsfs-disk-structure-layout-outline_z8cwso.png" alt="vsfs 磁盘布局" style="zoom:67%;"></p>
 <p>每个<code>inode</code>都有唯一编号，即<code>inode number</code>。且在<code>vsfs</code>中，通过<code>inode number</code>可以直接得出对应的<code>inode</code>所在磁盘位置。下图中，<code>inodes</code>从 12kb 位置开始直至 32kb 处，占据 5 个数据块空间。因此，若读取<code>inode number</code>为 32 的<code>inode</code>，则可通过<code>blk=(inumber * sizeof(inode_t))/blockSize</code> 得到起始的 <code>block</code>编号（相对于<code>inodes</code>区域的<code>block</code>编号），但考虑到物理磁盘通过扇区寻址，因此进一步计算，<code>sector=((blk*blockSize)+inodeStartAddr)/sectorSize</code>以得出最后的全局扇区编号。</p>
-<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-disk-structure-layout_jiku0x.png" alt="vsfs inode table布局" style="zoom:67%;"></p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578413459/blog/31-vsfs/vsfs-disk-structure-layout_us9zno.png" alt="vsfs inode 磁盘布局" style="zoom:67%;"></p>
 <h3 id="关于-inode"><a href="#关于-inode" class="headerlink" title="关于 inode"></a>关于 inode</h3><p>关于<code>inode</code>的设计。即如何通过<code>inode</code>定位到对应的<code>data blocks</code>。最简单的方式即存储一个直接指针(<code>direct pointers</code>)，即对应的磁盘地址。但这种方式存在明显的局限性，考虑一个非常大的文件，其大小超过一个<code>inode</code>块所能索引总的数据块大小（约 4kb/256b <em> 4kb）。解决办法也很直接，使用多级指针，在这个实例中，若仅多考虑一个间接指针<code>indirect pointer</code>，且间级指针所指向的数据块中所包含的地址大小为 4b，且再加上一级指针所能索引的数据块的大小，即若一个<code>inode</code>包含 12 （典型的值）个<code>direct pointer</code>和 1 个<code>indirect pointer</code>，那么此<code>inode</code>所能索引的最大文件大小为 (12+4kb/4b) </em> 4kb = 4144kb。当然，在很多情况下，仍不能满足需求，则可考虑三级指针(<code>double indirect pointer</code>)，简单估算，可以索引的数据块的最大大小为 (12+4kb/4b+(4kb/4b <em> 4kb/4b))  </em> 4kb，可以看到这个大小已经非常大了。事实上，很多文件系统（包括<code>ext2</code>和<code>ext3</code>）都使用多级指针。另外，实际上在绝大部分使用场景中，一级指针已经完全够用，因为小文件在文件系统占主导地位（如 2kb），因此，为了更好地适应此种情形，一个<code>inode</code>包含典型的 12 个直接指针，能够直接索引 48kb 的文件大小，这已经可以满足大部分情况下的需求了。但为了应对极少部分的大文件存储，可以添加一个二级甚至三级指针。</p>
 <p>事实上，<code>inode</code>可以使用任何其它能够有效管理组织数据块元数据信息的数据结构来实现，另一种常见的是基于<code>extents</code>的实现方式，一个<code>extent</code>表示一个磁盘地址和一个表示数据块数目的整数，以此来索引一个文件。明显，基于<code>extents</code>的表示方式需要大量连续磁盘空间，且如果文件过大，也可能需要多个<code>extent</code>来表示，但相比基于<code>inode</code>的索引方式，基于<code>extents</code>的方式其元数据信息所占空间小，相对紧凑，因此访问效率可能更高。</p>
 <p>另一种用于实现<code>inode</code>的方式是使用链表(<code>linked-based</code>)，在这种情况下，我们只需要一个指针指向文件所包含的第一个数据块。但此种方式的缺点很明显，访问文件指定部分时，相当于要遍历整个链表。因此，对于<code>FAT</code>文件系统而言，虽然它也采用类似的方式实现，但它使用一个内存表存储着所有链表节点的信息，内存表通过数据块的地址来索引，以获得下一个数据块的地址信息，通过此种方式高效地实现数据块的随机索引。</p>
 <h3 id="目录组织"><a href="#目录组织" class="headerlink" title="目录组织"></a>目录组织</h3><p>关于目录。对于内核而言，目录也是一种特殊的文件（<code>directory</code>类型），因此，它也是通过<code>inode</code>来索引其所包含的<code>data blocks</code>。只不过不同于普通的文件存储的是用户数据，目录包含的是<code>(entry name, inode number)</code>的一个列表（可能还包含其它信息，比如<code>entry</code>名的长度），当然，目录也可以包含目录。类似地，也有通过<code>B-tree</code>来组织目录所包含的内容的实现方式。</p>
 <h2 id="典型方法执行流程"><a href="#典型方法执行流程" class="headerlink" title="典型方法执行流程"></a>典型方法执行流程</h2><p>在了解一个典型的文件系统所使用的基本数据结构后，即清楚了用户数据在磁盘是如何被组织和管理后。那么，我们还需要了解，当我们操作存储在磁盘上的文件时，具体是如何映射到对这些数据结构的相关操作的。典型的操作流程包括文件的读取和写入。</p>
 <h3 id="文件读取"><a href="#文件读取" class="headerlink" title="文件读取"></a>文件读取</h3><p>以一个简单的实例阐述。若文件系统读取一个大小为 12kb(3个数据块)的文件<code>/foo/bar</code>。读取过程所涉及的相应数据结构的操作类型及顺序如下图。几个关键点L：<code>/</code>目录所对应的<code>inode</code>的编号必须是全局的，因为一般的文件或目录的<code>inode</code>编号是通过在其父目录中检索得到，而考虑到<code>/</code>处在最顶级的层级，因此，其<code>inode</code>编号必须是全局的。另外，访问一个文件的某个数据块时，需要更新文件所对应的<code>inode</code>中存储的元数据信息（访问时间）。最后注意到，目标文件所处的层级越深，其访问也越耗时，因为理论上它需要一层层递归下去，而且在递归过程中，若某一目录所包含的项非常多，则会严重降低指定目录项的检索效率。但为了提高文件访问的效率，文件系统一般会采用缓存那些频繁访问的数据块。</p>
-<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-access-read_kearc3.png" alt="vsfs 文件读取流程" style="zoom:50%;"></p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578413458/blog/31-vsfs/vsfs-access-read_wvmans.png" alt="vsfs 文件读取流程" style="zoom:50%;"></p>
 <h3 id="文件写入"><a href="#文件写入" class="headerlink" title="文件写入"></a>文件写入</h3><p>同样以一个简单的实例阐述。文件的写入流程和文件读取的流程存在相似部分。显然，文件首先需要被打开，因此定位文件的过程是类似的。写入文件可能涉及到新数据块分配，当然，也有可能是已有数据块被覆盖。如果考虑写入额外内容，则需要更新<code>d-bmap</code>和<code>inode</code>。具体而言，每次对文件写入新数据块，需要对<code>d-bmap</code>读取和写入各一次，对<code>inode</code>读取和写入各一次，以及对新数据块的写入操作。另外，若创建文件，则流程更为复杂，因为它涉及到文件所在目录的相关操作，比如在目录所关联的数据块中分配对应的<code>entry</code>记录。具体而言，对<code>d-bmap</code>读取和写入各一次，对文件所对应<code>inode</code>的写入，对文件所在目录所关联的数据块的写入，以及对文件所在的目录所对应的<code>inode</code>的读取和写入各一次，即总共包含了 5 次IO。而且可能还需要对创建后的文件写入新数据块。同文件读取类似，文件写入所需要的磁盘操作甚至更多，因此，大部分情况下，文件系统也会对文件的写入进行缓冲，以执行批量写入，批量写入也有助于磁盘调度器的调度优化。</p>
-<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578299108/blog/vsfs-access-write_vqmw7i.png" alt="vsfs 文件创建流程" style="zoom:50%;"></p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578413457/blog/31-vsfs/vsfs-access-write_z5v5ql.png" alt="vsfs 文件创建流程" style="zoom:50%;"></p>
 <p>简单小结。本文先指出关于磁盘本身的一些重要点，这是考虑到这些关键点与文件系统的设计，甚至上层应用程序对文件系统的使用密切相关。另外，从两个方面简单介绍了简单文件系统(<code>vsfs</code>)，其一是<code>vsfs</code>为了有效组织和管理磁盘上的数据，所采用的重要数据结构，其次结合这些数据结构，简单介绍文件读取和创建两个典型操作流程中对相应的数据结构的操作类型和顺序。理解这两点有助于对一个文件系统的原理的整体把握。本文的定位是一篇总结和启发性的文章（文章中的插图全部出自参考资料中的[1]），希望通过对一个极其简单的文件系统的了解，能够有助于学习那些更加先进复杂的文件系统。</p>
 <p>参考资料<br>[1].  Arpaci-Dusseau R H, Arpaci-Dusseau A C. Operating systems: Three easy pieces[M]. Arpaci-Dusseau Books LLC, 2018.</p>
 
@@ -602,7 +602,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-count">33</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -624,7 +624,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">45</span>
+                  <span class="site-state-item-count">48</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -701,7 +701,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">160.4k</span>
+    <span title="Site words total count">166.8k</span>
   
 </div>
 

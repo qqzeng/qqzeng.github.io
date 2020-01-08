@@ -308,6 +308,195 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2020/01/07/简单文件系统的崩溃一致性和日志/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/01/07/简单文件系统的崩溃一致性和日志/" itemprop="url">简单文件系统的崩溃一致性和日志</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-07T15:45:53+08:00">
+                2020-01-07
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/单机存储/" itemprop="url" rel="index">
+                    <span itemprop="name">单机存储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2020/01/07/简单文件系统的崩溃一致性和日志/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2020/01/07/简单文件系统的崩溃一致性和日志/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  6,400
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  23
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>上一篇文章从早期 unix 系统所使用的文件系统存在的典型问题切入，介绍<code>The Fast File System</code>三个方面的工作：基于数据访问的局部性，优化了磁盘数据块布局方式以提升磁盘效率，同时允许使用更灵活的数据块大小以提升磁盘利用率和传输速率，最后在兼容已有文件系统接口规范的前提下，通过增强已有功能以进一步提升系统易用性。本文主题是文件系统的崩溃一致性(<code>crash consistency</code>)和日志(<code>journaling</code>)，文件系统的<code>crash consistency</code>问题可以通过若干种方式来解决，其中典型的两种方案就是<code>file system checker(fsck)</code>和<code>journaling</code>。所谓的<code>crash consistency</code>问题指的是在文件系统更新磁盘数据结构的过程中发生某种软硬件问题而使得更新被迫中断，最终导致磁盘被更新数据结构处于不一致状态。其中<code>fsck</code>是早期文件系统使用的恢复策略，是一种<code>lazy</code>的修复策略，存在严重的效率问题。相反，<code>journaling</code>则是更为<code>active</code>的解决方案，也是一种广泛被使用的解决方案。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2020/01/07/简单文件系统的崩溃一致性和日志/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2020/01/06/The-Fast-File-System/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -2029,195 +2218,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/05/13/nsq-nsqd-服务启动源码简析/">
-
-    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="qqzeng">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/05/13/nsq-nsqd-服务启动源码简析/" itemprop="url">nsq nsqd 服务启动源码简析</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-13T11:55:15+08:00">
-                2019-05-13
-              </time>
-            
-
-            
-
-            
-
-
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/消息队列/" itemprop="url" rel="index">
-                    <span itemprop="name">消息队列</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2019/05/13/nsq-nsqd-服务启动源码简析/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/05/13/nsq-nsqd-服务启动源码简析/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  11,746
-                </span>
-              words
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  50
-                </span>
-              mins
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>上一篇文章阐述了<code>nsqlookupd</code>模块的源码，主要分析<code>nsqlookupd</code>服务进程启动、实例构建及初始化、<code>tcp &amp; http</code>请求处理器的构建和注册以及由<code>nsqlookupd</code>提供的<code>topic</code>注册及查询功能这几个流程的相关源码。<code>nsqlookupd</code>耦合的模块较少，程序逻辑也较简单。但由于其和<code>topic</code>及<code>channel</code>等密切相关，因此<code>nsqd</code>更为复杂。<code>nsqd</code>充当<code>nsq</code>消息队列核心角色，它负责接收、排队以及转发（投递）消息，因此这需要同<code>nsq</code>各个组件交互，包括生产者、消费者、<code>nsqlookupd</code>以及<code>nsqadmin</code>。<code>nsq</code>提供<code>http/https</code>的方式与生产者通信，主要包括<code>topic</code>和<code>channel</code>创建和查询，配置更新，以及消息发布等功能。另外<code>nsq</code>提供了<code>tcp</code>的方式与消费者及生产者通信，为消费者提供消息订阅功能，而为生产者提供消息发布的功能。最后，考虑到<code>nsqd</code>无状态的特性，<code>nsqd</code>可以通过横向扩展来增强请求处理能力，也可以通过增加一个或多个备份来提高数据可靠性。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/05/13/nsq-nsqd-服务启动源码简析/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2268,7 +2268,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-count">33</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2290,7 +2290,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">45</span>
+                  <span class="site-state-item-count">48</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -2351,7 +2351,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">160.4k</span>
+    <span title="Site words total count">166.8k</span>
   
 </div>
 
