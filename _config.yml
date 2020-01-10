@@ -142,3 +142,10 @@ baidu_url_submit:
   host: qtozeng.top ## 百度站长平台中注册的域名
   token: XWvu5LONbQzUJIhD ## 准入秘钥
   path: baidu_urls.txt ## 文本文档的地址， 新链接会保存在此文本文档里
+
+math:
+  engine: 'mathjax' # or 'katex'
+  mathjax:
+    # src: custom_mathjax_source
+    config:
+      # MathJax config
