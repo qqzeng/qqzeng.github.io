@@ -102,12 +102,12 @@
 <meta property="og:description" content="前面关于文件系统的三篇文章，分别总结了简单文件系统(vsfs)、快速文件系统(FFS)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(crash consistency)的两种主要解决方案：fsck和journaling。但已有文件系统的文件访问效率仍然远低于磁盘的peek bandwidth，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-seq-inode_g0mw1j.png">
-<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-seq-imap_asv84y.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578650908/blog/34-Log-Structured-File-System/lfs-seq-imap_nws50m.png">
 <meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-seq-cr_i8jjrb.png">
 <meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578646156/blog/34-Log-Structured-File-System/lfs-seq-dir_kahgwz.png">
 <meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-datastructures_xz6k6t.png">
 <meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-data-isalive_arjoe2.png">
-<meta property="og:updated_time" content="2020-01-10T10:01:50.095Z">
+<meta property="og:updated_time" content="2020-01-10T11:44:49.129Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="The Log-Structured File System">
 <meta name="twitter:description" content="前面关于文件系统的三篇文章，分别总结了简单文件系统(vsfs)、快速文件系统(FFS)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(crash consistency)的两种主要解决方案：fsck和journaling。但已有文件系统的文件访问效率仍然远低于磁盘的peek bandwidth，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum">
@@ -411,7 +411,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  6,534
+                  6,424
                 </span>
               words
 
@@ -427,7 +427,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  24
+                  23
                 </span>
               mins
             </div>
@@ -448,7 +448,7 @@
       
 
       
-        <p>前面关于文件系统的三篇文章，分别总结了简单文件系统(<code>vsfs</code>)、快速文件系统(<code>FFS</code>)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(<code>crash consistency</code>)的两种主要解决方案：<code>fsck</code>和<code>journaling</code>。但已有文件系统的文件访问效率仍然远低于磁盘的<code>peek bandwidth</code>，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum 研发了<code>log-structured file system</code>(<code>LFS</code>)，<code>LFS</code>专注于磁盘写操作性能的提升，使其尽量接近于磁盘的<code>peek bandwidth</code>，特别是对于那些存在大量小文件写入和更新的应用场景。顾名思义，<code>LFS</code>是一种日志类型文件系统，磁盘上存储全部是日志，日志包含元数据信息和文件数据块。具体而言，当文件系统发起写操作时，<code>LFS</code>首先将更新的相关数据块（包括元数据信息）以<code>segment</code>为单位缓存在主存，然后按顺序写入磁盘的一块连续区域。<code>LFS</code>不会覆盖或删除磁盘上已有数据，相反它将更新后的数据块（包括元数据）按顺序追加写入到空闲磁盘区域。通过将文件更新带来的随机写操作转化为顺序写<code>segment</code>到磁盘的方式，最大化了写操作效率，因此显著提升了文件系统性能。具体地，它将旧文件系统仅有 5% 到 10% 的<code>peek bandwidth</code>提升到 65% 到 75%。</p>
+        <p>前面关于文件系统的三篇文章，分别总结了简单文件系统(<code>vsfs</code>)、快速文件系统(<code>FFS</code>)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(<code>crash consistency</code>)的两种主要解决方案：<code>fsck</code>和<code>journaling</code>。但已有文件系统的文件访问效率仍然远低于磁盘的<code>peek bandwidth</code>，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum 研发了<code>log-structured file system</code>(<code>LFS</code>)，<code>LFS</code>专注于磁盘写操作性能的提升，使其尽量接近于磁盘的<code>peek bandwidth</code>，特别是对于那些存在大量小文件写入和更新的应用场景。顾名思义，<code>LFS</code>是一种日志类型文件系统，磁盘上存储全部是日志，日志包含元数据信息和文件数据块。具体而言，当文件系统发起写操作时，<code>LFS</code>首先将更新的相关数据块（包括元数据信息）以<code>segment</code>为单位缓存在主存，然后按顺序写入磁盘的一块连续区域。<code>LFS</code>不会覆盖或删除磁盘上已有数据，相反它将更新后的数据块（包括元数据）按顺序追加写入到空闲磁盘区域。通过将文件更新带来的随机写操作转化为顺序写<code>segment</code>到磁盘的方式，最大化了写操作效率，因此显著提升了文件系统的性能。从论文中提供的具体数据来看，它将旧文件系统的磁盘访问效率仅有 5% 到 10% 的<code>peek bandwidth</code>提升到 65% 到 75%。</p>
 <a id="more"></a>
 <p>众所周知，<code>vsfs</code>存在严重的磁盘访问效率问题，具体原因是它将磁盘上相关数据结构（如<code>inode</code>和<code>data block</code>，以及同一目录下的文件）分开存储，导致文件访问时，累计大量寻道和旋转操作，严重降低了磁盘吞吐量。而<code>FFS</code>则正是基于文件数据结构访问的空间局部性(<code>space locality</code>)，创造性地引入了<code>cylinder group</code>(<code>block group</code>)，以将文件<code>inode</code>及其关联的<code>data block</code>，以及同一目录下的文件存放于同一<code>block group</code>，避免大量寻道和旋转延时，但考虑到访问相关文件或目录时，它们并不是完全直接相邻，换言之，仍存在一些短的寻道和旋转开销。典型地，<code>FFS</code>创建一个文件需要 5 次写操作。另外，虽然<code>jounraling</code>模式通过顺序写<code>circular log</code>在保证系统能顺利从崩溃中恢复的同时，显著提升磁盘效率，但其存在的问题是，异步的<code>checkpoint</code>操作（将文件数据块和元数据信息真正写入磁盘）仍然存在定位开销。总而言之，已有文件系统的文件访问效率仍然远低于磁盘的<code>peek bandwidth</code>。</p>
 <p><code>FFS</code>的研发存在几个前提或动机：一方面，在文件系统<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/" target="_blank" rel="noopener">第一篇文章</a>中强调过，磁盘随机写操作速度比顺序写的速度慢大约两个数量级，而且随着技术不断发展，磁盘传输效率越来越高，但其旋转和寻道开销并没有相应地减少，因此二者之间的差距越拉越大；另一方面，同样随着技术成熟，系统主存也不断增长，换言之，原本因不能放入内存而带来的额外磁盘开销的情况已不复存在，主存通过缓存磁盘内容能提供较高的文件读取效率，在这种情况下，文件访问操作由文件的写操作主导；第三，如上所述，已有文件系统在很多应用场景下的性能表现糟糕。这三个前提或动机催生<code>LFS</code>的诞生。</p>
@@ -456,16 +456,21 @@
 <h1 id="从日志中高效检索数据"><a href="#从日志中高效检索数据" class="headerlink" title="从日志中高效检索数据"></a>从日志中高效检索数据</h1><p>这一部分主题为如何构建日志位于磁盘的详细布局，从而允许我们获得高效的文件检索速率。我们以一种解决抛出问题的方式来阐述（希望这种方式能够让读者不仅能够知道日志构造细节，也能够理解日志如此设计的原因，因为这能帮助我们更多）。</p>
 <h2 id="一个简单磁盘日志结构设计"><a href="#一个简单磁盘日志结构设计" class="headerlink" title="一个简单磁盘日志结构设计"></a>一个简单磁盘日志结构设计</h2><p>首先，既然是将对文件的更新或写入操作转化为日志条目，再顺序写入到磁盘的一段连续空闲区域。那么，这个转化过程具体又是如何进行的？简单地，从一个实例入手，对于创建一个新文件，我们可以在磁盘上顺序写入类似于下图的日志块：它同时将文件的数据块 $D$ 写入到磁盘的$A_{0}$地址处，并将索引数据块$D$的 <code>inode</code>写入到紧跟着$D$后面的位置（注意实际上 <code>inode</code>会比<code>data block</code>小很多）。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-seq-inode_g0mw1j.png" alt="简单磁盘日志结构" style="zoom:50%;"></p>
-<h2 id="如何设计-segment-的大小？"><a href="#如何设计-segment-的大小？" class="headerlink" title="如何设计 segment 的大小？"></a>如何设计 segment 的大小？</h2><p>但能想象得到，仅仅将日志数据顺序写入磁盘并不能完全保证文件更新操作非常高效，这还取决于你每次顺序写入磁盘的日志大小，换言之，必须一次性写入较大块数据到磁盘才能最大程度均摊磁盘的定位开销。为了实现这一目的，我们引入<code>segment</code>的概念（实际上，<code>segment</code>的概念同样有利于<code>crash recovery</code>的实现，后文会详述）。具体而言，文件系统先将文件更新相关的数据块转化成日志条目并以<code>segment</code>为单位缓存于主存，通过设置合适的<code>segment</code>大小（几 $MB$，论文中是 512$KB$或1$1MB$），能够使得写操作非常高效。我们可以简单进行如下计算。其中$D$表示写入数据块大小，$R_{effective}$表示磁盘实际写速率，$T_{position}$表示一次写操作带来的定位开销（寻道延时和旋转延时），$R_{peak}$表示磁盘的<code>peek bandwidth</code>，最后$F$为预计的磁盘实际写速率和磁盘<code>peek bandwidth</code>的比值。<br>$$<br>R_{effective} = \frac{D}{T_{position}+D/R_{peak}} = F <em> R_{peak} \<br>D = F </em> R_{peak} <em> (T_{position} + D/R_{peak}) \<br>D = (F </em> R_{peak} <em> T_{position}) + (F </em> R_{peak} <em> D/R_{peak}) \<br>D = \frac{F}{1-F} </em> R_{peak} * T_{position}<br>$$<br>从以上公式可知，假设定位开销为 10 ms，<code>peek bandwidth</code>为 100 $MB/s$，预计的 $F=90\%$， 那么可计算得，$D=9MB$。同样可计算出当实际的写速率达到<code>peek bandwidth</code>的 $95\%$甚至$99\%$，$D$的理论大小。由此可见，通过设置合适的$D$的大小取值，可使得磁盘实际写速率达到预计值。</p>
+<h2 id="如何设计-segment-的大小？"><a href="#如何设计-segment-的大小？" class="headerlink" title="如何设计 segment 的大小？"></a>如何设计 segment 的大小？</h2><p>但能想象得到，仅仅将日志数据顺序写入磁盘并不能完全保证文件更新操作非常高效，这还取决于你每次顺序写入磁盘的日志大小，换言之，必须一次性写入较大块数据到磁盘才能最大程度均摊磁盘的定位开销。为了实现这一目的，我们引入<code>segment</code>的概念（实际上，<code>segment</code>的概念同样有利于<code>crash recovery</code>的实现，后文会详述）。具体而言，文件系统先将文件更新相关的数据块转化成日志条目并以<code>segment</code>为单位缓存于主存，通过设置合适的<code>segment</code>大小（几 $MB$，论文中是 512$KB$或1$1MB$），能够使得写操作非常高效。我们可以简单进行如下计算。其中$D$表示写入数据块大小，$R_{effective}$表示磁盘实际写速率，$T_{position}$表示一次写操作带来的定位开销（寻道延时和旋转延时），$R_{peak}$表示磁盘的<code>peek bandwidth</code>，最后$F$为预计的磁盘实际写速率和磁盘<code>peek bandwidth</code>的比值。</p>
+<script type="math/tex; mode=display">
+R_{effective} = \frac{D}{T_{position}+D/R_{peak}} = F * R_{peak} \\
+D = F * R_{peak} * (T_{position} + D/R_{peak}) \\
+D = (F * R_{peak} * T_{position}) + (F * R_{peak} * D/R_{peak}) \\
+D = \frac{F}{1-F} * R_{peak} * T_{position}</script><p>从以上公式可知，假设定位开销为 10 ms，<code>peek bandwidth</code>为 100 $MB/s$，预计的 $F=90\%$， 那么可计算得，$D=9MB$。同样可计算出当实际的写速率达到<code>peek bandwidth</code>的 $95\%$甚至$99\%$，$D$的理论大小。由此可见，通过设置合适的$D$的大小取值，可使得磁盘实际写速率达到预计值。</p>
 <h2 id="Inode-Map"><a href="#Inode-Map" class="headerlink" title="Inode Map"></a>Inode Map</h2><p>回到日志结构设计问题，我们在第一小节中按要求设计了最简单的日志结构原型。在<code>vsfs</code>中，<code>inode</code>以数组形式组织并且被写入到磁盘固定位置，如此一来，通过<code>inode</code>编号和<code>inode</code>区域首地址来检索指定<code>inode</code>容易计算得到。类似地，在<code>FFS</code>中，也可通过近似方法计算（仅仅是引入<code>block group</code>）。但这种通过简单计算方式获取<code>inode</code>在<code>LFS</code>却不起作用，考虑到<code>LFS</code>将所有文件的<code>inode</code>和<code>data block</code>分散存储在磁盘上，且无法简单确定最新版本<code>inode</code>地址。</p>
 <p><code>LFS</code>引入<code>inode map</code>来解决此问题。<code>inode map (imap)</code>的作用即作为<code>inode</code>和<code>inode number</code>的中转结构。顾名思义，它大体是一个字典数据结构，其通过<code>inode number</code>来索引对应最新版本的<code>inode</code>地址。但毫无疑问，<code>imap</code>必须持久化以应对系统崩溃情况，因此<code>LFS</code>选择将<code>imap</code>同样作为元信息存储在紧跟着<code>inode</code>的位置，换言之，每一次<code>inode</code>的更新，也会写入一个相应更新后的<code>imap</code>块（可以理解，之所以如此设计是为了尽可能避免磁盘的定位开销）。因此，当写入一个文件时，其写入磁盘日志的内容大概如下图所示。另外，需要强调的是，为了保证检索效率，<code>imap</code>会被缓存到主存，因此当通过一个<code>inode number</code>检索<code>inode</code>时，会先从内存的<code>imap</code>中检索对应<code>inode</code>地址，此后操作的开销同其它文件系统的检索开销相同。</p>
-<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-seq-imap_asv84y.png" alt="lfs 加入 imap 后的日志结构" style="zoom:50%;"></p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578650908/blog/34-Log-Structured-File-System/lfs-seq-imap_nws50m.png" alt="lfs 加入 imap 后的日志结构" style="zoom:50%;"></p>
 <h2 id="Checkpoint-Region"><a href="#Checkpoint-Region" class="headerlink" title="Checkpoint Region"></a>Checkpoint Region</h2><p>虽然通过<code>imap</code>可以方便索引到<code>inode</code>，但问题是如何方便且快速索引到<code>imap</code>呢（可以发现<code>imap</code>并没有固定地址）？因此，我们不得不引入一个具备固定地址的数据结构，通过此数据结构来索引<code>imap</code>，是的，<code>LFS</code>由此设计了<code>Checkpoint Region (CR)</code>。具体而言，<code>CR</code>包含直接索引最新版本的<code>imap</code>指针（其实还存储其它内容，后文阐述），且论文中将<code>CR</code>被设置成以 30s 的时间间隔更新到磁盘，换言之，因更新<code>CR</code>所造成的写操作开销可以接受。因此引入<code>CR</code>后，整个磁盘日志布局相应更新如下图。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-seq-cr_i8jjrb.png" alt="lfs 加入 checkpoint region 后的日志结构" style="zoom:50%;"></p>
-<p>事实上，为了应对<code>crash recovery</code>，<code>CR</code>设计得更为复杂。但为了逻辑上更为清晰，将相关内容放到最后一部分阐述。</p>
+<p>事实上，为了应对崩溃恢复，<code>CR</code>设计得更为复杂。但为了逻辑阐述清晰，将相关内容放到后文再阐述。</p>
 <h2 id="目录如何处理？"><a href="#目录如何处理？" class="headerlink" title="目录如何处理？"></a>目录如何处理？</h2><p>众所周知，在所有文件系统中，目录都被当成一种特殊的文件来对待，在<code>LFS</code>中也不例外，一个包含目录更新的简单日志结构如下图。因为目录仅仅是类似于<code>(name, inode number)</code>简单列表。换言之，目录也是通过<code>imap</code>来间接索引，和文件的<code>inode</code>索引没有区别。但正是因为引入了<code>imap</code>才避免了文件更新所存在的<code>recursive update problem</code>[4]，此问题存在于那些不对文件数据块就地更新的文件系统。简单而言，当我们更新一个文件时，事实上文件所在的目录（具体是目录所关联的<code>data block</code>）也需要被更新，类似地，一旦文件所在目录被更新，其父目录同样需要被更新，如此循环，直至根目录。<code>imap</code>的引入可避免此问题，因为此时只需要更新对应的<code>imap</code>即可，文件所在目录只包含了文件的<code>inode number</code>，并不会被级联更新，真正需要更新的只有<code>imap</code>，因此规避了<code>recursive update problem</code>。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578646156/blog/34-Log-Structured-File-System/lfs-seq-dir_kahgwz.png" alt="lfs 对目录的存储" style="zoom:50%;"></p>
-<p>至此，关于<code>LFS</code>为了保证能够高效地从日志中检索数据，所做的工作（设计相应数据结构）已阐述完毕。事实上，还有一些其它用于<code>garbage collection</code>和<code>crash recovery</code>的数据结构没有阐述，具体可见如下表（出自原论文）。</p>
+<p>至此，关于<code>LFS</code>为保证能高效地从日志中检索数据所做的工作（设计相应数据结构）已阐述完毕。事实上，还有其它用于<code>garbage collection</code>和<code>crash recovery</code>的数据结构未阐述，具体可见如下表（出自原论文）。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578646154/blog/34-Log-Structured-File-System/lfs-datastructures_xz6k6t.png" alt="lfs 中日志所包含的数据结构"></p>
 <p>最后，阐述<code>LFS</code>从磁盘上读取指定文件的过程以小结此部分内容。首先我们必须从磁盘指定位置读取<code>CR</code>的内容，然后通过<code>CR</code>存储的关联<code>imap</code>指针以读取整个最新版本的<code>imap</code>到内存中。至此，预备工作已经完毕。此时若需根据<code>inode number</code>从磁盘检索相应的<code>inode</code>，<code>LFS</code>首先从缓存的<code>imap</code>中根据<code>inode number</code>查找对应的最新版本的<code>inode</code>地址，以<code>inode</code>地址读取<code>data block</code>的过程同其它文件系统的索引过程类似，即通过<code>direct pointer</code>或者<code>indirect pointer</code>等结构来读取。因此，<code>LFS</code>保证了文件访问操作的主导开销集中在文件写入操作，因为文件读取可通过缓存命中，对比其它文件系统，读操作开销并未加剧。</p>
 <h1 id="垃圾回收"><a href="#垃圾回收" class="headerlink" title="垃圾回收"></a>垃圾回收</h1><p>读者可以注意到，<code>LFS</code>将每次文件更新后相关的数据块以日志形式顺序写入磁盘，这意味着磁盘上可能存放着一个文件的多个历史更新版本数据，但大部分情况下，仅有文件最新版本数据有价值。因此，如何有效清理文件历史版本数据是<code>LFS</code>重点考虑的问题（有些<code>version file system</code>[5]，相反选择保留旧版本文件数据，即通过引入文件历史版本这一功能特性来巧妙解决此问题）。</p>
@@ -479,19 +484,27 @@
 <p>另外，<code>LFS</code>使用<code>version number</code>来优化这个标记过程（避免了不必要的读操作）。具体而言，它在每个<code>imap</code>项中为每个文件保存一个版本号，当文件被删除或清空时，版本号会递增。版本号和<code>inode number</code>共同构成文件内容的标识符。因此，<code>segment summary block</code>为每个块记录了对应标识符，若一个块的标识符和当前存储在<code>imap</code>中的标识符不同，则表明此块是无用的。</p>
 <p>关于<code>LFS</code>的清理策略，论文中提到有四个方面的问题需要被解决：</p>
 <ul>
-<li>何时开始清理<code>segment</code>。这个问题比较简单，可以等到磁盘剩余空间低于某一阈值开始清理，或者是周期性清理；</li>
-<li>一次性清理的<code>segment</code>的数量。显然一次性清理的<code>segment</code>得越多，腾出的磁盘空间越大，但同时也带来更多开销；</li>
+<li>何时清理<code>segment</code>。这个问题较简单，可等到磁盘剩余空间低于某一阈值时清理，或者周期性清理；</li>
+<li>单次清理<code>segment</code>的数量。显然一次性清理越多<code>segment</code>，空闲磁盘空间越大，但同时也带来更多开销；</li>
 <li>哪些<code>segment</code>应该被清理。是否应该选择对碎片化(<code>fragmented</code>)最严重的<code>segment</code>进行清理？</li>
 <li>那些存活的块应该如何被分组以写入到新的<code>segment</code>。一种方案是基于读的<code>space locality</code>，即同一目录下的块被组织到同一<code>segment</code>，另一种方案是基于读的<code>time locality</code>，即上一次修改时间接近的块被安排到同一<code>segment</code>。</li>
 </ul>
 <p><code>LFS</code>并没有详细考虑第一和第二个问题的解决方案，而是采取直接且简单的解决办法。具体地，当<code>LFS</code>发现空闲的<code>segment</code>的数量低于某一阈值（数十个），则开始启动清理程序。而且，它选择每次清理数十个<code>segment</code>直至空闲的<code>segment</code>的数量超过预设阈值（50 到 100 个）。之所以将阈值作为清理条件，是因为这些变量的具体取值和<code>LFS</code>的整体性能并不非常相关。相反，第三和第四个问题则和<code>LFS</code>的性能密切相关。</p>
-<p><code>LFS</code>通过引入<code>write cost</code>来度量清理策略的代价，<code>write cost</code>表示每写一个<code>byte</code>数据而带来的磁盘平均繁忙时间。若<code>write cost</code>取值为 1.0，则表示代价最小，此时没有任何垃圾清理开销，磁盘带宽全部用于写存活块。类似地，若<code>write cost</code>取值为 10.0，则表示只有 1/10 的磁盘带宽用于数据块写入。论文中给出了<code>write cost</code>的计算公式如下，其中$N$表示读入到内存的<code>segment</code>数量，$u$表示<code>block</code>的存活率。<br>$$<br>\text{write cost} = \frac{\text{total bytes read and write}}{\text{new data written}}<br>= \frac{\text{read segs + wirte live + write new}}{\text{new data written}} = \frac{N+N<em>u+N</em>(1-u)}{N*(1-u)} = \frac{2}{1-u}<br>$$<br>从公式中，可发现<code>write cost</code>和$u$密切相关，论文中给出具体模拟实验结果[2]。</p>
-<h2 id="Segment-Usage-Table"><a href="#Segment-Usage-Table" class="headerlink" title="Segment Usage Table"></a>Segment Usage Table</h2><p><code>LFS</code>采取一种<code>cost-benefit</code>作为选择被清理的<code>segment</code>的策略，即选择那些具备最大<code>benefit-to-cost</code>比值的<code>segment</code>作为清理对象。其中的清理所带来的<code>benefit</code>包含两个部分，回收空闲空间大小$1-u$和此段回收空间能够维持空闲的时间$age$，且<code>LFS</code>使用<code>segment</code>中<code>block</code>最近修改时间（即最年轻的块）作为此段回收空间维持空闲时间的估计值。而<code>cost</code>同样包含两部分，整个<code>segment</code>读操作的开销$1$和写存活块到空闲区域的开销$u$。综上，<code>benefit-to-cost</code>的计算公式为：<br>$$<br>\frac{\text{benefit}}{\text{cost}} = \frac{\text{free space generated <em> age of data}}{\text{cost}} = \frac{(1-u)</em>\text{age}}{1+u}<br>$$<br><code>LFS</code>为了实现<code>cost-benefit</code>策略，引入<code>segment usage table</code>的概念。具体地，对于每一个<code>segment</code>，<code>segment usage table</code>记录了<code>segment</code>中存活块的大小以及每个块的最近修改时间。且<code>segment usage table</code>本身同样被写入到每个<code>segment</code>，其地址同样被记录在<code>CR</code>中。为了计算每个<code>segment</code>的<code>cost-to-benefit</code>的值，只需按照每个存活块的$age$进行排序（因为$u$可以通过存活块大小比上整个<code>segment</code>的大小获得）即可（注意，论文中提到，<code>LFS</code>记录的是整个文件最近被更新的时间，而不是单个块）。</p>
+<p><code>LFS</code>通过引入<code>write cost</code>来度量清理策略的代价，<code>write cost</code>表示每写一个<code>byte</code>数据而带来的磁盘平均繁忙时间。若<code>write cost</code>取值为 1.0，则表示代价最小，此时没有任何垃圾清理开销，磁盘带宽全部用于写存活块。类似地，若<code>write cost</code>取值为 10.0，则表示只有 1/10 的磁盘带宽用于数据块写入。论文中给出了<code>write cost</code>的计算公式如下，其中$N$表示读入到内存的<code>segment</code>数量，$u$表示<code>block</code>的存活率。</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+\text{write cost} &= \frac{\text{total bytes read and write}}{\text{new data written}}
+= \frac{\text{read segs + wirte live + write new}}{\text{new data written}} \\
+&= \frac{N+N*u+N*(1-u)}{N*(1-u)} = \frac{2}{1-u}
+\end{align*}</script><p>从公式中，可发现<code>write cost</code>和$u$密切相关，论文中给出具体模拟实验结果[2]。</p>
+<h2 id="Segment-Usage-Table"><a href="#Segment-Usage-Table" class="headerlink" title="Segment Usage Table"></a>Segment Usage Table</h2><p><code>LFS</code>采取一种<code>cost-benefit</code>作为选择被清理的<code>segment</code>的策略，即选择那些具备最大<code>benefit-to-cost</code>比值的<code>segment</code>作为清理对象。其中的清理所带来的<code>benefit</code>包含两个部分，回收空闲空间大小$1-u$和此段回收空间能够维持空闲的时间$age$，且<code>LFS</code>使用<code>segment</code>中<code>block</code>最近修改时间（即最年轻的块）作为此段回收空间维持空闲时间的估计值。而<code>cost</code>同样包含两部分，整个<code>segment</code>读操作的开销$1$和写存活块到空闲区域的开销$u$。综上，<code>benefit-to-cost</code>的计算公式为：</p>
+<script type="math/tex; mode=display">
+\frac{\text{benefit}}{\text{cost}} = \frac{\text{free space generated * age of data}}{\text{cost}} = \frac{(1-u)*\text{age}}{1+u}</script><p><code>LFS</code>为了实现<code>cost-benefit</code>策略，引入<code>segment usage table</code>的概念。具体地，对于每一个<code>segment</code>，<code>segment usage table</code>记录了<code>segment</code>中存活块的大小以及每个块的最近修改时间。且<code>segment usage table</code>本身同样被写入到每个<code>segment</code>，其地址同样被记录在<code>CR</code>中。为了计算每个<code>segment</code>的<code>cost-to-benefit</code>的值，只需按照每个存活块的$age$进行排序（因为$u$可以通过存活块大小比上整个<code>segment</code>的大小获得）即可（注意，论文中提到，<code>LFS</code>记录的是整个文件最近被更新的时间，而不是单个块）。</p>
 <p>至此，关于<code>LFS</code>日志中无用块的回收策略相关部分已经阐述完毕。总而言之，<code>LFS</code>总的清理过程比较简单，但为了提高清理效率或者提高整个<code>LFS</code>的效率，需要重点考虑两个问题，第一个是如何判断某个<code>segment</code>需要被清理，<code>LFS</code>给出了两种解决办法，其中一种引入了<code>segment summary block</code>，另一种优化措施则采用版本号机制；第二个问题是如何选择哪些<code>segment</code>作为此次清理对象，<code>LFS</code>通过计算每个<code>segment</code>的<code>benefit-to-cost</code>的值来获取最合适的清理对象。</p>
 <h1 id="崩溃恢复"><a href="#崩溃恢复" class="headerlink" title="崩溃恢复"></a>崩溃恢复</h1><p>那么<code>LFS</code>如何处理崩溃恢复呢？崩溃恢复是为了维持磁盘相关数据结构的一致性。旧文件系统必须扫描整个文件系统才能确定在系统崩溃时哪些数据结构发生了哪些变更。上一节的<a href="https://qtozeng.top/2020/01/07/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B4%A9%E6%BA%83%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E6%97%A5%E5%BF%97/" target="_blank" rel="noopener">崩溃一致性和日志</a>的主题为提高崩溃恢复效率。而对于<code>LFS</code>而言，无论系统何时崩溃，其导致的数据结构变更只能位于日志末尾位置，因此，崩溃恢复过程的执行更为迅速（这一特性也被应用于数据库管理系统和其它文件系统）。</p>
 <p>具体而言，我们知道，大体上，写入磁盘的日志包括两个部分：<code>CR</code>和<code>segment</code>。换言之，我们只需要考虑这两个结构写入磁盘的过程中发生系统崩溃时，应该分别如何处理。<code>LFS</code>使用<code>checkpoint</code>和<code>roll-forward</code>来分别解决这两个问题。前者定义了磁盘某一时刻的一致性状态，而后者用于恢复最后一次<code>checkpoint</code>后又执行的更新操作所带来的变更。</p>
-<p>在<code>LFS</code>中其<code>checkpoint</code>操作包括两个阶段：首先将更新的数据写入磁盘（包括<code>data block</code>、<code>inode</code>、<code>imap</code>、<code>segment summary block</code>和<code>segment usage table</code>）；其次，将<code>CR</code>写入到磁盘固定位置（事实上是以 30s 为周期写入），<code>CR</code>中包含了<code>imap</code>、<code>segment usage table</code>和指向最后一个<code>segment</code>的指针的地址，以及写入时间戳。</p>
-<h2 id="Checkpoint"><a href="#Checkpoint" class="headerlink" title="Checkpoint"></a>Checkpoint</h2><p>为了保证<code>CR</code>写入磁盘的原子性，<code>LFS</code>采取了两个方法，一个是实际上<code>CR</code>会被交替写入到磁盘两端，当需要读取<code>CR</code>时，选择具备最新完整时间戳的版本；另外，在<code>CR</code>包含区域的首尾加入了写入时间戳，因此，一旦写入<code>CR</code>时系统崩溃，则读取此<code>CR</code>记录时，不可能获得两个相同的写入时间戳。因此正常情况下，在系统重启后，通过读取<code>CR</code>的内容，可以获得最后一次<code>checkpoint</code>操作时的<code>imap</code>等数据结构的地址信息，因此可顺利重构出最后一次<code>checkpoint</code>操作时的全局日志结构。</p>
+<p>在<code>LFS</code>的<code>checkpoint</code>操作包括两个阶段：首先将更新的数据写入磁盘（包括<code>data block</code>、<code>inode</code>、<code>imap</code>、<code>segment summary block</code>和<code>segment usage table</code>）；其次，将<code>CR</code>写入到磁盘固定位置（以 30s 为周期写入），<code>CR</code>中包含了<code>imap</code>、<code>segment usage table</code>和指向最后一个<code>segment</code>的指针的地址，以及写入时间戳。</p>
+<h2 id="Checkpoint"><a href="#Checkpoint" class="headerlink" title="Checkpoint"></a>Checkpoint</h2><p>为保证<code>CR</code>写入磁盘的原子性，<code>LFS</code>采取两个方法，一个是<code>CR</code>实际上会被交替写入到磁盘两端，当需要读取<code>CR</code>时，选择具有最新完整时间戳的版本；另外，在<code>CR</code>包含区域的首尾加入写入时间戳，因此一旦写入<code>CR</code>时系统崩溃，则读取此<code>CR</code>记录时，不可能获得两个相同的写入时间戳。因此正常情况下，在系统重启后，通过读取<code>CR</code>的内容，可以获得最后一次<code>checkpoint</code>操作时的<code>imap</code>等数据结构的地址信息，因此可顺利重构出最后一次<code>checkpoint</code>操作时的全局日志结构。</p>
 <h2 id="Roll-Forward"><a href="#Roll-Forward" class="headerlink" title="Roll-Forward"></a>Roll-Forward</h2><p>理论上，若用户只需粗糙地恢复磁盘数据，则通过<code>checkpoint</code>来恢复即可满足要求。但其不足之处在于，它忽略了最后一次<code>checkpoint</code>操作后对磁盘执行的变更，这在某些情况下是不能接受的，因此，<code>LFS</code>采用<code>roll-forward</code>的方式来进行细粒度的崩溃恢复。<code>roll-forward</code>会利用保存在<code>segment summary block</code>中的信息来恢复最近的更新操作。具体地，若<code>segment summary block</code>中保存的信息表明一个新的<code>inode</code>的存在，<code>LFS</code>则更新<code>imap</code>以指向最新的<code>inode</code>。另外，<code>roll-forward</code>也会调整<code>segment usage table</code>记录的<code>segment</code>的利用率$u$。<code>roll-forward</code>所解决的最后一个问题是目录中目录项和对应<code>inode</code>的一致性问题，因为在更新<code>inode</code>的<code>reference count</code>和写入数据这两个操作之间可能发生系统崩溃。为了顺利恢复目录和<code>inode</code>的一致性，<code>LFS</code>在每条日志中额外增加了一条被称为<code>directory operation log</code>的记录，且<code>LFS</code>确保在每条日志中的<code>directory opearation log</code>会出现在对应的目录数据块或<code>inode</code>块之前。具体细节读者可参考原论文[2]。</p>
 <p>至此，关于<code>LFS</code>如何提供崩溃恢复功能的内容已经阐述完毕。简单而言，<code>LFS</code>通过两种手段以从粗粒度和细粒度双管齐下地执行崩溃恢复。具体而言，通过巧妙设计<code>CR</code>的数据结构，崩溃恢复过程中的简单<code>checkpoint</code>操作即能保证系统恢复到崩溃前的最后一次<code>checkpoint</code>时刻的一致性状态；然后再通过<code>roll-forward</code>从最后一条<code>segment</code>开始实施文件级别的恢复操作。</p>
 <p>简单小结。本文从三个方面简单介绍了<code>LFS</code>。<code>LFS</code>的核心思想容易理解，将对于磁盘上文件更新所带来的随机写入操作转化为批量的按顺序以<code>segment</code>为单位写入磁盘的操作，以尽可能接近磁盘带宽来执行写入操作（这种技术在数据库领域被称为是<code>shadow paging</code>，而在文件系统领域则被称为是<code>copy-on-write</code>）。关于<code>LFS</code>，我们首先需要清楚<code>LFS</code>诞生的前提或实现的动机；其次，对于一个文件系统，需要保证能够高效地检索文件数据内容。因此理解<code>LFS</code>如何组织文件相关的元数据和数据块信息至关重要；另外，考虑到<code>LFS</code>并未直接更新磁盘上的数据块，而采用将更新转化成日志的形式顺序写入磁盘的方式，因此，必须解决由此产生的无用的历史版本文件数据的问题。最后，崩溃恢复是一个文件系统必备的功能，<code>LFS</code>从粗粒度和细粒度两个角度分别使用<code>checkpoint</code>和<code>roll-forward</code>来解决崩溃恢复的问题。</p>
@@ -726,7 +739,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">173.3k</span>
+    <span title="Site words total count">173.2k</span>
   
 </div>
 
@@ -1272,7 +1285,24 @@
         }
       });
     </script>
-    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
   
 
 

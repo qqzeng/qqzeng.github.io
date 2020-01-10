@@ -405,7 +405,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  6,534
+                  6,424
                 </span>
               words
 
@@ -421,7 +421,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  24
+                  23
                 </span>
               mins
             </div>
@@ -443,7 +443,7 @@
 
       
         
-          <p>前面关于文件系统的三篇文章，分别总结了简单文件系统(<code>vsfs</code>)、快速文件系统(<code>FFS</code>)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(<code>crash consistency</code>)的两种主要解决方案：<code>fsck</code>和<code>journaling</code>。但已有文件系统的文件访问效率仍然远低于磁盘的<code>peek bandwidth</code>，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum 研发了<code>log-structured file system</code>(<code>LFS</code>)，<code>LFS</code>专注于磁盘写操作性能的提升，使其尽量接近于磁盘的<code>peek bandwidth</code>，特别是对于那些存在大量小文件写入和更新的应用场景。顾名思义，<code>LFS</code>是一种日志类型文件系统，磁盘上存储全部是日志，日志包含元数据信息和文件数据块。具体而言，当文件系统发起写操作时，<code>LFS</code>首先将更新的相关数据块（包括元数据信息）以<code>segment</code>为单位缓存在主存，然后按顺序写入磁盘的一块连续区域。<code>LFS</code>不会覆盖或删除磁盘上已有数据，相反它将更新后的数据块（包括元数据）按顺序追加写入到空闲磁盘区域。通过将文件更新带来的随机写操作转化为顺序写<code>segment</code>到磁盘的方式，最大化了写操作效率，因此显著提升了文件系统性能。具体地，它将旧文件系统仅有 5% 到 10% 的<code>peek bandwidth</code>提升到 65% 到 75%。</p>
+          <p>前面关于文件系统的三篇文章，分别总结了简单文件系统(<code>vsfs</code>)、快速文件系统(<code>FFS</code>)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(<code>crash consistency</code>)的两种主要解决方案：<code>fsck</code>和<code>journaling</code>。但已有文件系统的文件访问效率仍然远低于磁盘的<code>peek bandwidth</code>，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum 研发了<code>log-structured file system</code>(<code>LFS</code>)，<code>LFS</code>专注于磁盘写操作性能的提升，使其尽量接近于磁盘的<code>peek bandwidth</code>，特别是对于那些存在大量小文件写入和更新的应用场景。顾名思义，<code>LFS</code>是一种日志类型文件系统，磁盘上存储全部是日志，日志包含元数据信息和文件数据块。具体而言，当文件系统发起写操作时，<code>LFS</code>首先将更新的相关数据块（包括元数据信息）以<code>segment</code>为单位缓存在主存，然后按顺序写入磁盘的一块连续区域。<code>LFS</code>不会覆盖或删除磁盘上已有数据，相反它将更新后的数据块（包括元数据）按顺序追加写入到空闲磁盘区域。通过将文件更新带来的随机写操作转化为顺序写<code>segment</code>到磁盘的方式，最大化了写操作效率，因此显著提升了文件系统的性能。从论文中提供的具体数据来看，它将旧文件系统的磁盘访问效率仅有 5% 到 10% 的<code>peek bandwidth</code>提升到 65% 到 75%。</p>
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2020/01/09/The-Log-Structured-File-System/#more" rel="contents">
@@ -2351,7 +2351,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">173.3k</span>
+    <span title="Site words total count">173.2k</span>
   
 </div>
 
@@ -2881,7 +2881,24 @@
         }
       });
     </script>
-    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
   
 
 

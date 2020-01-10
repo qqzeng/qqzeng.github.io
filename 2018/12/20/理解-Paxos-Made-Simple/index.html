@@ -415,7 +415,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  5,314
+                  5,315
                 </span>
               words
 
@@ -490,7 +490,7 @@
 <p>P2a . If a proposal with value v is chosen, then every higher-numbered proposal accepted by any acceptor has value v.</p>
 </blockquote>
 <p><code>P2a</code>其实是在对<code>acceptor</code>做限制。事实上，<code>P2</code>与<code>P2a</code>是一致的，只要满足了<code>P2a</code>就能满足<code>P2</code>。但前面提到过<code>P1</code>是后续推断所必须满足的，而仔细考量<code>P2a</code>，它似乎违反了<code>P1</code>这个约束底线。可以考虑这样一个场景：若有 2 个<code>proposer</code>和 5 个<code>acceptor</code>。首先由<code>proposer-1</code>提出了<code>[id1, v1]</code>的提案，恰好<code>acceptor1~3</code>都顺利接受了此提案，即<code>quorum</code>个节点选定了该值<code>v1</code>，于是对于<code>proposer-1</code>及<code>acceptor1~3</code>而言，它们都选定了<code>v1</code>。而<code>acceptor4</code>在<code>proposer-1</code>提出提案的时候，刚好宕机了（事实上，只要其先接受<code>proposer-2</code>的提案即可，且<code>proposer-2</code>的编号大于<code>proposer-1</code>的编号）而后有<code>proposer-2</code>提出了提案<code>[id2, v2]</code>且<code>id2&gt;id1 &amp; v1!=v2</code>。那么由<code>P1</code>知，<code>acceptor-4</code>在宕机恢复后，必须接受提案<code>[id2, v2]</code>，即选定<code>v2</code>。很明显这不符合<code>P2a</code>的条件。因此，我们只有对<code>P2a</code>进行加强，才能让它继续满足<code>P1</code>所设定的底线。</p>
-<p>我们自己可以先直观思考，为了保证<code>acceptor</code>后续通过的<code>proposal</code>的值与之前已经认定的值是相同的。如果直接依据之前的简单流程：<code>proposer</code>直接将其提案发送给<code>acceptor</code>，这可能会产生冲突。所以，我们可以尝试限制后续的<code>proposer</code>发送的提案的<code>value</code>，以保证<code>proposer</code>发送的提案的<code></code>value<code>与之前已经通过的提案的value</code>相同，于是引出了<code>P2b</code>：</p>
+<p>我们自己可以先直观思考，为了保证<code>acceptor</code>后续通过的<code>proposal</code>的值与之前已经认定的值是相同的。如果直接依据之前的简单流程：<code>proposer</code>直接将其提案发送给<code>acceptor</code>，这可能会产生冲突。所以，我们可以尝试限制后续的<code>proposer</code>发送的提案的<code>value</code>，以保证<code>proposer</code>发送的提案的<code>`value</code>与之前已经通过的提案的value<code>相同，于是引出了</code>P2b`：</p>
 <blockquote>
 <p>P2b. If a proposal with value v is chosen, then every higher-numbered proposal issued by any proposer has value v.</p>
 </blockquote>
@@ -761,7 +761,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">173.3k</span>
+    <span title="Site words total count">173.2k</span>
   
 </div>
 
@@ -1281,33 +1281,30 @@
     var s = document.getElementsByTagName("script")[0];
     s.parentNode.insertBefore(bp, s);
 })();
+</script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
 </script>
 
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
 
   
   
 
   
-  
-    <script type="text/x-mathjax-config">
-      MathJax.Hub.Config({
-        tex2jax: {
-          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
-          processEscapes: true,
-          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
-        }
-      });
-    </script>
-
-    <script type="text/x-mathjax-config">
-      MathJax.Hub.Queue(function() {
-        var all = MathJax.Hub.getAllJax(), i;
-        for (i=0; i < all.length; i += 1) {
-          all[i].SourceElement().parentNode.className += ' has-jax';
-        }
-      });
-    </script>
-    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
   
 
 
