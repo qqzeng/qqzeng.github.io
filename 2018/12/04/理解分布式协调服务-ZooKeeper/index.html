@@ -7,7 +7,7 @@
 
 <html class="theme-next mist use-motion" lang="zh-Hans">
 <head><meta name="generator" content="Hexo 3.8.0">
-  <meta charset="UTF-8">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,分布式协调服务,原子广播协议,分布式锁,">
+  <meta name="keywords" content="分布式系统,分布式协调服务,分布式锁,原子广播协议,">
 
 
 
@@ -94,7 +94,7 @@
 
 
 <meta name="description" content="ZooKeeper是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(coordination service)。虽然ZooKeeper被认为是 Google Chubby的开源实现，但其设计理念却存在较大差异：ZooKeeper致力于提供一个简单且高性能(high performance)的内核(kernel)以为客户端（应用程序）构">
-<meta name="keywords" content="分布式系统,分布式协调服务,原子广播协议,分布式锁">
+<meta name="keywords" content="分布式系统,分布式协调服务,分布式锁,原子广播协议">
 <meta property="og:type" content="article">
 <meta property="og:title" content="理解分布式协调服务 zookeeper">
 <meta property="og:url" content="https://qtozeng.com/2018/12/04/理解分布式协调服务-ZooKeeper/index.html">
@@ -155,7 +155,7 @@
       var s = document.getElementsByTagName("script")[0];
       s.parentNode.insertBefore(hm, s);
     })();
-  </script>
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
 
 
 
@@ -169,7 +169,7 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
@@ -501,9 +501,9 @@
           
             <a href="/tags/分布式协调服务/" rel="tag"># 分布式协调服务</a>
           
-            <a href="/tags/原子广播协议/" rel="tag"># 原子广播协议</a>
-          
             <a href="/tags/分布式锁/" rel="tag"># 分布式锁</a>
+          
+            <a href="/tags/原子广播协议/" rel="tag"># 原子广播协议</a>
           
         </div>
       
@@ -615,7 +615,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">33</span>
+                  <span class="site-state-item-count">34</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -637,7 +637,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">48</span>
+                  <span class="site-state-item-count">49</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -714,7 +714,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">166.8k</span>
+    <span title="Site words total count">173.3k</span>
   
 </div>
 
@@ -1241,6 +1241,28 @@
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
 
   
 

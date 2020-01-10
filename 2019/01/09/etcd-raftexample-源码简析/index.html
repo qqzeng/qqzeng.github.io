@@ -7,7 +7,7 @@
 
 <html class="theme-next mist use-motion" lang="zh-Hans">
 <head><meta name="generator" content="Hexo 3.8.0">
-  <meta charset="UTF-8">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,分布式存储,分布式缓存,一致性协议,分布式协调服务,">
+  <meta name="keywords" content="分布式系统,分布式协调服务,分布式缓存,分布式存储,一致性协议,">
 
 
 
@@ -94,7 +94,7 @@
 
 
 <meta name="description" content="最近集中了解了ZAB、Raft及Paxos协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现Raft协议，并基于Raft构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的Raft协议的实现内幕，故选择etcd进行解读。etcd是 CoreOS 基于Raft协议使用 go 开发的分布式 kv 存储系统，可用于">
-<meta name="keywords" content="分布式系统,分布式存储,分布式缓存,一致性协议,分布式协调服务">
+<meta name="keywords" content="分布式系统,分布式协调服务,分布式缓存,分布式存储,一致性协议">
 <meta property="og:type" content="article">
 <meta property="og:title" content="etcd raftexample 源码简析">
 <meta property="og:url" content="https://qtozeng.com/2019/01/09/etcd-raftexample-源码简析/index.html">
@@ -155,7 +155,7 @@
       var s = document.getElementsByTagName("script")[0];
       s.parentNode.insertBefore(hm, s);
     })();
-  </script>
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
 
 
 
@@ -169,7 +169,7 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
@@ -537,13 +537,13 @@
           
             <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
           
-            <a href="/tags/分布式存储/" rel="tag"># 分布式存储</a>
+            <a href="/tags/分布式协调服务/" rel="tag"># 分布式协调服务</a>
           
             <a href="/tags/分布式缓存/" rel="tag"># 分布式缓存</a>
           
-            <a href="/tags/一致性协议/" rel="tag"># 一致性协议</a>
+            <a href="/tags/分布式存储/" rel="tag"># 分布式存储</a>
           
-            <a href="/tags/分布式协调服务/" rel="tag"># 分布式协调服务</a>
+            <a href="/tags/一致性协议/" rel="tag"># 一致性协议</a>
           
         </div>
       
@@ -655,7 +655,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">33</span>
+                  <span class="site-state-item-count">34</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -677,7 +677,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">48</span>
+                  <span class="site-state-item-count">49</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -754,7 +754,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">166.8k</span>
+    <span title="Site words total count">173.3k</span>
   
 </div>
 
@@ -1281,6 +1281,28 @@
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
 
   
 
