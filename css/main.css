@@ -1832,7 +1832,7 @@ pre .javascript .function {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #5900ff;
+  background: #ba6967;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -2913,4 +2913,27 @@ hr {
     width: auto;
     text-align: center;
   }
+}
+article p {
+  font-family: 'Microsoft YaHei', 'SF Pro Display', Roboto, Noto, Arial, 'PingFang SC', sans-serif;
+  font-size: 16px;
+  color: #4f4f4f;
+  font-weight: 400;
+  line-height: 26px;
+  margin: 0 0 16px;
+}
+article h1,
+article h2,
+article h3,
+article h4,
+article h5,
+article h6,
+article h7,
+a,
+strong {
+  font-family: 'Microsoft YaHei', 'SF Pro Display', Roboto, Noto, Arial, 'PingFang SC', sans-serif;
+}
+.gutter pre span,
+.code pre span {
+  font: 400 14px Source Code monospace, PingFang SC, Microsoft YaHei, sans-serif !important;
 }
