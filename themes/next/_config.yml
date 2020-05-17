@@ -282,6 +282,18 @@ custom_logo:
 # https://github.com/chriskempson/tomorrow-theme
 highlight_theme: normal
 
+codeblock:
+  # Code Highlight theme
+  # Available values: normal | night | night eighties | night blue | night bright | solarized | solarized dark | galactic
+  # See: https://github.com/chriskempson/tomorrow-theme
+  highlight_theme: normal
+  # Add copy button on codeblock
+  copy_button:
+    enable: true
+    # Show text copy result.
+    show_result: true
+    # Available values: default | flat | mac
+    style: default
 
 # ---------------------------------------------------------------
 # Font Settings
@@ -306,17 +318,17 @@ font:
   # `family: Times New Roman`. Without any quotes.
   # `size: xx`. Use `px` as unit.
 
-  # Global font settings used on <body> element.
+  # Global font settings used on <body> element. #Monda
   global:
     external: true
     family: Lato
     size:
 
   # Font settings for Headlines (h1, h2, h3, h4, h5, h6).
-  # Fallback to `global` font settings.
+  # Fallback to `global` font settings. #Roboto Slab
   headings:
     external: true
-    family:
+    family: 
     size:
 
   # Font settings for posts.
