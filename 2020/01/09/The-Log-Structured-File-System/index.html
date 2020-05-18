@@ -97,7 +97,7 @@
 <meta name="keywords" content="单机存储,文件系统,日志文件系统,崩溃恢复">
 <meta property="og:type" content="article">
 <meta property="og:title" content="The Log-Structured File System">
-<meta property="og:url" content="https://qtozeng.com/2020/01/09/The-Log-Structured-File-System/index.html">
+<meta property="og:url" content="https://qtozeng.top/2020/01/09/The-Log-Structured-File-System/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="前面关于文件系统的三篇文章，分别总结了简单文件系统(vsfs)、快速文件系统(FFS)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(crash consistency)的两种主要解决方案：fsck和journaling。但已有文件系统的文件访问效率仍然远低于磁盘的peek bandwidth，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum">
 <meta property="og:locale" content="zh-Hans">
@@ -141,7 +141,7 @@
 
 
 
-  <link rel="canonical" href="https://qtozeng.com/2020/01/09/The-Log-Structured-File-System/">
+  <link rel="canonical" href="https://qtozeng.top/2020/01/09/The-Log-Structured-File-System/">
 
 
 
@@ -315,7 +315,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2020/01/09/The-Log-Structured-File-System/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/01/09/The-Log-Structured-File-System/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="qqzeng">
@@ -450,7 +450,7 @@
         <p>前面关于文件系统的三篇文章，分别总结了简单文件系统(<code>vsfs</code>)、快速文件系统(<code>FFS</code>)和保证文件系统（以简单文件系统示例）的崩溃恢复一致性(<code>crash consistency</code>)的两种主要解决方案：<code>fsck</code>和<code>journaling</code>。但已有文件系统的文件访问效率仍然远低于磁盘的<code>peek bandwidth</code>，因此伯克利研究人员 John Ousterhout 和他的学生  Mendel Rosenblum 研发了<code>log-structured file system</code>(<code>LFS</code>)，<code>LFS</code>专注于磁盘写操作性能的提升，使其尽量接近于磁盘的<code>peek bandwidth</code>，特别是对于那些存在大量小文件写入和更新的应用场景。顾名思义，<code>LFS</code>是一种日志类型文件系统，磁盘上存储全部是日志，日志包含元数据信息和文件数据块。具体而言，当文件系统发起写操作时，<code>LFS</code>首先将更新的相关数据块（包括元数据信息）以<code>segment</code>为单位缓存在主存，然后按顺序写入磁盘的一块连续区域。<code>LFS</code>不会覆盖或删除磁盘上已有数据，相反它将更新后的数据块（包括元数据）按顺序追加写入到空闲磁盘区域。通过将文件更新带来的随机写操作转化为顺序写<code>segment</code>到磁盘的方式，最大化了写操作效率，因此显著提升了文件系统的性能。从论文中提供的具体数据来看，它将旧文件系统的磁盘访问效率仅有 5% 到 10% 的<code>peek bandwidth</code>提升到 65% 到 75%。</p>
 <a id="more"></a>
 <p>众所周知，<code>vsfs</code>存在严重的磁盘访问效率问题，具体原因是它将磁盘上相关数据结构（如<code>inode</code>和<code>data block</code>，以及同一目录下的文件）分开存储，导致文件访问时，累计大量寻道和旋转操作，严重降低了磁盘吞吐量。而<code>FFS</code>则正是基于文件数据结构访问的空间局部性(<code>space locality</code>)，创造性地引入了<code>cylinder group</code>(<code>block group</code>)，以将文件<code>inode</code>及其关联的<code>data block</code>，以及同一目录下的文件存放于同一<code>block group</code>，避免大量寻道和旋转延时，但考虑到访问相关文件或目录时，它们并不是完全直接相邻，换言之，仍存在一些短的寻道和旋转开销。典型地，<code>FFS</code>创建一个文件需要 5 次写操作。另外，虽然<code>jounraling</code>模式通过顺序写<code>circular log</code>在保证系统能顺利从崩溃中恢复的同时，显著提升磁盘效率，但其存在的问题是，异步的<code>checkpoint</code>操作（将文件数据块和元数据信息真正写入磁盘）仍然存在定位开销。总而言之，已有文件系统的文件访问效率仍然远低于磁盘的<code>peek bandwidth</code>。</p>
-<p><code>FFS</code>的研发存在几个前提或动机：一方面，在文件系统<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/" target="_blank" rel="noopener">第一篇文章</a>中强调过，磁盘随机写操作速度比顺序写的速度慢大约两个数量级，而且随着技术不断发展，磁盘传输效率越来越高，但其旋转和寻道开销并没有相应地减少，因此二者之间的差距越拉越大；另一方面，同样随着技术成熟，系统主存也不断增长，换言之，原本因不能放入内存而带来的额外磁盘开销的情况已不复存在，主存通过缓存磁盘内容能提供较高的文件读取效率，在这种情况下，文件访问操作由文件的写操作主导；第三，如上所述，已有文件系统在很多应用场景下的性能表现糟糕。这三个前提或动机催生<code>LFS</code>的诞生。</p>
+<p><code>FFS</code>的研发存在几个前提或动机：一方面，在文件系统<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/">第一篇文章</a>中强调过，磁盘随机写操作速度比顺序写的速度慢大约两个数量级，而且随着技术不断发展，磁盘传输效率越来越高，但其旋转和寻道开销并没有相应地减少，因此二者之间的差距越拉越大；另一方面，同样随着技术成熟，系统主存也不断增长，换言之，原本因不能放入内存而带来的额外磁盘开销的情况已不复存在，主存通过缓存磁盘内容能提供较高的文件读取效率，在这种情况下，文件访问操作由文件的写操作主导；第三，如上所述，已有文件系统在很多应用场景下的性能表现糟糕。这三个前提或动机催生<code>LFS</code>的诞生。</p>
 <p>本篇文章同样隶属于总结或启发性的文章，文章内容来源于书本 Operating Systems Three Easy Pieces [1]、<code>LFS</code>原论文[2]，以及一些课程参考资料[3]。因此读者若有兴趣，建议阅读原论文。后文从三个方面来详细阐述<code>LFS</code>，即<code>LFS</code>主要包含的三个部分：一是设计恰当数据结构，以保证高效地检索写入到磁盘的日志；第二，磁盘无用块的回收以备重复用，即垃圾回收(<code>garbage collection</code>)，这一部分相对更为复杂。最后是<code>lfs</code>实现的崩溃恢复(<code>crash recovery</code>)策略。总而言之，<code>LFS</code>思想是简单的，且容易理解，但仅仅了解这些并不够，更需要了解其成为一个完善的文件系统所必须具备的功能——<code>crash recovery</code>，这也是<code>LFS</code>的相当重要的一部分贡献。</p>
 <h1 id="从日志中高效检索数据"><a href="#从日志中高效检索数据" class="headerlink" title="从日志中高效检索数据"></a>从日志中高效检索数据</h1><p>这一部分主题为如何构建日志位于磁盘的详细布局，从而允许我们获得高效的文件检索速率。我们以一种解决抛出问题的方式来阐述（希望这种方式能够让读者不仅能够知道日志构造细节，也能够理解日志如此设计的原因，因为这能帮助我们更多）。</p>
 <h2 id="一个简单磁盘日志结构设计"><a href="#一个简单磁盘日志结构设计" class="headerlink" title="一个简单磁盘日志结构设计"></a>一个简单磁盘日志结构设计</h2><p>首先，既然是将对文件的更新或写入操作转化为日志条目，再顺序写入到磁盘的一段连续空闲区域。那么，这个转化过程具体又是如何进行的？简单地，从一个实例入手，对于创建一个新文件，我们可以在磁盘上顺序写入类似于下图的日志块：它同时将文件的数据块 $D$ 写入到磁盘的$A_{0}$地址处，并将索引数据块$D$的 <code>inode</code>写入到紧跟着$D$后面的位置（注意实际上 <code>inode</code>会比<code>data block</code>小很多）。</p>
@@ -500,7 +500,7 @@ D = \frac{F}{1-F} * R_{peak} * T_{position}</script><p>从以上公式可知，�
 <script type="math/tex; mode=display">
 \frac{\text{benefit}}{\text{cost}} = \frac{\text{free space generated * age of data}}{\text{cost}} = \frac{(1-u)*\text{age}}{1+u}</script><p><code>LFS</code>为了实现<code>cost-benefit</code>策略，引入<code>segment usage table</code>的概念。具体地，对于每一个<code>segment</code>，<code>segment usage table</code>记录了<code>segment</code>中存活块的大小以及每个块的最近修改时间。且<code>segment usage table</code>本身同样被写入到每个<code>segment</code>，其地址同样被记录在<code>CR</code>中。为了计算每个<code>segment</code>的<code>cost-to-benefit</code>的值，只需按照每个存活块的$age$进行排序（因为$u$可以通过存活块大小比上整个<code>segment</code>的大小获得）即可（注意，论文中提到，<code>LFS</code>记录的是整个文件最近被更新的时间，而不是单个块）。</p>
 <p>至此，关于<code>LFS</code>日志中无用块的回收策略相关部分已经阐述完毕。总而言之，<code>LFS</code>总的清理过程比较简单，但为了提高清理效率或者提高整个<code>LFS</code>的效率，需要重点考虑两个问题，第一个是如何判断某个<code>segment</code>需要被清理，<code>LFS</code>给出了两种解决办法，其中一种引入了<code>segment summary block</code>，另一种优化措施则采用版本号机制；第二个问题是如何选择哪些<code>segment</code>作为此次清理对象，<code>LFS</code>通过计算每个<code>segment</code>的<code>benefit-to-cost</code>的值来获取最合适的清理对象。</p>
-<h1 id="崩溃恢复"><a href="#崩溃恢复" class="headerlink" title="崩溃恢复"></a>崩溃恢复</h1><p>那么<code>LFS</code>如何处理崩溃恢复呢？崩溃恢复是为了维持磁盘相关数据结构的一致性。旧文件系统必须扫描整个文件系统才能确定在系统崩溃时哪些数据结构发生了哪些变更。上一节的<a href="https://qtozeng.top/2020/01/07/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B4%A9%E6%BA%83%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E6%97%A5%E5%BF%97/" target="_blank" rel="noopener">崩溃一致性和日志</a>的主题为提高崩溃恢复效率。而对于<code>LFS</code>而言，无论系统何时崩溃，其导致的数据结构变更只能位于日志末尾位置，因此，崩溃恢复过程的执行更为迅速（这一特性也被应用于数据库管理系统和其它文件系统）。</p>
+<h1 id="崩溃恢复"><a href="#崩溃恢复" class="headerlink" title="崩溃恢复"></a>崩溃恢复</h1><p>那么<code>LFS</code>如何处理崩溃恢复呢？崩溃恢复是为了维持磁盘相关数据结构的一致性。旧文件系统必须扫描整个文件系统才能确定在系统崩溃时哪些数据结构发生了哪些变更。上一节的<a href="https://qtozeng.top/2020/01/07/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B4%A9%E6%BA%83%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E6%97%A5%E5%BF%97/">崩溃一致性和日志</a>的主题为提高崩溃恢复效率。而对于<code>LFS</code>而言，无论系统何时崩溃，其导致的数据结构变更只能位于日志末尾位置，因此，崩溃恢复过程的执行更为迅速（这一特性也被应用于数据库管理系统和其它文件系统）。</p>
 <p>具体而言，我们知道，大体上，写入磁盘的日志包括两个部分：<code>CR</code>和<code>segment</code>。换言之，我们只需要考虑这两个结构写入磁盘的过程中发生系统崩溃时，应该分别如何处理。<code>LFS</code>使用<code>checkpoint</code>和<code>roll-forward</code>来分别解决这两个问题。前者定义了磁盘某一时刻的一致性状态，而后者用于恢复最后一次<code>checkpoint</code>后又执行的更新操作所带来的变更。</p>
 <p>在<code>LFS</code>的<code>checkpoint</code>操作包括两个阶段：首先将更新的数据写入磁盘（包括<code>data block</code>、<code>inode</code>、<code>imap</code>、<code>segment summary block</code>和<code>segment usage table</code>）；其次，将<code>CR</code>写入到磁盘固定位置（以 30s 为周期写入），<code>CR</code>中包含了<code>imap</code>、<code>segment usage table</code>和指向最后一个<code>segment</code>的指针的地址，以及写入时间戳。</p>
 <h2 id="Checkpoint"><a href="#Checkpoint" class="headerlink" title="Checkpoint"></a>Checkpoint</h2><p>为保证<code>CR</code>写入磁盘的原子性，<code>LFS</code>采取两个方法，一个是<code>CR</code>实际上会被交替写入到磁盘两端，当需要读取<code>CR</code>时，选择具有最新完整时间戳的版本；另外，在<code>CR</code>包含区域的首尾加入写入时间戳，因此一旦写入<code>CR</code>时系统崩溃，则读取此<code>CR</code>记录时，不可能获得两个相同的写入时间戳。因此正常情况下，在系统重启后，通过读取<code>CR</code>的内容，可以获得最后一次<code>checkpoint</code>操作时的<code>imap</code>等数据结构的地址信息，因此可顺利重构出最后一次<code>checkpoint</code>操作时的全局日志结构。</p>
@@ -880,7 +880,7 @@ D = \frac{F}{1-F} * R_{peak} * T_{position}</script><p>从以上公式可知，�
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://qtozeng.com/2020/01/09/The-Log-Structured-File-System/';
+          this.page.url = 'https://qtozeng.top/2020/01/09/The-Log-Structured-File-System/';
           this.page.identifier = '2020/01/09/The-Log-Structured-File-System/';
           this.page.title = 'The Log-Structured File System';
         };
@@ -1292,10 +1292,13 @@ D = \frac{F}{1-F} * R_{peak} * T_{position}</script><p>从以上公式可知，�
 
   
 
-
+  <!--  -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/custom.js"></script>
 <!-- 代码块复制功能 -->
-<script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
-<script type="text/javascript" src="/js/src/clipboard-use.js"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<!-- <script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
+<script type="text/javascript" src="/js/src/custom.js"></script> -->
+<!-- <script type="text/javascript" src="/js/src/clipboard-use.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config("");
 </script>

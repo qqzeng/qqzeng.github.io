@@ -97,7 +97,7 @@
 <meta name="keywords" content="分布式系统,线性一致性,顺序一致性">
 <meta property="og:type" content="article">
 <meta property="og:title" content="etcd-raft ReadIndex 线性一致性读源码简析">
-<meta property="og:url" content="https://qtozeng.com/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/index.html">
+<meta property="og:url" content="https://qtozeng.top/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上篇文章阐述了etcd-raft集群配置变更源码的相关逻辑，同时，在理论层面，从正反两个方面简要y论述了一次集群配置变更只能涉及到一个节点的原因。本文的主题为etcd-raft使用ReadIndex来实现线性一致性(linearizability)的实现原理。这包括两个方面，首先简要阐述线性一致性的理论知识，其次是结合etcd-raft的源码来简单梳理其如何使用ReadIndex来保证读请求的线性">
 <meta property="og:locale" content="zh-Hans">
@@ -134,7 +134,7 @@
 
 
 
-  <link rel="canonical" href="https://qtozeng.com/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/">
+  <link rel="canonical" href="https://qtozeng.top/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/">
 
 
 
@@ -308,7 +308,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="qqzeng">
@@ -880,7 +880,7 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://qtozeng.com/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/';
+          this.page.url = 'https://qtozeng.top/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/';
           this.page.identifier = '2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/';
           this.page.title = 'etcd-raft ReadIndex 线性一致性读源码简析';
         };
@@ -1272,10 +1272,13 @@
 
   
 
-
+  <!--  -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/custom.js"></script>
 <!-- 代码块复制功能 -->
-<script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
-<script type="text/javascript" src="/js/src/clipboard-use.js"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<!-- <script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
+<script type="text/javascript" src="/js/src/custom.js"></script> -->
+<!-- <script type="text/javascript" src="/js/src/clipboard-use.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config("");
 </script>

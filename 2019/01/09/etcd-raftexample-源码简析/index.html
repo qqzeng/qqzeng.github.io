@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,分布式协调服务,分布式缓存,分布式存储,一致性协议,">
+  <meta name="keywords" content="分布式系统,分布式协调服务,分布式存储,分布式缓存,一致性协议,">
 
 
 
@@ -94,10 +94,10 @@
 
 
 <meta name="description" content="最近集中了解了ZAB、Raft及Paxos协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现Raft协议，并基于Raft构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的Raft协议的实现内幕，故选择etcd进行解读。etcd是 CoreOS 基于Raft协议使用 go 开发的分布式 kv 存储系统，可用于">
-<meta name="keywords" content="分布式系统,分布式协调服务,分布式缓存,分布式存储,一致性协议">
+<meta name="keywords" content="分布式系统,分布式协调服务,分布式存储,分布式缓存,一致性协议">
 <meta property="og:type" content="article">
 <meta property="og:title" content="etcd raftexample 源码简析">
-<meta property="og:url" content="https://qtozeng.com/2019/01/09/etcd-raftexample-源码简析/index.html">
+<meta property="og:url" content="https://qtozeng.top/2019/01/09/etcd-raftexample-源码简析/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="最近集中了解了ZAB、Raft及Paxos协议的基本理论，因此想进一步深入到源代码仔细体验一致性协议如何在分布式系统中发挥作用。虽然在 MIT 6.824 课程中有简单实现Raft协议，并基于Raft构建了一个粗糙的 kv 存储系统。但还是想了解下工业生产级别的Raft协议的实现内幕，故选择etcd进行解读。etcd是 CoreOS 基于Raft协议使用 go 开发的分布式 kv 存储系统，可用于">
 <meta property="og:locale" content="zh-Hans">
@@ -134,7 +134,7 @@
 
 
 
-  <link rel="canonical" href="https://qtozeng.com/2019/01/09/etcd-raftexample-源码简析/">
+  <link rel="canonical" href="https://qtozeng.top/2019/01/09/etcd-raftexample-源码简析/">
 
 
 
@@ -308,7 +308,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2019/01/09/etcd-raftexample-源码简析/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/01/09/etcd-raftexample-源码简析/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="qqzeng">
@@ -538,9 +538,9 @@
           
             <a href="/tags/分布式协调服务/" rel="tag"># 分布式协调服务</a>
           
-            <a href="/tags/分布式缓存/" rel="tag"># 分布式缓存</a>
-          
             <a href="/tags/分布式存储/" rel="tag"># 分布式存储</a>
+          
+            <a href="/tags/分布式缓存/" rel="tag"># 分布式缓存</a>
           
             <a href="/tags/一致性协议/" rel="tag"># 一致性协议</a>
           
@@ -895,7 +895,7 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://qtozeng.com/2019/01/09/etcd-raftexample-源码简析/';
+          this.page.url = 'https://qtozeng.top/2019/01/09/etcd-raftexample-源码简析/';
           this.page.identifier = '2019/01/09/etcd-raftexample-源码简析/';
           this.page.title = 'etcd raftexample 源码简析';
         };
@@ -1287,10 +1287,13 @@
 
   
 
-
+  <!--  -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/custom.js"></script>
 <!-- 代码块复制功能 -->
-<script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
-<script type="text/javascript" src="/js/src/clipboard-use.js"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<!-- <script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
+<script type="text/javascript" src="/js/src/custom.js"></script> -->
+<!-- <script type="text/javascript" src="/js/src/clipboard-use.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config("");
 </script>

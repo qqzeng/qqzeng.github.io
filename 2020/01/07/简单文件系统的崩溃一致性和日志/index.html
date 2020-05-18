@@ -97,7 +97,7 @@
 <meta name="keywords" content="单机存储,文件系统,崩溃恢复,一致性,日志">
 <meta property="og:type" content="article">
 <meta property="og:title" content="简单文件系统的崩溃一致性和日志">
-<meta property="og:url" content="https://qtozeng.com/2020/01/07/简单文件系统的崩溃一致性和日志/index.html">
+<meta property="og:url" content="https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/index.html">
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="上一篇文章从早期 unix 系统所使用的文件系统存在的典型问题切入，介绍The Fast File System三个方面的工作：基于数据访问的局部性，优化了磁盘数据块布局方式以提升磁盘效率，同时允许使用更灵活的数据块大小以提升磁盘利用率和传输速率，最后在兼容已有文件系统接口规范的前提下，通过增强已有功能以进一步提升系统易用性。本文主题是文件系统的崩溃一致性(crash consistency)和日">
 <meta property="og:locale" content="zh-Hans">
@@ -146,7 +146,7 @@
 
 
 
-  <link rel="canonical" href="https://qtozeng.com/2020/01/07/简单文件系统的崩溃一致性和日志/">
+  <link rel="canonical" href="https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/">
 
 
 
@@ -320,7 +320,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.com/2020/01/07/简单文件系统的崩溃一致性和日志/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="qqzeng">
@@ -458,7 +458,7 @@
 <h1 id="Crash-Consistency-Problem"><a href="#Crash-Consistency-Problem" class="headerlink" title="Crash Consistency Problem"></a>Crash Consistency Problem</h1><p>所谓的<code>crash consistency</code>也被称为是<code>consistent update</code>。问题产生的本质原因是：文件系统对磁盘发出的更新操作通常是一个复合操作，即磁盘无法通过一次写入操作就能完成整个更新请求，相反，它需要依次更新多个相关数据结构，即多次写入磁盘才能顺利完成请求。在这多个依次写入的操作中间，系统发生了某种软件或硬件方面的错误（如突然断电<code>power loss</code>或者系统崩溃<code>system crash</code>），使得此次更新请求未能顺利完成，即只更新了部分数据结构，这就导致被更新的数据结构处于一个不不一致的状态，这可能导致很多问题，典型包括<code>space leak</code>、<code>garbage data</code>和<code>inconsistent data structures</code>三种 。</p>
 <p>我们使用<code>vsfs</code>作为原型，通过一个简单实例来阐述<code>crash consistency</code>问题。假设目前磁盘上的数据块布局如下，只有一个文件 foo，其<code>inode</code>编号为 2，且我们想往文件 foo 追加数据内容。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-exp-1_zxkxsl.png" alt="foo 文件相关数据块的磁盘布局" style="zoom:50%;"></p>
-<p>从<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/" target="_blank" rel="noopener">这里</a>我们可以了解到更新一个磁盘上的文件包含了对磁盘上相关数据结构的一系列更新操作，在这个实例中，需要更新对应的<code>inode</code>（增加一个直接指针，以及更新文件大小、访问和修改时间等属性），写入新的数据块 Db，以及更新<code>d-bmap</code>（标记 Db 已被写入）。下图为写入期间未发生任何错误的情况下，更新后磁盘布局。</p>
+<p>从<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/">这里</a>我们可以了解到更新一个磁盘上的文件包含了对磁盘上相关数据结构的一系列更新操作，在这个实例中，需要更新对应的<code>inode</code>（增加一个直接指针，以及更新文件大小、访问和修改时间等属性），写入新的数据块 Db，以及更新<code>d-bmap</code>（标记 Db 已被写入）。下图为写入期间未发生任何错误的情况下，更新后磁盘布局。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-exp-2_h1bexm.png" alt="foo 文件被更新后相关数据块的磁盘布局" style="zoom:50%;"></p>
 <p>若不幸在整个更新过程中发生了错误（一般而言，文件系统通过<code>page cache</code>或<code>buffer cache</code>来缓存对磁盘的更新，并周期性的实施刷盘操作，但同步刷盘操作中也可能被中断），那么磁盘中关于文件 foo 的状态可能有如下两种情况：</p>
 <ul>
@@ -501,7 +501,7 @@
 <p>下图同样表示在对文件的更新过程中，使用<code>data journaling</code>策略来保证<code>crash consistency</code>，和文件相关的磁盘数据结构写入的相对顺序，图中往下表示时间增长，虚线隔开的各个操作表示它们之间必须严格按照相对顺序执行，而同为虚线框内的一组操作表示它们之间的执行顺序是任意的。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-data-timeline_nvzrbg.png" alt="data journaling 模式下各操作相对执行顺序" style="zoom:50%;"></p>
 <p>最后补充一点。有读者可能会想，既然为了避免日志写入发生<code>torn write</code>，那么是不是可以将构成日志的 5 个部分依次按顺序写入磁盘，且保证前一个部分成功写入磁盘后，才写入后一个部分。理论上，这种方式没有任何问题，但其代价也显而易见，大幅度降低文件系统性能，因为它使得文件系统的写缓冲没有任何作用。基于此，<code>ext4</code>文件系统采用了一种更加优雅的解决方案，为了同时保证日志写入的高效以及写入的原子性，在每条日志记录的开始和末尾处增加了日志记录中数据块的<code>checksum</code>，同时，在崩溃恢复程序读取日志时，会临时计算数据块的<code>checksum</code>，同时对比保存在日志记录中的值，若二者不等，则表明日志记录是不完整的。否则，证明日志记录确实是完整的，即日志记录在写入过程中未发生系统崩溃。详细内容可参考文献[2]。</p>
-<h2 id="Batching-Log-Updates"><a href="#Batching-Log-Updates" class="headerlink" title="Batching Log Updates"></a>Batching Log Updates</h2><p><code>data jounaling</code>模式能基本解决<code>crash consistency</code>问题，其不足之处在于日志记录包含了实际数据块，因此占用了较多额外空间。另外，恢复过程还会引入部分<code>redundant write</code>。针对<code>redundant write</code>的问题，我们考虑这样一个场景：同一个目录下的两个文件 foo1 和 foo2 依次进行更新，在<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/" target="_blank" rel="noopener">这里</a>我们知道更新目录下的一个文件，至少需要更新的磁盘数据结构包括<code>i-bmap</code>、<code>inode</code>、目录所关联的<code>data block</code>以及目录的<code>inode</code>，因此，这些信息全部需要作为日志内容写入到磁盘，那么 foo1 和 foo2 的更新则需要重复写入目录的<code>inode</code>及其关联的<code>data block</code>，因此会导致较多写操作开销（考虑当更新同一个目录下的多个文件或目录的情况）。针对这一问题，<code>ext3</code>文件系统采用<code>batch update</code>策略来解决。具体而言，它会先将文件的更新进行缓存，并标记对应的日志记录需要存盘，当发现同一目录中其它文件也需要更新时，会将对应的日志记录合并到前一文件所对应的日志记录的数据块中，最后当达到刷盘周期时，将包含多个文件更新的日志记录一次性写入磁盘。而针对前一个问题，可以使用<code>metadata journaling</code>模式来进行优化。</p>
+<h2 id="Batching-Log-Updates"><a href="#Batching-Log-Updates" class="headerlink" title="Batching Log Updates"></a>Batching Log Updates</h2><p><code>data jounaling</code>模式能基本解决<code>crash consistency</code>问题，其不足之处在于日志记录包含了实际数据块，因此占用了较多额外空间。另外，恢复过程还会引入部分<code>redundant write</code>。针对<code>redundant write</code>的问题，我们考虑这样一个场景：同一个目录下的两个文件 foo1 和 foo2 依次进行更新，在<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/">这里</a>我们知道更新目录下的一个文件，至少需要更新的磁盘数据结构包括<code>i-bmap</code>、<code>inode</code>、目录所关联的<code>data block</code>以及目录的<code>inode</code>，因此，这些信息全部需要作为日志内容写入到磁盘，那么 foo1 和 foo2 的更新则需要重复写入目录的<code>inode</code>及其关联的<code>data block</code>，因此会导致较多写操作开销（考虑当更新同一个目录下的多个文件或目录的情况）。针对这一问题，<code>ext3</code>文件系统采用<code>batch update</code>策略来解决。具体而言，它会先将文件的更新进行缓存，并标记对应的日志记录需要存盘，当发现同一目录中其它文件也需要更新时，会将对应的日志记录合并到前一文件所对应的日志记录的数据块中，最后当达到刷盘周期时，将包含多个文件更新的日志记录一次性写入磁盘。而针对前一个问题，可以使用<code>metadata journaling</code>模式来进行优化。</p>
 <h2 id="Making-The-Log-Finite"><a href="#Making-The-Log-Finite" class="headerlink" title="Making The Log Finite"></a>Making The Log Finite</h2><p>上一小节提到的<code>data journaling</code>方式不仅存在占用过多额外磁盘空间问题，而且也会增加崩溃恢复过程的耗时。其解决方式比较直接，通过日志循环写入(<code>circular log</code>)配合日志释放来解决。具体而言，将存储日志的磁盘区域作为一个环形数组即可，环形数组的首尾指针即为没有被释放的日志记录边界，为了方便，可以将这两个指针存储在<code>journal superblock</code>中。如下图所示。</p>
 <p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout-free_vmujha.png" alt="circular log" style="zoom:50%;"></p>
 <p>为了实现<code>circular log</code>，需在每次成功文件更新的操作后，即时将日志区域中对应条目释放掉（即更新<code>circular log</code>的首尾指针）。通过引入<code>circular log</code>后，为了保证<code>crash consistency</code>，更新文件的整个过程可扩展为如下四个阶段：</p>
@@ -911,7 +911,7 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://qtozeng.com/2020/01/07/简单文件系统的崩溃一致性和日志/';
+          this.page.url = 'https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/';
           this.page.identifier = '2020/01/07/简单文件系统的崩溃一致性和日志/';
           this.page.title = '简单文件系统的崩溃一致性和日志';
         };
@@ -1303,10 +1303,13 @@
 
   
 
-
+  <!--  -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/custom.js"></script>
 <!-- 代码块复制功能 -->
-<script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
-<script type="text/javascript" src="/js/src/clipboard-use.js"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<!-- <script type="text/javascript" src="/js/src/clipboard.min.js"></script>  
+<script type="text/javascript" src="/js/src/custom.js"></script> -->
+<!-- <script type="text/javascript" src="/js/src/clipboard-use.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config("");
 </script>
