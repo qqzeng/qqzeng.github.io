@@ -289,8 +289,8 @@
       <tags>
         <tag>分布式系统</tag>
         <tag>分布式协调服务</tag>
-        <tag>分布式存储</tag>
         <tag>分布式缓存</tag>
+        <tag>分布式存储</tag>
         <tag>一致性协议</tag>
       </tags>
   </entry>
@@ -303,8 +303,8 @@
         <category>一致性算法</category>
       </categories>
       <tags>
-        <tag>一致性算法</tag>
         <tag>原子广播协议</tag>
+        <tag>一致性算法</tag>
       </tags>
   </entry>
   <entry>
