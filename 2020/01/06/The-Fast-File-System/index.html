@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="单机存储,文件系统,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上一篇文章从文件系统所使用的数据结构和典型文件访问操作流程两个方面，简要介绍一个简单文件系统(vsfs)原型。其目的主要在于理解一个最基本的文件系统的核心，并且如何理解和学习一个文件系统，是一篇总结和启发性的文章。本文从简单文件系统或早期 unix 系统所使用的文件系统存在的典型问题出发，引出更优秀的文件系统——The Fast File System，它在兼容已有文件系统接口规范的前提下，对已有">
+<meta name="keywords" content="单机存储,文件系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Fast File System">
+<meta property="og:url" content="https://qtozeng.top/2020/01/06/The-Fast-File-System/index.html">
+<meta property="og:site_name" content="Zeng Qiaoqiao">
+<meta property="og:description" content="上一篇文章从文件系统所使用的数据结构和典型文件访问操作流程两个方面，简要介绍一个简单文件系统(vsfs)原型。其目的主要在于理解一个最基本的文件系统的核心，并且如何理解和学习一个文件系统，是一篇总结和启发性的文章。本文从简单文件系统或早期 unix 系统所使用的文件系统存在的典型问题出发，引出更优秀的文件系统——The Fast File System，它在兼容已有文件系统接口规范的前提下，对已有">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-cylinder-group_jbeomr.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-block-group_ioiafd.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-layout-related_sozltf.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-layout-mess.png_gjk3iz.png">
+<meta property="og:updated_time" content="2020-01-08T02:53:32.462Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Fast File System">
+<meta name="twitter:description" content="上一篇文章从文件系统所使用的数据结构和典型文件访问操作流程两个方面，简要介绍一个简单文件系统(vsfs)原型。其目的主要在于理解一个最基本的文件系统的核心，并且如何理解和学习一个文件系统，是一篇总结和启发性的文章。本文从简单文件系统或早期 unix 系统所使用的文件系统存在的典型问题出发，引出更优秀的文件系统——The Fast File System，它在兼容已有文件系统接口规范的前提下，对已有">
+<meta name="twitter:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-cylinder-group_jbeomr.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2020/01/06/The-Fast-File-System/">
+
+
+
+
+
+  <title>The Fast File System | Zeng Qiaoqiao</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zeng Qiaoqiao</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/01/06/The-Fast-File-System/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">The Fast File System</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-06T19:26:36+08:00">
+                2020-01-06
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/单机存储/" itemprop="url" rel="index">
+                    <span itemprop="name">单机存储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,848
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  10
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上一篇文章从文件系统所使用的数据结构和典型文件访问操作流程两个方面，简要介绍一个简单文件系统(<code>vsfs</code>)原型。其目的主要在于理解一个最基本的文件系统的核心，并且如何理解和学习一个文件系统，是一篇总结和启发性的文章。本文从简单文件系统或早期 unix 系统所使用的文件系统存在的典型问题出发，引出更优秀的文件系统——<code>The Fast File System</code>，它在兼容已有文件系统接口规范的前提下，对已有文件系统存在的问题，针对性进行优化以提升文件系统的访问和存储效率，同时进一步提升系统的易用性。</p>
+<a id="more"></a>
+<p>同上一篇文章类似，本文也是一篇总结和启发性的文章。其来源于书籍 operating systems three easy pieces，以及相应的原始论文 The Fast File System。若读者对其中的细节感兴趣，推荐阅读原文。<code>The Fast File System (FFS)</code>是对早期 Unix 所使用的文件系统的重实现，它通过使用更灵活的数据块分配策略(<code>allocation policies</code>)以增强数据块访问的本地性(<code>locality</code>)，最终显著提升磁盘访问的吞吐率，另外它提供多个数据块大小作为选择，以适应不同文件大小的情形，同时也提升了文件的存储利用率，最后它还提出了一系列的能够提升系统易用性的功能。本文先简单介绍早期文件系统存在的典型的问题，然后再从上述几个方面介绍<code>FFS</code>。</p>
+<h1 id="早期文件系统存在的问题"><a href="#早期文件系统存在的问题" class="headerlink" title="早期文件系统存在的问题"></a>早期文件系统存在的问题</h1><p>早期文件系统性能很糟糕，通常只能达到磁盘总带宽的 2%。造成磁盘低访问效率的根本原因是：将磁盘当成一块支持随机访问的内存来使用，导致每次磁盘访问操作的定位开销非常大。换言之，文件系统的设计没有充分考虑磁盘的顺序访问的效率比随机访问的效率高出接近两个数量级这一本质特性。</p>
+<p>具体而言，磁盘访问效率较低包括几个典型的原因：一方面，文件所对应的<code>inode</code>和其索引的<code>data blocks</code>跨越多个磁道，因此，当由<code>inode</code>索引对应的<code>data blocks</code>时存在较大的寻道延时；其次，早期文件系统采用链表实现，即使用链表将空闲块链接起来，此种实现方式较为简单，但其存在的问题是：当文件被反复删除和创建时，原本存储于磁盘上一段连续区域的文件，被其它文件分割成多个离散片段，即访问逻辑上连续的文件的操作，最终映射到了物理磁盘上碎片化的随机访问，这严重降低了文件访问效率（很多磁盘整理小工具的基本原理即为磁盘碎片整理）。另外一个则是关于数据块大小的问题，早期文件系统所使用的数据块大小为 512b，一个较小的取值，小数据块大小导致大文件包含过多的元数据信息，并且也会导致数据块的传输速率下降（频繁累计寻道和旋转延时）。但小数据块大小有利于存储效率的提升，因为它减少了内部碎片。数据块大小的设计是个典型的<code>trade-off</code>。</p>
+<h1 id="The-Fast-File-System"><a href="#The-Fast-File-System" class="headerlink" title="The Fast File System"></a>The Fast File System</h1><p><code>FFS</code>是 Berkeley 研究实现的一个文件系统。它的一个核心设计原则是<code>disk aware</code>。所谓<code>disk aware</code>指的是文件系统的设计考虑到了底层磁盘的结构，通过最优化数据的存储布局，以提升磁盘的访问效率。同时，值得提倡的是，它很好地遵循已有文件系统的接口规范，只更改增强了接口内部的实现，因此，能够很方便将<code>FFS</code>嵌入到已有系统中以替换原有文件系统，这也使得很多现代优秀的文件系统的设计一直延续这一准则。</p>
+<h2 id="优化数据结构布局"><a href="#优化数据结构布局" class="headerlink" title="优化数据结构布局"></a>优化数据结构布局</h2><p>根据磁盘自身的构造特点，<code>FFS</code>首先将整个磁盘划分成一组<code>cylinder group</code>，其中<code>cylinder group</code>是由若干个相邻的<code>cylinder</code>构成。下面是一个示意图。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-cylinder-group_jbeomr.png" alt="磁盘的 cylinder group 结构" style="zoom:50%;"></p>
+<p>但考虑到现代磁盘并没有将磁盘本身构造细节暴露给上层文件系统，因此文件系统也无法利用这些细节。但类似地，现代的一些文件系统（包括<code>ext2</code>、<code>ext3</code>和<code>ext4</code>）将整个磁盘抽象后的大数组划分为若干个<code>block group</code>，其中每个<code>block group</code>包含若干个连续数据块。换言之，文件系统将<code>cylinder group</code>抽象成<code>block group</code>，它是<code>FFS</code>提升文件访问效率的一个核心设计。而且，<code>FFS</code>将每个<code>block group</code>作为一个独立的区域，即其中包含了所存储文件相关的所有信息（同<code>vsfs</code>设计类似，包括<code>data blocks</code>、<code>inodes</code>、<code>i-bmap</code>、<code>d-bmap</code>和一个<code>superblock</code>）。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-block-group_ioiafd.png" alt="文件系统使用的 block grouop 结构" style="zoom:67%;"></p>
+<p><code>FFS</code>引入<code>block group</code>的设计结构是为了优化数据块的布局方式。<code>FFS</code>对数据块的组织布局的核心原则是：<code>keep related stuff together</code>，即将相关的数据结构存储在一起。这主要包含两个方面：一对于同一文件其所涉及的数据结构存储在同一<code>block group</code>；另外，对于同一目录下的文件和目录项所涉及的数据结构存储在同一<code>block group</code>。以一个实例来阐述。比如存在四个文件<code>/a/c</code>、<code>/a/d</code>、<code>/a/e</code>和<code>/b/f</code>，那么<code>FFS</code>会将<code>a</code>、<code>c</code>、<code>d</code>和<code>e</code>存储到同一<code>block group</code>，而将<code>b</code>和<code>f</code>共同存储到另一个<code>block group</code>，示意图如下。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-layout-related_sozltf.png" alt="FFS 所改进的数据块布局方式" style="zoom:50%;"></p>
+<p>作为一个错误的设计示例。原有的旧的文件系统为了提升磁盘的利用空间，会尽量保证数据块的均匀分布，因此它更倾向于将不同的文件分散存储在不同的<code>block group</code>中。在这种情况下，当访问同一目录下的文件，会引发较多寻道操作，降低了访问效率。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578451856/blog/32-The-Fast-File-System/ffs-layout-mess.png_gjk3iz.png" alt="一种糟糕的数据块布局方式" style="zoom:50%;"></p>
+<p>事实上，<code>FFS</code>所遵循的这两种数据块存放策略存在相应依据。换言之，文件系统的使用中存在大量的对应使用场景。一方面，将文件的<code>inode</code>及其对应<code>data blocks</code>存放在同一<code>block group</code>这是显然的。其次，同一目录下的文件通常会被同时访问，比如使用<code>gcc</code>编译项目目录下的源文件。本质上是因为同一目录下的文件或目录其相关性较大。</p>
+<p>最后，此种数据块的布局方式对于大文件而言却是一个例外。可以预料到，大文件可能会填满整个<code>block group</code>，这导致其它同它相关的文件不得不存放到其它的<code>block group</code>。对此，<code>FFS</code>的改进后的布局策略是：将一个大文件分成若干个大的<code>chunk</code>，每个<code>chunk</code>存放在一个<code>block group</code>上，这样后续同其有关联的文件，就能够同样存放到同一<code>block group</code>。但这有一个明显的弊端，将大文件分成多个<code>chunk</code>分开存放将导致访问大文件本身的开销显著增大（寻道操作增加）。但事实上增加的开销取决于每个<code>chunk</code>的大小，换言之，理论上只要<code>chunk</code>够大，那么传输单个<code>chunk</code>所包含数据的时间将基本抵消对相邻<code>chunk</code>的寻道开销，这是一种典型的<code>amortization</code>策略。简单计算，如果磁盘的<code>peek bandwidth</code>是 50kb/s，那么若想达到 50% 的<code>peek bandwidth</code>（即一半时间开销用于数据传输，一半用于寻道和旋转操作），只需要将<code>chunk</code>的大小设置成 409.6 kb 即可。同样，当取得 90% 的<code>peek bandwidth</code>时，相应的<code>chunk</code>大小为 3.69mb。但事实上，<code>FFS</code>并非通过增加大文件的<code>chunk</code>的大小，而是采用一种更符合实际情况的解决方案，将大文件所包含的<code>direct pointer</code>(12个) 存放到第一个<code>block group</code>中，而将后续的每一个<code>indirect pointer</code>及其数据块分别存放到不同的<code>block group</code>中。显然，这是考虑在到绝大部分情况下，文件都只由直接指针构成。</p>
+<h2 id="数据块大小设置"><a href="#数据块大小设置" class="headerlink" title="数据块大小设置"></a>数据块大小设置</h2><p>数据块大小的设置面临的问题是：过小的取值会影响数据传输效率（因为这将导致过多的寻道操作），而过大的取值会造成过多的内部碎片，降低了磁盘的利用率。<code>FFS</code>通过引入<code>sub-block</code>来解决这个问题。具体而言，当应对小文件的存储时，它会分若干个<code>sub-block</code>，当随着文件大小的增长超过 4kb 时，会将已分配的数据进一步拷贝到以 4kb 为单位的数据块，同时释放文件原来占用的<code>sub-block</code>。但这也存在一个问题，即连续不断的拷贝也会降低性能。<code>FFS</code>针对性地修改<code>lib</code>库通过缓存对文件的写入，并尽量以 4kb 为大小写入磁盘，来缓解这一问题。</p>
+<p>另外，论文中还介绍了<code>FFS</code>引入的一种<code>parameterization</code>策略，详情可参考原论文。</p>
+<h2 id="功能性增强"><a href="#功能性增强" class="headerlink" title="功能性增强"></a>功能性增强</h2><p>所谓的功能性增强(<code>Functional Enhancements</code>)指的是：通过增强已有文件系统的功能，来改善系统的可用性。<code>FFS</code>做了较多的改进，包括</p>
+<ul>
+<li>支持<code>long file names</code>，改进旧的文件系统只能支持固定长度的较短的文件名称的缺陷；</li>
+<li>引入<code>symbolic link</code>，旧的文件系统只支持<code>hard link</code>，硬链接有较大限制，比如不能跨分区链接，且禁止链接到目录以避免循环链接；</li>
+<li>引入<code>rename</code>系统调用以原子性地重命名文件；</li>
+<li>引入了<code>advisory shared/exclusive locks</code>以方便地构建并发程序；</li>
+<li>引入了<code>Quotas</code>机制，让管理员能更合理地对每个用户实施配额限制，包括具体到<code>inode</code>和<code>data block</code>数目的限制。</li>
+</ul>
+<p>简单小节。本文简单介绍了<code>Fast File System</code>，它对旧的 unix 文件进行了改进。具体而言，以<code>disk aware</code>为设计准则，通过优化磁盘数据结构的存储布局，提升了文件的访问效率；同时引入一种<code>sub-block</code>的策略，来尽可能适应不同的文件存储情形，以提高系统的存储和访问效率；最后在遵循已有文件系统接口规范的前提下，增强已有功能的内部实现，以提升系统的易用性。总而言之，<code>FFS</code>有许多优秀的设计理念和方法值得学习和借鉴，这有助于学习和改进其它更加先进的文件系统。</p>
+<p>参考资料<br>[1]. Arpaci-Dusseau R H, Arpaci-Dusseau A C. Operating systems: Three easy pieces[M]. Arpaci-Dusseau Books LLC, 2018.<br>[2]. McKusick M K, Joy W N, Leffler S J, et al. A fast file system for UNIX[J]. ACM Transactions on Computer Systems (TOCS), 1984, 2(3): 181-197.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/单机存储/" rel="tag"># 单机存储</a>
+          
+            <a href="/tags/文件系统/" rel="tag"># 文件系统</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/05/简单文件系统-vsfs/" rel="next" title="简单文件系统 vsfs">
+                <i class="fa fa-chevron-left"></i> 简单文件系统 vsfs
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/01/07/简单文件系统的崩溃一致性和日志/" rel="prev" title="简单文件系统的崩溃一致性和日志">
+                简单文件系统的崩溃一致性和日志 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">qqzeng</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">49</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="email">
+                      
+                        <i class="fa fa-fw fa-globe"></i>email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#早期文件系统存在的问题"><span class="nav-number">1.</span> <span class="nav-text">早期文件系统存在的问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#The-Fast-File-System"><span class="nav-number">2.</span> <span class="nav-text">The Fast File System</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#优化数据结构布局"><span class="nav-number">2.1.</span> <span class="nav-text">优化数据结构布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据块大小设置"><span class="nav-number">2.2.</span> <span class="nav-text">数据块大小设置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#功能性增强"><span class="nav-number">2.3.</span> <span class="nav-text">功能性增强</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">qqzeng</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173.2k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+  
+
+
+  
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script>
+
+  <!-- 代码块复制功能 -->
+<!--   <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script> -->
+  <!-- <script type="text/javascript" src="/js/src/custom.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

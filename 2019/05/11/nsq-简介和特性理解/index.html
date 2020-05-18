@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="分布式系统,消息队列,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前段时间写的分布式系统相关lab，都是使用go语言，还挺有趣的这门语言，但至今也没系统了解过它。不得不说，纯粹了解或学习语言特性，长时间下来会有点枯燥。个人更习惯阅读开源项目，以更深入了解其在实际工程项目的最佳实践（但似乎不能对语言特性本质有太多的了解，尴尬）。很自然地选择了一个对于初学者比较经典的starter project，一个分布式实时消息队列——nsq。大家比较熟悉的消息中间件可能是像R">
+<meta name="keywords" content="分布式系统,消息队列">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nsq 简介和特性理解">
+<meta property="og:url" content="https://qtozeng.top/2019/05/11/nsq-简介和特性理解/index.html">
+<meta property="og:site_name" content="Zeng Qiaoqiao">
+<meta property="og:description" content="前段时间写的分布式系统相关lab，都是使用go语言，还挺有趣的这门语言，但至今也没系统了解过它。不得不说，纯粹了解或学习语言特性，长时间下来会有点枯燥。个人更习惯阅读开源项目，以更深入了解其在实际工程项目的最佳实践（但似乎不能对语言特性本质有太多的了解，尴尬）。很自然地选择了一个对于初学者比较经典的starter project，一个分布式实时消息队列——nsq。大家比较熟悉的消息中间件可能是像R">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/blob/hexo/static/mq-comparison.png?raw=true">
+<meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/blob/hexo/static/nsqd-message-pub-sub-process.gif?raw=true">
+<meta property="og:updated_time" content="2019-05-13T13:57:34.176Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="nsq 简介和特性理解">
+<meta name="twitter:description" content="前段时间写的分布式系统相关lab，都是使用go语言，还挺有趣的这门语言，但至今也没系统了解过它。不得不说，纯粹了解或学习语言特性，长时间下来会有点枯燥。个人更习惯阅读开源项目，以更深入了解其在实际工程项目的最佳实践（但似乎不能对语言特性本质有太多的了解，尴尬）。很自然地选择了一个对于初学者比较经典的starter project，一个分布式实时消息队列——nsq。大家比较熟悉的消息中间件可能是像R">
+<meta name="twitter:image" content="https://github.com/qqzeng/qqzeng.github.io/blob/hexo/static/mq-comparison.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2019/05/11/nsq-简介和特性理解/">
+
+
+
+
+
+  <title>nsq 简介和特性理解 | Zeng Qiaoqiao</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zeng Qiaoqiao</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/05/11/nsq-简介和特性理解/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">nsq 简介和特性理解</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-11T21:51:04+08:00">
+                2019-05-11
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/消息队列/" itemprop="url" rel="index">
+                    <span itemprop="name">消息队列</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,754
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  10
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>前段时间写的分布式系统相关<code>lab</code>，都是使用<code>go</code>语言，还挺有趣的这门语言，但至今也没系统了解过它。不得不说，纯粹了解或学习语言特性，长时间下来会有点枯燥。个人更习惯阅读开源项目，以更深入了解其在实际工程项目的最佳实践（但似乎不能对语言特性本质有太多的了解，尴尬）。很自然地选择了一个对于初学者比较经典的<code>starter project</code>，一个<strong>分布式实时消息队列</strong>——<code>nsq</code>。大家比较熟悉的消息中间件可能是像<code>RabbitMQ</code>、<code>ActiveMQ</code>、<code>RocketMQ</code>以及<code>kafaka</code>之类的。我个人对这些消息中间件并没有实践经验，但感觉<code>nsq</code>更轻量级（代码量也少），而且正如官方对其的定义，其最主要优势在于<strong>分布式</strong>和<strong>实时</strong>。具体对比，可以参考<code>golang 2017</code>开发者大会上的一张图。<code>nsq</code>遵循的是一个去中心化的的拓扑结构，其具备<strong>高可用性</strong>（无单点故障<code>SPOF</code>）、<strong>可扩展</strong>（支持水平扩展节点）、<strong>低延迟</strong>（采用<code>push</code>的方式）、<strong>可靠消息传递</strong>（消息可被持久化和失败重入队列）、<strong>组合式负载均衡</strong>（消息推送为随机负载均衡）以及<strong>消费者自动发现和连接生产者</strong>（通过服务发现与注册系统实现）等特性。笔者打算后面通过一系列博文，深入到<code>nsq</code>源码，简析其各模块（组件）的设计实现。</p>
+<a id="more"></a>
+<p>按照惯例，先声明下阅读本文章的前提。本文不会详细介绍<a href="https://nsq.io/overview/quick_start.html" target="_blank" rel="noopener">nsq</a>基本特性，也不会过多阐述消息队列的基本功能和使用场景，也不会涉及到<code>nsq</code>如何使用及其最佳实践。换言之，阅读本文前最好对这些有初步了解，以在整体上有所把握和体会。关于<code>nsq</code>可参考官方文档的文献[1]、[2]、[3]和[4]，或者其它中文文章[4]。本文先简要介绍<code>nsq</code>各组件及基本工作流程，然后详细阐述<code>nsq</code>几个值得注意的特性。若有理解错误的地方，欢迎指正！</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/blob/hexo/static/mq-comparison.png?raw=true" alt="mq-comparison"></p>
+<h2 id="nsq-基本介绍"><a href="#nsq-基本介绍" class="headerlink" title="nsq 基本介绍"></a>nsq 基本介绍</h2><p>在本文最前面，简要阐述了<code>nsq</code>的几个重要特性（官方文档列举的更全），我们会重点阐述这些特性。关于它们中的一些，我们深入到代码以了解其是如何实现的。而其它的典型的包括：易于部署，因为它没有太多依赖配置（通过命令行就可以配置）；支持安全传输层协议 (<code>TLS</code>)；还提供了多种语言的客户端功能库；最后附带一个简易的集群管理界面<code>nsqadmin</code>。<code>nsq</code>主要包括两个组件<code>nsqd</code>和<code>nsqlookupd</code>，和一个管理界面<code>nsqdadmin</code>：</p>
+<ul>
+<li><code>nsqd</code>是一个负责接收、排队、转发消息到客户端的守护进程；</li>
+<li><code>nsqlookupd</code>是一个管理集群(<code>nsqd</code>)拓扑信息并提供最终一致性的服务注册与发现的守护进程；</li>
+<li><code>nsqadmin</code>是一个管理界面，提供实时的集群中<code>topic</code>、<code>channel</code>和<code>message</code>的统计信息，还提供与这些实体相关的各种管理接口。</li>
+</ul>
+<p>在这里简单阐述整个系统的典型流程。除了上述几个组件外，另外两个核心的概念为主题(<code>topic</code>)和通道<code>channel</code>，当然消息(<code>message</code>)也是重要的。它们的简单阐述如下：</p>
+<ul>
+<li><code>message</code>即代表的是数据，它被生产者创建并发送到指定的<code>topic</code>，而消费者可以从指定的<code>topic</code>和<code>channel</code>接收并消费消息。且每个被<code>nsqd</code>接收到的消息至少会被发送一次给消费者，因为消息消费超时会触发重入队过程，且消息附带有一个投递次数属性，以使得客户端对投递次数过大的消息灵活处理。</li>
+<li><code>topic</code>代表生产者投递消息的一个逻辑键值，它可以将消息进行分类。一个<code>nsqd</code>上可包含多个<code>topic</code>，且它们可以不必在生产者投递消息前就创建，换言之，<code>topic</code>可在其第一次接收到生产者投递的消息时创建。</li>
+<li><code>channel</code>代表消费者订阅某个<code>nsqd</code>上的<code>topic</code>的消息。你可以仍旧将它视作一个消息队列，只不过它与消费者相关。每当生产者将消息发布到一个<code>topic</code>上，消息会被<strong>拷贝</strong>（深拷贝，即构建一个消息副本）到与<code>topic</code>关联的所有的<code>channel</code>。而且，多个消费者可以订阅同一个<code>channel</code>，<code>channel</code>会将其接收到的消息<strong>随机</strong>（即随机负载均衡）发送到与其关联的一个客户端。同<code>topic</code>类似，<code>channel</code>也可不用提前创建，消费者在第一次订阅消息（在指定<code>topic</code>的某个<code>channel</code>）的时候会创建此<code>channel</code>（若其不存在）。最后，<code>channel</code>从<code>topic</code>接收的消息首先会在内存中排队，当达到内存队列长度上限，就被写到持久化存储。</li>
+</ul>
+<p><code>nsqd</code>在启动时通常会建与各<code>nsqlookupd</code>的连接。<code>nsqlookupd</code>为其提供目录服务，即<code>nsqd</code>可将<code>topic</code>、<code>channel</code>及<code>nsqd</code>(生产者)的信息注册到<code>nsqlookupd</code>，并且可通过与<code>nsqlookupd</code>之间的<code>TCP</code>连接动态更新自己的状态信息（<code>topic</code>及<code>channel</code>信息等）。而消费者可通过<code>http</code>请求连接到<code>nsqlookupd</code>，以查找其感兴趣的<code>nsqd</code>的地址。正是通过这种设计使得消费者与生产者分离，从而降低系统复杂性。在获取到生产者(<code>nsqd</code>)的地址后（准确而言，还包括<code>topic</code>及<code>channel</code>） ，消费者（<code>nsq</code>客户端）可直接连接到<code>nsqd</code>，以等待对方发送消息（不是主动去拉到消息，而是等被对方推送消息）。另外，为了提供更好的吞吐量，<code>nsq</code>允许消费者显式地向<code>nsqd</code>声明其能够处理的消息数量，这可以提高消息的吞吐量（避免消费者积压消息的情况）。针对每一个消息，当消费者消费完成后，其需要回复<code>nsqd</code>一个<code>FIN</code>消息，否则消息会被重入队，然后再一次被发送给消费者。最后，有一点需要注意，客户端（消费者）一次性只能订阅一个<code>channel</code>。官方文档提供的消息流动图如下：</p>
+<p><img src="https://github.com/qqzeng/qqzeng.github.io/blob/hexo/static/nsqd-message-pub-sub-process.gif?raw=true" alt="mq-comparison"></p>
+<h2 id="关键特性"><a href="#关键特性" class="headerlink" title="关键特性"></a>关键特性</h2><p>个人在阅读官方文档之后，对于其描述的一些特性比较模糊，甚至有一些误解，在后面的进一步了解过程（甚至有些东西未深入到源码是不太能理解的），因此个人总结下如下几点是需要特别理解和注意的：</p>
+<ul>
+<li><code>nsq</code>官方所声称的<strong>去中心化分布式</strong>特征，指的是，因为各节点(<code>nsqd</code>甚至也包括<code>nsqlookupd</code>)之间不会产生状态（数据）共享或依赖，因此可以直接通过添加节点来提升系统处理能力（即系统可通过水平扩展来来线性提升处理能力），且单个节点宕机不会影响其它节点的功能。因此，正是因为节点之间没有状态共享，没有数据冗余或副本的概念，使得它也不需要使用复杂的一致性算法来保证数据的一致；</li>
+<li>虽然官方声称其是具体<strong>可靠消息传递</strong>，但是需要注意的是，其的确也存在消息丢失的情形，因为虽然它通过提供消息持久化来缓解这一问题，但并没有根本解决这一问题，一旦宕机，内存中的消息会丢失，当然你可以将内存队列长度<code>mem_queue_size</code>参数设置地更小一些以缓解此问题。甚至，你可以节点作冗余操作，以保证数据丢失的可能性在实际生产中几乎不可能发生（注意不是不可能发生），但对于那些需要高可靠性的消息发布的应用场景，<code>nsq</code>是无法保证的。</li>
+<li>还有，官方文档提到一点，<code>nsq</code>并没有<code>kafaka</code>那么强大，它不能保证<strong>消息的严格顺序</strong>，换言之，生产者创建的消息可以随时（不确定性）地以任何顺序进入到<code>nsqd</code>的消息队列。典型地，官方推荐将消息生产者与<code>nsqd</code>实例协同部署，即部署在同一台机器上，这样即使发生网络分区，也不会影响生产者消息的投递，明显在此种情况下消息投递的效率理论上会被其它情况下的消息投递效率。但官方提供了一种解决方案，即将消息打上时间戳。尽管如此，它仍然不适合需要保证严格消息顺序的情况下。</li>
+<li><code>nsq</code>保证的消息<strong>至少一次</strong>会被发送给生产者。换言之，消息可能被多次发送给消费者。因此，消费者应该能够识别消息重复(<code>message de-duplicate</code>)，或者保证消息所涉及的操作幂等性(<code>idempotent</code>)。更具体地，造成消息被多次发送的原因包括，客户端连接断开或消息超时时间内未返回响应，这些都会导致消息的重入队操作(<code>requeue</code>)。</li>
+<li>关于<code>nsqlookupd</code>，其也是可<strong>水平扩展</strong>的，但各节点实例之间也是没有任何联系的，结合业务逻辑来阐述，即每个<code>nsqdlookupd</code>实例可分别接收部分或全部的<code>nsqd</code>实例的服务注册请求，这只需要客户端在连接到<code>nsqlookupd</code>获取所有的生产者(及<code>topic</code>和<code>channel</code>)信息后，对获取的数据进行一个<code>union</code>操作即可，便可得到整个系统中生产者的拓扑信息（这即是官方文档中所描述的将发现服务设计成<code>eventually consistent</code>）。</li>
+<li>最后，不得不说的一点是，正是因为上面所描述的各种不足，造就了<code>nsq</code>的<strong>精简设计</strong>。简单实在是太重要了！因为简单意味着容易进行故障或bug查找，同时，容易部署和使用方便。不得不说，当满足了应用的基本功能之后，简单往往是最重要的一个因素。</li>
+</ul>
+<p>小结一下，本文先简要介绍了<code>nsq</code>的各个组件及基本工作流程，然后重点阐述了几个值得关注的特性，这些特性（包括未讨论的）以及<code>nsq</code>的各个组件，会在后面的博文中阐述。为了更好地理解<code>nsq</code>，个人建议，先仔细阅读官方文档，并简单实践，若有兴趣，深入源码查看会收获更多。</p>
+<p>参考文献</p>
+<p>[1]. <a href="https://nsq.io/overview/features_and_guarantees.html" target="_blank" rel="noopener">nsq Features &amp; Guarantees</a><br>[2]. <a href="https://nsq.io/overview/design.html" target="_blank" rel="noopener">nsq Design</a><br>[3]. <a href="https://nsq.io/overview/quick_start.html" target="_blank" rel="noopener">nsq Quick Start</a><br>[4]. <a href="https://speakerdeck.com/snakes/nsq-nyc-golang-meetup" target="_blank" rel="noopener">nsq - NYC Golang Meetup</a><br>[5]. <a href="https://juejin.im/entry/59ddae8151882578bb480d0e" target="_blank" rel="noopener">消息中间件NSQ深入与实践</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
+          
+            <a href="/tags/消息队列/" rel="tag"># 消息队列</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/07/Java-内存模型/" rel="next" title="Java 内存模型">
+                <i class="fa fa-chevron-left"></i> Java 内存模型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/12/nsq-nsqlookupd-源码简析/" rel="prev" title="nsq nsqlookupd 源码简析">
+                nsq nsqlookupd 源码简析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">qqzeng</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">49</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="email">
+                      
+                        <i class="fa fa-fw fa-globe"></i>email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#nsq-基本介绍"><span class="nav-number">1.</span> <span class="nav-text">nsq 基本介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关键特性"><span class="nav-number">2.</span> <span class="nav-text">关键特性</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">qqzeng</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173.2k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+  
+
+
+  
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script>
+
+  <!-- 代码块复制功能 -->
+<!--   <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script> -->
+  <!-- <script type="text/javascript" src="/js/src/custom.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

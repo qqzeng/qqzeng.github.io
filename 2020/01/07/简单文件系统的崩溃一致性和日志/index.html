@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="单机存储,文件系统,崩溃恢复,一致性,日志,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上一篇文章从早期 unix 系统所使用的文件系统存在的典型问题切入，介绍The Fast File System三个方面的工作：基于数据访问的局部性，优化了磁盘数据块布局方式以提升磁盘效率，同时允许使用更灵活的数据块大小以提升磁盘利用率和传输速率，最后在兼容已有文件系统接口规范的前提下，通过增强已有功能以进一步提升系统易用性。本文主题是文件系统的崩溃一致性(crash consistency)和日">
+<meta name="keywords" content="单机存储,文件系统,崩溃恢复,一致性,日志">
+<meta property="og:type" content="article">
+<meta property="og:title" content="简单文件系统的崩溃一致性和日志">
+<meta property="og:url" content="https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/index.html">
+<meta property="og:site_name" content="Zeng Qiaoqiao">
+<meta property="og:description" content="上一篇文章从早期 unix 系统所使用的文件系统存在的典型问题切入，介绍The Fast File System三个方面的工作：基于数据访问的局部性，优化了磁盘数据块布局方式以提升磁盘效率，同时允许使用更灵活的数据块大小以提升磁盘利用率和传输速率，最后在兼容已有文件系统接口规范的前提下，通过增强已有功能以进一步提升系统易用性。本文主题是文件系统的崩溃一致性(crash consistency)和日">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-exp-1_zxkxsl.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-exp-2_h1bexm.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-layout_d4wion.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout_niytif.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout-bad-case_yqqzk2.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-data-timeline_nvzrbg.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout-free_vmujha.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout-meta_t1gexs.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-meta-timeline_le6j8l.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-meta-reuse-1_przz2u.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-meta-reuse-2_nhk36y.png">
+<meta property="og:updated_time" content="2020-01-09T14:30:37.810Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="简单文件系统的崩溃一致性和日志">
+<meta name="twitter:description" content="上一篇文章从早期 unix 系统所使用的文件系统存在的典型问题切入，介绍The Fast File System三个方面的工作：基于数据访问的局部性，优化了磁盘数据块布局方式以提升磁盘效率，同时允许使用更灵活的数据块大小以提升磁盘利用率和传输速率，最后在兼容已有文件系统接口规范的前提下，通过增强已有功能以进一步提升系统易用性。本文主题是文件系统的崩溃一致性(crash consistency)和日">
+<meta name="twitter:image" content="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-exp-1_zxkxsl.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/">
+
+
+
+
+
+  <title>简单文件系统的崩溃一致性和日志 | Zeng Qiaoqiao</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zeng Qiaoqiao</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">简单文件系统的崩溃一致性和日志</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-07T15:45:53+08:00">
+                2020-01-07
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/单机存储/" itemprop="url" rel="index">
+                    <span itemprop="name">单机存储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  6,400
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  23
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上一篇文章从早期 unix 系统所使用的文件系统存在的典型问题切入，介绍<code>The Fast File System</code>三个方面的工作：基于数据访问的局部性，优化了磁盘数据块布局方式以提升磁盘效率，同时允许使用更灵活的数据块大小以提升磁盘利用率和传输速率，最后在兼容已有文件系统接口规范的前提下，通过增强已有功能以进一步提升系统易用性。本文主题是文件系统的崩溃一致性(<code>crash consistency</code>)和日志(<code>journaling</code>)，文件系统的<code>crash consistency</code>问题可以通过若干种方式来解决，其中典型的两种方案就是<code>file system checker(fsck)</code>和<code>journaling</code>。所谓的<code>crash consistency</code>问题指的是在文件系统更新磁盘数据结构的过程中发生某种软硬件问题而使得更新被迫中断，最终导致磁盘被更新数据结构处于不一致状态。其中<code>fsck</code>是早期文件系统使用的恢复策略，是一种<code>lazy</code>的修复策略，存在严重的效率问题。相反，<code>journaling</code>则是更为<code>active</code>的解决方案，也是一种广泛被使用的解决方案。</p>
+<a id="more"></a>
+<p>同前两篇文章类似，本文是一篇总结性的文章。本文的目标为：使用一个简单文件系统作为原型，来深入了解<code>crash consistency</code>问题本身，以及能够解决它的各种方法技术具体的工作原理。这对于理解一个文件系统的<code>crash recover</code>有较大帮助。本文首先从一个简单的<code>crash consistency</code>问题实例切入，即先将问题抛出，然后分别介绍它的各种解决办法，早期的文件系统使用<code>fsck</code>在重启文件系统过程中校验并恢复整个文件系统，主流的解决办法是使用<code>journaling</code>或者称为<code>write-ahead logging</code>，其只需在写入数据的同时花费额外的一点写开销，就能使得文件系统后期高效恢复。</p>
+<h1 id="Crash-Consistency-Problem"><a href="#Crash-Consistency-Problem" class="headerlink" title="Crash Consistency Problem"></a>Crash Consistency Problem</h1><p>所谓的<code>crash consistency</code>也被称为是<code>consistent update</code>。问题产生的本质原因是：文件系统对磁盘发出的更新操作通常是一个复合操作，即磁盘无法通过一次写入操作就能完成整个更新请求，相反，它需要依次更新多个相关数据结构，即多次写入磁盘才能顺利完成请求。在这多个依次写入的操作中间，系统发生了某种软件或硬件方面的错误（如突然断电<code>power loss</code>或者系统崩溃<code>system crash</code>），使得此次更新请求未能顺利完成，即只更新了部分数据结构，这就导致被更新的数据结构处于一个不不一致的状态，这可能导致很多问题，典型包括<code>space leak</code>、<code>garbage data</code>和<code>inconsistent data structures</code>三种 。</p>
+<p>我们使用<code>vsfs</code>作为原型，通过一个简单实例来阐述<code>crash consistency</code>问题。假设目前磁盘上的数据块布局如下，只有一个文件 foo，其<code>inode</code>编号为 2，且我们想往文件 foo 追加数据内容。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-exp-1_zxkxsl.png" alt="foo 文件相关数据块的磁盘布局" style="zoom:50%;"></p>
+<p>从<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/">这里</a>我们可以了解到更新一个磁盘上的文件包含了对磁盘上相关数据结构的一系列更新操作，在这个实例中，需要更新对应的<code>inode</code>（增加一个直接指针，以及更新文件大小、访问和修改时间等属性），写入新的数据块 Db，以及更新<code>d-bmap</code>（标记 Db 已被写入）。下图为写入期间未发生任何错误的情况下，更新后磁盘布局。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-exp-2_h1bexm.png" alt="foo 文件被更新后相关数据块的磁盘布局" style="zoom:50%;"></p>
+<p>若不幸在整个更新过程中发生了错误（一般而言，文件系统通过<code>page cache</code>或<code>buffer cache</code>来缓存对磁盘的更新，并周期性的实施刷盘操作，但同步刷盘操作中也可能被中断），那么磁盘中关于文件 foo 的状态可能有如下两种情况：</p>
+<ul>
+<li>仅顺利更新一个数据结构。那么进一步存在三种可能的状态：<ul>
+<li>Db 被顺利写入。事实上，此次写入是无效的，因为没有<code>inode</code>能索引到 Db，也没有任何<code>d-bmap</code>记录了 Db 所在数据块已被占用，因此后续其可能被其它数据覆盖；</li>
+<li><code>inode</code>被顺利更新。在这种情况下，虽然文件元数据所包含的指针被更新，但其指向的是<code>garbage data</code>，且<code>d-bmap</code>也没有任何记录对应的数据块被占用，因此整个文件系统处于一个不一致的状态，必须对它进行修复后，文件系统才能继续工作；</li>
+<li><code>d-bmap</code>被顺利更新。同上一种情况类似，整个系统同样处于一个不一致的状态。且原本被 Db 占用的空间不会被任何数据填充，造成了磁盘<code>space leak</code>。</li>
+</ul>
+</li>
+<li>仅顺利更新两个数据结构。同样存在三种可能的状态：<ul>
+<li><code>inode</code>和<code>d-bmap</code>都被顺利更新。此时问题很简单，造成了文件系统后续将读入<code>garbage data</code>，尽管在文件系统看来，整个系统处于一致状态；</li>
+<li><code>inode</code>被顺利更新，且 Db 也被顺利写入。此时文件系统处于不一致的状态，需修复后才能继续工作；</li>
+<li><code>d-bmap</code>被顺利更新，且 Db 也被顺利写入。文件系统同样处于不一致的状态，虽然数据被成功写入，且也被成功标记，但文件系统却不知道 Db 是隶属于哪个文件。</li>
+</ul>
+</li>
+</ul>
+<p>从上面简单分析可以得出，文件系统的崩溃可能导致多种问题，具体包括<code>space leak</code>、<code>garbage data</code>和<code>inconsistent data structures</code>，其中后两种问题可造成严重后果。</p>
+<h1 id="The-File-System-Checker"><a href="#The-File-System-Checker" class="headerlink" title="The File System Checker"></a>The File System Checker</h1><p><code>fsck</code>是早期文件系统所采用的崩溃恢复手段，详情可参考文献[1]。它的工作原理很简单：允许不一致的情况发生，但在每次系统重启时，文件系统被挂载前，对它进行修复。但需明确的是，<code>fsck</code>并不能修复所有（上述三种）问题，典型的，在发生<code>garbage data</code>情况下，其根本无法辨别出数据块是否为<code>garbage data</code>。换言之，<code>fsck</code>只能解决文件系统存在的不一致问题。<code>fsck</code>会对多个方面实施校验检测，具体包括<code>superblock</code>检测（比如检测其完整性，否则使用其副本），<code>free blocks</code>检测（通过遍历所有数据块临时性重构<code>d-bmap</code>以检验其同<code>inode</code>之间是否保持一致），<code>inode state</code>检测（校验<code>indoe</code>完整性，否则清除<code>inode</code>及相关数据结构），<code>inode links</code>校验（通过临时计算出<code>inode</code>的链接数来校验为<code>inode</code>保存的链接数属性是否准确），最后也会检测<code>duplicate pointers</code>、<code>bad blocks</code>以及<code>directory</code>，详情可参考原文。</p>
+<p><code>fsck</code>存在的问题很明显，除了不能解决<code>garbage data</code>的问题外，更让人不能接受的是，修复所耗费时间过长，这在文件系统日渐增长的情况下显得尤为突出。因此，研究人员也在探索其它解决方案。</p>
+<h1 id="Journaling-Write-Ahead-Logging"><a href="#Journaling-Write-Ahead-Logging" class="headerlink" title="Journaling (Write-Ahead Logging)"></a>Journaling (Write-Ahead Logging)</h1><p>考虑到<code>fsck</code>存在的问题，研究人员对于文件系统的崩溃一致性的解决方案采取了同数据库管理系统类似的办法——<code>write-ahead logging</code>，在文件系统中被称为<code>journaling</code>。所谓的<code>write-ahead logging</code>直译为预写式日志，即在向磁盘写入实际的数据之前，先额外写一些数据（也被称为日志记录<code>log</code>）到磁盘指定区域，然后再更新磁盘写入实际数据。如此一来，若在磁盘更新的过程中发生了系统崩溃，则可读取之前写入到磁盘指定区域的<code>log</code>，以推断出被中断的更新操作的详细内容，然后针对性地重新执行更新操作。此种方案避免了对整个文件系统的全盘扫描，因此理论上提高了崩溃恢复效率。<code>ext3</code>正是在早期<code>ext2</code>文件系统之上进一步整合了<code>journaling</code>机制。并且假设将<code>write-ahead log</code>存储在同一磁盘或分区上（当然其也可存储在其它设备上）。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-layout_d4wion.png" alt="ext3 简化的磁盘布局（包含日志）" style="zoom:50%;"></p>
+<h2 id="Data-Journaling"><a href="#Data-Journaling" class="headerlink" title="Data Journaling"></a>Data Journaling</h2><p><code>data journaling</code>是一种简单的<code>journaling</code>方式，是<code>ext3</code>文件系统提供的一种<code>journaling</code>模式。顾名思义，它会将被更新后的完整数据块连同被更新的元数据信息写入到<code>write-ahead log</code>中。简单而言，同样以向 foo 文件追加数据操作作为示例，<code>data journaling</code>模式会依次写入<code>TxB</code>，<code>I[v2]</code>、<code>B[v2]</code>和<code>TxE</code>，这四个数据结构共同构成了一条完整的<code>data journaling log</code>。其中<code>TxB</code>标记一条新的日志记录的开始，它一般会包含<code>transaction id</code>和被更新的 foo 文件所关联的数据结构的地址信息（即<code>I[v2]</code>、<code>B[v2]</code>和<code>Db</code>）；<code>TxE</code>标记着日志记录的结束，一般同样会包含<code>transaction id</code>。而中间的三个数据块即为需更新到磁盘的相关数据块。考虑到此种<code>journaling</code>方式将被更新的数据块也写入到日志中，因此也称为是<code>physical logging</code>，其示意图如何所示。相对地，也有对应的<code>logical logging</code>模式，它不将具体的数据块也纳入到日志，这种方式后文会阐述。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout_niytif.png" alt="data journaling log 数据结构" style="zoom:50%;"></p>
+<p>因此，当采用<code>data journaling</code>模式，整个更新过程可划分为两个阶段：</p>
+<ol>
+<li><p><code>Journal write</code>，即先写日志，将日志内容写入到磁盘指定区域，包含上述<code>data journaling</code>日志组成的 5 个部分；</p>
+</li>
+<li><p><code>Checkpoint</code>，即表示将需要追加或更新的文件数据内容真正地更新到磁盘对应的数据块中。</p>
+</li>
+</ol>
+<p>读者可能很快会发现，这种模式存在一个问题：若在写入日志的过程中，系统崩溃，那么可能会发生意想不到的事情。考虑到文件系统一般会缓存 IO 请求以提升写性能，换言之，文件系统可能在合理的任意时间点以任意顺序写入<code>data journaling</code>日志记录所包含的 5 个部分。下面是一种典型的情况，即磁盘调度器可能会先将<code>TxB</code>、<code>I[v2]</code>、<code>B[v2]</code>和<code>TxE</code>先写入到磁盘，然后在未来得及写入<code>Db</code>时，发生了系统崩溃，那么，此时写入磁盘的日志状态如下图所示。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout-bad-case_yqqzk2.png" alt="日志记录可能发生的 torn write 情形" style="zoom:50%;"></p>
+<p>在崩溃恢复阶段，当读入这条日志记录时，可能引起严重错误，因为 Db 的数据块内容是任意<code>garbage data</code>。因此，为了应对该问题，文件系统采用一种类似于“二阶段提交”的方式来写入日志：它先写入除<code>TxE</code>结构之外的日志部分，等到它们真正被写入磁盘后，再接着写入<code>TxE</code>结构到磁盘。如此一来，一方面，若在写入第一部分的日志记录时发生了系统崩溃，那么此条日志记录是不完整的，在文件系统重启执行崩溃恢复时，会将此条日志记录视为非法，因此不会导致任何不一致的状态。另一方面，考虑到<code>TxE</code>结构一般较小，不足一个扇区大小，因此其写入操作不会发生<code>torn write</code>，换言之，日志记录的第二阶段的写入也是原子性的。总而言之，通过这种类似于“二阶段提交”式的日志写入，整个文件写入过程可进一步划分为三个阶段：</p>
+<ol>
+<li><code>Journal write</code>，同样先写日志，只不过先要确保除<code>TxE</code>结构之外的日志部分先写入到磁盘；</li>
+<li><code>Journal commit</code>，进一步写入<code>TxE</code>，以确保整条日志记录写入的原子性；</li>
+<li><code>Checkpoint</code>，最后才将需要追加或更新的文件数据内容真正地更新到磁盘对应的数据块中。</li>
+</ol>
+<p>在顺利为每个更新操作写入<code>data journaling</code>日志记录后，一旦发生任何系统崩溃情况，则在文件系统恢复过程中：一方面，若是在日志记录本身的写入过程中发生了系统崩溃，此时日志记录并不完整，因此恢复程序应当直接跳过，不会造成系统任何不一致现象。另一方面，若是在<code>checkpoint</code>阶段发生了系统崩溃，则只需要读取并解析对应日志内容，然后实施日志<code>replay</code>即可重新尝试将更新持久化到磁盘，这种日志类型在数据库管理系统中被称为<code>redo log</code>。</p>
+<p>下图同样表示在对文件的更新过程中，使用<code>data journaling</code>策略来保证<code>crash consistency</code>，和文件相关的磁盘数据结构写入的相对顺序，图中往下表示时间增长，虚线隔开的各个操作表示它们之间必须严格按照相对顺序执行，而同为虚线框内的一组操作表示它们之间的执行顺序是任意的。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-data-timeline_nvzrbg.png" alt="data journaling 模式下各操作相对执行顺序" style="zoom:50%;"></p>
+<p>最后补充一点。有读者可能会想，既然为了避免日志写入发生<code>torn write</code>，那么是不是可以将构成日志的 5 个部分依次按顺序写入磁盘，且保证前一个部分成功写入磁盘后，才写入后一个部分。理论上，这种方式没有任何问题，但其代价也显而易见，大幅度降低文件系统性能，因为它使得文件系统的写缓冲没有任何作用。基于此，<code>ext4</code>文件系统采用了一种更加优雅的解决方案，为了同时保证日志写入的高效以及写入的原子性，在每条日志记录的开始和末尾处增加了日志记录中数据块的<code>checksum</code>，同时，在崩溃恢复程序读取日志时，会临时计算数据块的<code>checksum</code>，同时对比保存在日志记录中的值，若二者不等，则表明日志记录是不完整的。否则，证明日志记录确实是完整的，即日志记录在写入过程中未发生系统崩溃。详细内容可参考文献[2]。</p>
+<h2 id="Batching-Log-Updates"><a href="#Batching-Log-Updates" class="headerlink" title="Batching Log Updates"></a>Batching Log Updates</h2><p><code>data jounaling</code>模式能基本解决<code>crash consistency</code>问题，其不足之处在于日志记录包含了实际数据块，因此占用了较多额外空间。另外，恢复过程还会引入部分<code>redundant write</code>。针对<code>redundant write</code>的问题，我们考虑这样一个场景：同一个目录下的两个文件 foo1 和 foo2 依次进行更新，在<a href="https://qtozeng.top/2020/01/05/%E7%AE%80%E5%8D%95%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-vsfs/">这里</a>我们知道更新目录下的一个文件，至少需要更新的磁盘数据结构包括<code>i-bmap</code>、<code>inode</code>、目录所关联的<code>data block</code>以及目录的<code>inode</code>，因此，这些信息全部需要作为日志内容写入到磁盘，那么 foo1 和 foo2 的更新则需要重复写入目录的<code>inode</code>及其关联的<code>data block</code>，因此会导致较多写操作开销（考虑当更新同一个目录下的多个文件或目录的情况）。针对这一问题，<code>ext3</code>文件系统采用<code>batch update</code>策略来解决。具体而言，它会先将文件的更新进行缓存，并标记对应的日志记录需要存盘，当发现同一目录中其它文件也需要更新时，会将对应的日志记录合并到前一文件所对应的日志记录的数据块中，最后当达到刷盘周期时，将包含多个文件更新的日志记录一次性写入磁盘。而针对前一个问题，可以使用<code>metadata journaling</code>模式来进行优化。</p>
+<h2 id="Making-The-Log-Finite"><a href="#Making-The-Log-Finite" class="headerlink" title="Making The Log Finite"></a>Making The Log Finite</h2><p>上一小节提到的<code>data journaling</code>方式不仅存在占用过多额外磁盘空间问题，而且也会增加崩溃恢复过程的耗时。其解决方式比较直接，通过日志循环写入(<code>circular log</code>)配合日志释放来解决。具体而言，将存储日志的磁盘区域作为一个环形数组即可，环形数组的首尾指针即为没有被释放的日志记录边界，为了方便，可以将这两个指针存储在<code>journal superblock</code>中。如下图所示。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452123/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout-free_vmujha.png" alt="circular log" style="zoom:50%;"></p>
+<p>为了实现<code>circular log</code>，需在每次成功文件更新的操作后，即时将日志区域中对应条目释放掉（即更新<code>circular log</code>的首尾指针）。通过引入<code>circular log</code>后，为了保证<code>crash consistency</code>，更新文件的整个过程可扩展为如下四个阶段：</p>
+<ol>
+<li><code>Journal write</code>，写入除<code>TxB</code>结构之外的其它日志记录内容；</li>
+<li><code>Journal commit</code>，进一步写入日志的<code>TxB</code>结构，至此，完成了日志记录的原子性写入；</li>
+<li><code>Checkpoint</code>，将文件更新或追加的数据真正写入到磁盘；</li>
+<li><code>Free</code>，释放掉步骤 1 和 2 中写入的日志记录，以备后续空间复用。</li>
+</ol>
+<p>至此，<code>data journaling</code>模式已较为完善，但其仍存在的问题是：每一个被更新的文件，其更新数据块需要被写入两次。</p>
+<h2 id="Metadata-Journaling"><a href="#Metadata-Journaling" class="headerlink" title="Metadata Journaling"></a>Metadata Journaling</h2><p>事实上，使用<code>data journaling</code>模式必须将更新数据块写入两次所带来的问题具体表现为：在写入元数据和实际数据之间的寻道操作开销较大。因此，进一步实现了<code>metadata journaling</code>(<code>ordered journaling</code>)来解决此问题。容易想到，<code>metadata journaling</code>只将被更新文件的元数据信息写入日志记录，如下图所示。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-log-layout-meta_t1gexs.png" alt="metadata journaling 模式日志布局" style="zoom:50%;"></p>
+<p>但若只纯粹将被更新的数据块从日志记录中移除，而不对文件更新的总规则进行调整，将引发一个额外的问题。我们不妨考虑何时将更新文件数据块真正写入磁盘，若仍旧按照之前的规则，即在将被更新文件的元数据信息写入日志记录后，才写入更新文件的数据块，则可能导致的问题是：假设在将更新文件的数据块写入磁盘时发生了系统崩溃，那么此时日志记录中包含的元信息索引的数据块实际上是无效的<code>garbage data</code>。这导致即使实施了崩溃恢复，且在文件系统的视角看来，整个文件系统确实处于一致状态，但文件中却包含<code>garbage data</code>。因此，为了避免这种情形发生，<code>ext3</code>文件系统选择先将被更新文件的数据块真正写入到磁盘，然后再写日志记录（二个阶段），最后 再将被更新文件的元数据信息真正写入磁盘。通过将数据块写入的顺序调整到日志中元信息的写入操作之前，避免了日志记录中的元信息引用了无效的数据块内容。总而言之，调整后的文件更新规则如下：</p>
+<ol>
+<li><code>Data write</code>，将被更新的文件的数据块真正写入到磁盘；</li>
+<li><code>Journal metadata write</code>，只将被更新的文件的元信息相关的数据块以及<code>TxB</code>构成的日志记录写入到磁盘；</li>
+<li><code>Journal commit</code>，进一步将此日志记录的<code>TxE</code>结构写入磁盘；</li>
+<li><code>Checkpoint metadata</code>，将被更新文件的元信息相关的数据块真正写入到磁盘；</li>
+<li><code>Free</code>，释放掉步骤 2 和 3 中写入的日志记录，以备后续空间复用。</li>
+</ol>
+<p>需要注意的是，步骤 1 和 2 的相对顺序可以任意（即可并发执行），只需确保步骤 3 在 1 和 2 之后完成即可。</p>
+<p>同<code>data journaling</code>类似，下图同样表示在对文件更新过程中，使用<code>metadata journaling</code>模式来保证<code>crash consistency</code>，和文件相关的磁盘数据结构写入的相对顺序，图中往下表示时间增长，虚线隔开的各个操作表示它们之间必须严格按照相对顺序执行，而同为虚线框内的一组操作表示它们之间的执行顺序是任意的。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-meta-timeline_le6j8l.png" alt="metadata journaling timeline" style="zoom:50%;"></p>
+<h2 id="Tricky-Case-Block-Reuse"><a href="#Tricky-Case-Block-Reuse" class="headerlink" title="Tricky Case: Block Reuse"></a>Tricky Case: Block Reuse</h2><p>关于使用<code>journaling</code>来保证文件更新操作的<code>crash consistency</code>的主要内容已阐述完毕。这一小节简单阐述在磁盘数据块被重用时可能出现的棘手问题。如下图所示，foo 表示一个目录，当我们在目录 foo 下创建一个文件时，若采用<code>metadata journaling</code>模式，其磁盘数据块布局可简化如下。注意，因为目录所包含内容也被视为元数据，因此会被记录到日志中。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-meta-reuse-1_przz2u.png" alt="data block reuse-1" style="zoom:50%;"></p>
+<p>此时若用户删除目录 foo 中所有内容以及目录自身，则原本被目录所占用的日志记录空间被释放以备复用。最后，若用户又创建新文件 bar，且文件系统恰好将 bar 文件相关内容写入到原本属于目录 foo 所在磁盘空间。若文件系统成功写入对文件 bar 的日志记录，此时用于记录日志的磁盘布局如下图所示，且文件 bar 也被成功写入磁盘（即成功<code>checkpoint</code>），而后某个时间点发生了系统崩溃，那么在执行<code>replay</code>过程中，当读取到关于目录 foo 的日志记录时，它会直接简单地重新将目录 foo 的内容写入到磁盘中已经被 bar 文件关联的<code>data block</code>占用的空间，因此覆盖了 bar 文件数据，导致用户读取 bar 文件时，产生意想不到的后果。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1578452124/blog/33-Crash-Consistency-Fsck-and-Journaling/ccj-journal-meta-reuse-2_nhk36y.png" alt="data block reuse-2" style="zoom:50%;"></p>
+<p>此种情况的原因很简单：未恰当地处理数据块重用。<code>ext3</code>文件系统的处理方式比较简单，它会将那些被删除文件或目录的日志记录标记成<code>revoke</code>，且在崩溃恢复过程中，当扫描到包含<code>revoke</code>的日志记录时，不会对此日志记录执行<code>replay</code>，因此避免了数据块覆盖的情况。</p>
+<h1 id="Other-Approaches"><a href="#Other-Approaches" class="headerlink" title="Other Approaches"></a>Other Approaches</h1><p>除了<code>fsck</code>和<code>journaling</code>这两种能够保证文件系统<code>crash consistency</code>的方法外，还有一些其它的解决方案。其中一种被称为<code>Soft Updates</code>，它的基本原理是将所有文件的更新操作请求进行严格排序，并且保证磁盘对应的数据结构不会处于不一致的状态，比如先写文件数据内容，再写文件元信息，以保证<code>inode</code>不会关联一个无效的数据块。但是<code>Soft Updates</code>实现起来比较复杂，需要充分了解文件系统内部相关数据结构知识，有兴趣的读者可参考文献[3]。另一种解决被称为是<code>copy-on-write(cow)</code>的方案则更为流行，我们对<code>cow</code>技术并不感到陌生，它的核心原理为：它不直接更新文件包含的数据块，相反，它会创建一个完整的更新后的副本，当完成了若干个更新操作后，再一次性将更新后的数据块关联到被对应的被更新文件。<code>ZFS</code>就同时使用<code>cow</code>和<code>journaling</code>两种技术，有兴趣的读者可参考文献[4]。另外，原书中还提到一种<code>optimistic crash consistency</code>技术，它通过使用<code>transaction checksum</code>技术（参考文献[2]），主要用于优化磁盘写入日志记录的过程，以减少等待数据刷盘所导致的时间开销。详细内容可参考文献[5]。</p>
+<p>简单小节，本文内容较多。先是从文件更新可能造成的<code>crash consistency</code>问题切入，详细阐述其可能造成的三种后果。然后，详细介绍了能够保证文件更新的<code>crash consistency</code>的两种解决方案：一种是<code>lazy</code>性质的<code>fsck</code>，其主要不足之处在于校验恢复耗时。另一种则是<code>journaling</code>方式，它包括<code>data journaling</code>和<code>metadata journaling</code>两种模式，后者相较于前者减少了文件数据块的写操作开销，但也更为复杂。在阐述<code>jouranling</code>模式时，同时阐述相关操作的一些优化，比如实施<code>batching log updates</code>和引入<code>cicular log</code>来提高恢复速度和磁盘利用率。最后顺便阐述<code>metadata journaling</code>模式在数据块重用的情况下可能存在的一个问题。需要注意的是，除了这两种解决方案之外，也提了其它比较流行和有效的方法。总而言之，关于本文的内容，个人推荐阅读原文，并且，相关的参考文献特别是那些比较新的文献更值得阅读研究。</p>
+<p>参考资料<br>[1]. McKusick M K, Joy W N, Leffler S J, et al. Fsck− The UNIX† File System Check Program[J]. Unix System Manager’s Manual-4.3 BSD Virtual VAX-11 Version, 1986.<br>[2]. Prabhakaran V, Bairavasundaram L N, Agrawal N, et al. IRON file systems[M]. ACM, 2005.<br>[3]. Ganger G R, Patt Y N. Metadata update performance in file systems[C]//Proceedings of the 1st USENIX conference on Operating Systems Design and Implementation. USENIX Association, 1994: 5.<br>[4]. Bonwick J, Moore B. ZFS: The last word in file systems[J]. 2007.<br>[5]. Chidambaram V, Pillai T S, Arpaci-Dusseau A C, et al. Optimistic crash consistency[C]//Proceedings of the Twenty-Fourth ACM Symposium on Operating Systems Principles. ACM, 2013: 228-243.<br>[6]. Arpaci-Dusseau R H, Arpaci-Dusseau A C. Operating systems: Three easy pieces[M]. Arpaci-Dusseau Books LLC, 2018.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/单机存储/" rel="tag"># 单机存储</a>
+          
+            <a href="/tags/文件系统/" rel="tag"># 文件系统</a>
+          
+            <a href="/tags/崩溃恢复/" rel="tag"># 崩溃恢复</a>
+          
+            <a href="/tags/一致性/" rel="tag"># 一致性</a>
+          
+            <a href="/tags/日志/" rel="tag"># 日志</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/06/The-Fast-File-System/" rel="next" title="The Fast File System">
+                <i class="fa fa-chevron-left"></i> The Fast File System
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/01/09/The-Log-Structured-File-System/" rel="prev" title="The Log-Structured File System">
+                The Log-Structured File System <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">qqzeng</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">49</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="email">
+                      
+                        <i class="fa fa-fw fa-globe"></i>email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Crash-Consistency-Problem"><span class="nav-number">1.</span> <span class="nav-text">Crash Consistency Problem</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#The-File-System-Checker"><span class="nav-number">2.</span> <span class="nav-text">The File System Checker</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Journaling-Write-Ahead-Logging"><span class="nav-number">3.</span> <span class="nav-text">Journaling (Write-Ahead Logging)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-Journaling"><span class="nav-number">3.1.</span> <span class="nav-text">Data Journaling</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Batching-Log-Updates"><span class="nav-number">3.2.</span> <span class="nav-text">Batching Log Updates</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Making-The-Log-Finite"><span class="nav-number">3.3.</span> <span class="nav-text">Making The Log Finite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Metadata-Journaling"><span class="nav-number">3.4.</span> <span class="nav-text">Metadata Journaling</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tricky-Case-Block-Reuse"><span class="nav-number">3.5.</span> <span class="nav-text">Tricky Case: Block Reuse</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Other-Approaches"><span class="nav-number">4.</span> <span class="nav-text">Other Approaches</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">qqzeng</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173.2k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+  
+
+
+  
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script>
+
+  <!-- 代码块复制功能 -->
+<!--   <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script> -->
+  <!-- <script type="text/javascript" src="/js/src/custom.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>
