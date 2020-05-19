@@ -1868,7 +1868,7 @@ pre .javascript .function {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #7a869f;
+  background: #654011;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -3001,8 +3001,8 @@ strong {
   font-family: 'Microsoft YaHei', 'SF Pro Display', Roboto, Noto, Arial, 'PingFang SC', sans-serif;
 }
 .gutter pre span {
-  font: 400 14px Source Code monospace, PingFang SC, Microsoft YaHei, sans-serif !important;
+  font: 400 14px Fira Code Medium, Source Code monospace, PingFang SC, Microsoft YaHei, sans-serif !important;
 }
 .code pre span {
-  font: 400 14px Fira Code Light, Source Code monospace, PingFang SC, Microsoft YaHei, sans-serif !important;
+  font: 400 14px Fira Code Medium, Source Code monospace, PingFang SC, Microsoft YaHei, sans-serif !important;
 }

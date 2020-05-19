@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,互斥算法,资源共享,lamport clock,逻辑时钟,">
+  <meta name="keywords" content="分布式系统,逻辑时钟,lamport clock,互斥算法,资源共享,">
 
 
 
@@ -94,11 +94,11 @@
 
 
 <meta name="description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
-<meta name="keywords" content="分布式系统,互斥算法,资源共享,lamport clock,逻辑时钟">
+<meta name="keywords" content="分布式系统,逻辑时钟,lamport clock,互斥算法,资源共享">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式互斥算法解析与实现">
 <meta property="og:url" content="https://qtozeng.top/2018/11/09/分布式互斥算法解析与实现/index.html">
-<meta property="og:site_name" content="Zeng Qiaoqiao">
+<meta property="og:site_name" content="一抹光辉油彩">
 <meta property="og:description" content="资源共享非常普遍，在单机系统中，进程间对共享资源的互斥访问可以通过互斥锁、信号量以及进程间通信等机制来实现。而在分布式系统中，也不可避免多个节点共享某一资源或同时执行某一函数，比如全局配置文件，因此分布式互斥算法必须保证任何时刻只允许一个进程访问资源或执行临界区(critical section)代码，即互斥算法的安全性，有些场景也有公平性要求。另外，好的互斥算法应该能尽可能降低消息带宽(mess">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:updated_time" content="2019-11-23T03:55:32.588Z">
@@ -140,7 +140,7 @@
 
 
 
-  <title>分布式互斥算法解析与实现 | Zeng Qiaoqiao</title>
+  <title>分布式互斥算法解析与实现 | 一抹光辉油彩</title>
   
 
 
@@ -179,7 +179,7 @@
     <div class="custom-logo-site-title">
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
-        <span class="site-title">Zeng Qiaoqiao</span>
+        <span class="site-title">一抹光辉油彩</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
@@ -311,13 +311,13 @@
     <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2018/11/09/分布式互斥算法解析与实现/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/avatar.gif">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="name" content="一抹光辉油彩">
     </span>
 
     
@@ -505,13 +505,13 @@
           
             <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
           
-            <a href="/tags/互斥算法/" rel="tag"># 互斥算法</a>
-          
-            <a href="/tags/资源共享/" rel="tag"># 资源共享</a>
+            <a href="/tags/逻辑时钟/" rel="tag"># 逻辑时钟</a>
           
             <a href="/tags/lamport-clock/" rel="tag"># lamport clock</a>
           
-            <a href="/tags/逻辑时钟/" rel="tag"># 逻辑时钟</a>
+            <a href="/tags/互斥算法/" rel="tag"># 互斥算法</a>
+          
+            <a href="/tags/资源共享/" rel="tag"># 资源共享</a>
           
         </div>
       
@@ -620,7 +620,7 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
-              <p class="site-author-name" itemprop="name">qqzeng</p>
+              <p class="site-author-name" itemprop="name">Zeng Qiaoqiao</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -726,7 +726,7 @@
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
-  <span class="author" itemprop="copyrightHolder">qqzeng</span>
+  <span class="author" itemprop="copyrightHolder">Zeng Qiaoqiao</span>
 
   
     <span class="post-meta-divider">|</span>
@@ -1314,6 +1314,7 @@
 
   
 
+  <!-- 代码块复制功能 -->
   
   <style>
     .copy-btn {
@@ -1383,12 +1384,7 @@
         }, 300)
       }).append(e)
     })
-  </script>
-
-  <!-- 代码块复制功能 -->
-<!--   <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
-  <script type="text/javascript" src="/js/src/clipboard-use.js"></script> -->
-  <!-- <script type="text/javascript" src="/js/src/custom.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config("");
 </script>
@@ -1406,5 +1402,6 @@
 </script>
 <!-- End: Injected MathJax -->
 <!-- hexo-inject:end -->
+
 </body>
 </html>

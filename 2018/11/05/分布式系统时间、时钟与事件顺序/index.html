@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,lamport clock,逻辑时钟,时钟同步,物理时钟,">
+  <meta name="keywords" content="分布式系统,时钟同步,逻辑时钟,物理时钟,lamport clock,">
 
 
 
@@ -94,11 +94,11 @@
 
 
 <meta name="description" content="如何确定分布式系统各节点（进程）中事件发生的先后顺序至关重要。时钟不一致会导致系统发生不可预料的逻辑错误。然而绝大部分情况下，不能依赖于物理时钟，因为不同的系统的物理时钟总会存在不同程度的时钟漂移（多处理器机器中也类似），即便各节点定期通过网络从时钟源进行时钟同步，也无法确保各节点时钟完全一致。因此，早在1978年，Leslie Lamport 便提出了逻辑时钟的概念，并描述了如何利用逻辑时钟来定">
-<meta name="keywords" content="分布式系统,lamport clock,逻辑时钟,时钟同步,物理时钟">
+<meta name="keywords" content="分布式系统,时钟同步,逻辑时钟,物理时钟,lamport clock">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式系统时间、时钟与事件顺序">
 <meta property="og:url" content="https://qtozeng.top/2018/11/05/分布式系统时间、时钟与事件顺序/index.html">
-<meta property="og:site_name" content="Zeng Qiaoqiao">
+<meta property="og:site_name" content="一抹光辉油彩">
 <meta property="og:description" content="如何确定分布式系统各节点（进程）中事件发生的先后顺序至关重要。时钟不一致会导致系统发生不可预料的逻辑错误。然而绝大部分情况下，不能依赖于物理时钟，因为不同的系统的物理时钟总会存在不同程度的时钟漂移（多处理器机器中也类似），即便各节点定期通过网络从时钟源进行时钟同步，也无法确保各节点时钟完全一致。因此，早在1978年，Leslie Lamport 便提出了逻辑时钟的概念，并描述了如何利用逻辑时钟来定">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://github.com/qqzeng/qqzeng.github.io/blob/hexo/static/eb415390449c57ea8f6c9e33c82a7e9.png?raw=true">
@@ -144,7 +144,7 @@
 
 
 
-  <title>分布式系统时间、时钟与事件顺序 | Zeng Qiaoqiao</title>
+  <title>分布式系统时间、时钟与事件顺序 | 一抹光辉油彩</title>
   
 
 
@@ -183,7 +183,7 @@
     <div class="custom-logo-site-title">
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
-        <span class="site-title">Zeng Qiaoqiao</span>
+        <span class="site-title">一抹光辉油彩</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
@@ -315,13 +315,13 @@
     <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2018/11/05/分布式系统时间、时钟与事件顺序/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="qqzeng">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/avatar.gif">
     </span>
 
     <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="name" content="一抹光辉油彩">
     </span>
 
     
@@ -490,13 +490,13 @@
           
             <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
           
-            <a href="/tags/lamport-clock/" rel="tag"># lamport clock</a>
+            <a href="/tags/时钟同步/" rel="tag"># 时钟同步</a>
           
             <a href="/tags/逻辑时钟/" rel="tag"># 逻辑时钟</a>
           
-            <a href="/tags/时钟同步/" rel="tag"># 时钟同步</a>
-          
             <a href="/tags/物理时钟/" rel="tag"># 物理时钟</a>
+          
+            <a href="/tags/lamport-clock/" rel="tag"># lamport clock</a>
           
         </div>
       
@@ -605,7 +605,7 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
-              <p class="site-author-name" itemprop="name">qqzeng</p>
+              <p class="site-author-name" itemprop="name">Zeng Qiaoqiao</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -711,7 +711,7 @@
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
-  <span class="author" itemprop="copyrightHolder">qqzeng</span>
+  <span class="author" itemprop="copyrightHolder">Zeng Qiaoqiao</span>
 
   
     <span class="post-meta-divider">|</span>
@@ -1299,6 +1299,7 @@
 
   
 
+  <!-- 代码块复制功能 -->
   
   <style>
     .copy-btn {
@@ -1368,12 +1369,7 @@
         }, 300)
       }).append(e)
     })
-  </script>
-
-  <!-- 代码块复制功能 -->
-<!--   <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
-  <script type="text/javascript" src="/js/src/clipboard-use.js"></script> -->
-  <!-- <script type="text/javascript" src="/js/src/custom.js"></script> --><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config("");
 </script>
@@ -1391,5 +1387,6 @@
 </script>
 <!-- End: Injected MathJax -->
 <!-- hexo-inject:end -->
+
 </body>
 </html>
