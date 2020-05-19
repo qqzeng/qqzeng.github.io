@@ -1,3 +1,4 @@
+https://qtozeng.top/2020/05/19/go-build-命令基本工作过程/
 https://qtozeng.top/2020/01/09/The-Log-Structured-File-System/
 https://qtozeng.top/2020/01/07/简单文件系统的崩溃一致性和日志/
 https://qtozeng.top/2020/01/06/The-Fast-File-System/

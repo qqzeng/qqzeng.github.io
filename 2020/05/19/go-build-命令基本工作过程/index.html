@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="go,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Go 是一种支持原生并发、带垃圾回收同时编译速度快的语言，这一定程度上归功于其实现了语言自身的 runtime，这类似于 C 运行时 libc。正如官方文档所说，Go 是一种快速的、静态类型的编译语言，以至于让人感觉其就像一种动态类型的解释语言。本文从原理上阐述go build命令具体工作过程，即阐述 Go 项目如何从由语言源码构成的代码文件转换成机器码组成的可执行二进制文件。简单而言，逻辑上，b">
+<meta name="keywords" content="go">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go build 命令基本工作过程">
+<meta property="og:url" content="https://qtozeng.top/2020/05/19/go-build-命令基本工作过程/index.html">
+<meta property="og:site_name" content="一抹光辉油彩">
+<meta property="og:description" content="Go 是一种支持原生并发、带垃圾回收同时编译速度快的语言，这一定程度上归功于其实现了语言自身的 runtime，这类似于 C 运行时 libc。正如官方文档所说，Go 是一种快速的、静态类型的编译语言，以至于让人感觉其就像一种动态类型的解释语言。本文从原理上阐述go build命令具体工作过程，即阐述 Go 项目如何从由语言源码构成的代码文件转换成机器码组成的可执行二进制文件。简单而言，逻辑上，b">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-05-19T11:47:46.085Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="go build 命令基本工作过程">
+<meta name="twitter:description" content="Go 是一种支持原生并发、带垃圾回收同时编译速度快的语言，这一定程度上归功于其实现了语言自身的 runtime，这类似于 C 运行时 libc。正如官方文档所说，Go 是一种快速的、静态类型的编译语言，以至于让人感觉其就像一种动态类型的解释语言。本文从原理上阐述go build命令具体工作过程，即阐述 Go 项目如何从由语言源码构成的代码文件转换成机器码组成的可执行二进制文件。简单而言，逻辑上，b">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2020/05/19/go-build-命令基本工作过程/">
+
+
+
+
+
+  <title>go build 命令基本工作过程 | 一抹光辉油彩</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">一抹光辉油彩</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/05/19/go-build-命令基本工作过程/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">go build 命令基本工作过程</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-19T19:46:33+08:00">
+                2020-05-19
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index">
+                    <span itemprop="name">go</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3,425
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  15
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Go 是一种支持原生并发、带垃圾回收同时编译速度快的语言，这一定程度上归功于其实现了语言自身的 runtime，这类似于 C 运行时 libc。正如官方文档所说，Go 是一种快速的、静态类型的编译语言，以至于让人感觉其就像一种动态类型的解释语言。本文从原理上阐述<code>go build</code>命令具体工作过程，即阐述 Go 项目如何从由语言源码构成的代码文件转换成机器码组成的可执行二进制文件。简单而言，逻辑上，build 命令编译用户指定的导入路径所对应的应用程序包及其依赖包，但并不安装编译的结果。而从执行步骤上看，build 命令执行过程包含编译（compile）和链接（link）两个步骤。</p>
+<a id="more"></a>
+<p>本文假设你已具备 Go 语言入门知识，比如<a href="https://golang.org/doc/install" target="_blank" rel="noopener">如何搭建 Go 开发环境</a>，同时<a href="https://www.digitalocean.com/community/tutorials/how-to-install-go-and-set-up-a-local-programming-environment-on-ubuntu-18-04" target="_blank" rel="noopener">创建一个 Go 项目并顺利运行起来</a>，在这过程中，你会了解 GOPATH、GOBIN 等重要环境变量的含义，同时也清楚 Go 项目源码的标准组织结构，具体可参考<a href="https://golang.org/doc/gopath_code.html" target="_blank" rel="noopener">这里</a>。另外，本文并非是语言使用或介绍教程，换言之，本文对于所阐述的内容并不会面面俱到，比如，本文不会详细介绍 build 命令各选项的含义及具体用法，因此你需要提前或同时使用 man 指令或者<a href="https://golang.org/cmd/go/" target="_blank" rel="noopener">官方文档</a>来详细了解相关命令。另外，本文所有实验均在 Ubuntu 18.04 x86_64，go1.12 linux/amd64 的环境下测试通过。</p>
+<h2 id="以一个实例来剖析-go-build-命令执行过程"><a href="#以一个实例来剖析-go-build-命令执行过程" class="headerlink" title="以一个实例来剖析 go build 命令执行过程"></a>以一个实例来剖析 go build 命令执行过程</h2><p>我们以一个简单测试项目 <a href="https://github.com/qqzeng/go-code-snippet/tree/master/helloworld" target="_blank" rel="noopener">helloworld</a> 来阐述<code>go build</code>命令的具体工作过程，项目组织结构如下所示，我们需要知道的和本文相关的代码逻辑仅仅是<code>main.go</code>引入了 uitl 包。具体地，helloworld 包含程序启动执行入口 main 包源码文件<code>main.go</code>以及 util 包下的工具类源码文件<code>slice_lib.go</code>及其对应的单元测试源码文件<code>slice_lib_test.go</code>，事实上，它们分别对应 Go 项目中所包含的命令源码、库源码、测试源码三类源代码文件。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">helloworld/</span><br><span class="line">├── main.go</span><br><span class="line">└── util</span><br><span class="line">    ├── slice_lib.go</span><br><span class="line">    └── slice_lib_test.go</span><br></pre></td></tr></table></figure>
+<p>然后，我们进入到项目要目录下，执行<code>go build -x -work main.go</code>命令来构建（注意，官方并没有将 build 命令称之为构建，这里我们不准确地将编译和链接两个步骤称为构建，下文也是类似）此项目。其中，-x 选项表示打印构建过程所执行的命令，而 -work 选项表示保留在构建过程中创建的临时文件及目录，以方便我们了解构建的细节，build 命令的更多选项可参考<a href="https://golang.org/cmd/go/#hdr-Compile_packages_and_dependencies" target="_blank" rel="noopener">这里</a>，或者使用 man 命令。另外，build 命令后也可以跟隶属单个包的源码文件列表。同时，build 会忽略测试源码文件。最后，当编译包含单个 main 包源码文件时，它以 build 命令后附加的源码文件列表中第一个文件的名称来命名其构建生成的二进制可执行文件，并输出到当前执行命令所在的目录。注意，若 build 后未跟任何源文件或包名（或项目名），则其生成的二进制可执行文件的名称为对应的包名（或项目名）。build 命令输出结果如下所示。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line">ubuntu@VM-0-14-ubuntu:~/workSpaces/go/src/github.com/qqzeng/helloworld$ go build -x -work main.go</span><br><span class="line">WORK=/tmp/go-build634787878</span><br><span class="line">mkdir -p $WORK/b029/</span><br><span class="line">cat &gt;$WORK/b029/importcfg &lt;&lt; 'EOF' # internal</span><br><span class="line"><span class="meta">#</span> import config</span><br><span class="line">EOF</span><br><span class="line">cd /home/ubuntu/workSpaces/go/src/github.com/qqzeng/helloworld/util</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/compile -o $WORK/b029/_pkg_.a -trimpath $WORK/b029 -p \</span><br><span class="line">github.com/qqzeng/helloworld/util -complete -buildid T0vxP0OAL4NQLqv8Z5hZ/T0vxP0OAL4NQLqv8Z5hZ -goversion \</span><br><span class="line">go1.12 -D "" -importcfg $WORK/b029/importcfg -pack ./slice_lib.go</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/buildid -w $WORK/b029/_pkg_.a # internal</span><br><span class="line">cp $WORK/b029/_pkg_.a /home/ubuntu/.cache/go-build/00/00c7955e923d12630ae21b9150bf5cd83ad34d446a411992f2818bd1953a03e2-d # internal</span><br><span class="line">mkdir -p $WORK/b001/</span><br><span class="line">cat &gt;$WORK/b001/importcfg &lt;&lt; 'EOF' # internal</span><br><span class="line"><span class="meta">#</span> import config</span><br><span class="line">packagefile fmt=/usr/local/go/pkg/linux_amd64/fmt.a</span><br><span class="line">packagefile github.com/qqzeng/helloworld/util=$WORK/b029/_pkg_.a</span><br><span class="line">packagefile runtime=/usr/local/go/pkg/linux_amd64/runtime.a</span><br><span class="line">EOF</span><br><span class="line">cd /home/ubuntu/workSpaces/go/src/github.com/qqzeng/helloworld</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/compile -o $WORK/b001/_pkg_.a -trimpath $WORK/b001 -p main -complete -  \</span><br><span class="line">buildid NQfuV250impAGJ9_g3cW/NQfuV250impAGJ9_g3cW -goversion go1.12 -D  \</span><br><span class="line">_/home/ubuntu/workSpaces/go/src/github.com/qqzeng/helloworld -importcfg $WORK/b001/importcfg -pack ./main.go</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/buildid -w $WORK/b001/_pkg_.a # internal</span><br><span class="line">cp $WORK/b001/_pkg_.a /home/ubuntu/.cache/go-build/63/63457873f0a007f7287e97b43e05b31477c7f8d1bb0008df9ceaaf10ba9a665a-d # internal</span><br><span class="line">cat &gt;$WORK/b001/importcfg.link &lt;&lt; 'EOF' # internal</span><br><span class="line">packagefile command-line-arguments=$WORK/b001/_pkg_.a</span><br><span class="line">packagefile fmt=/usr/local/go/pkg/linux_amd64/fmt.a</span><br><span class="line">packagefile github.com/qqzeng/helloworld/util=$WORK/b029/_pkg_.a</span><br><span class="line">packagefile runtime=/usr/local/go/pkg/linux_amd64/runtime.a</span><br><span class="line">packagefile errors=/usr/local/go/pkg/linux_amd64/errors.a</span><br><span class="line">packagefile internal/fmtsort=/usr/local/go/pkg/linux_amd64/internal/fmtsort.a</span><br><span class="line">packagefile io=/usr/local/go/pkg/linux_amd64/io.a</span><br><span class="line">packagefile math=/usr/local/go/pkg/linux_amd64/math.a</span><br><span class="line">packagefile os=/usr/local/go/pkg/linux_amd64/os.a</span><br><span class="line">packagefile reflect=/usr/local/go/pkg/linux_amd64/reflect.a</span><br><span class="line">packagefile strconv=/usr/local/go/pkg/linux_amd64/strconv.a</span><br><span class="line">packagefile sync=/usr/local/go/pkg/linux_amd64/sync.a</span><br><span class="line">packagefile unicode/utf8=/usr/local/go/pkg/linux_amd64/unicode/utf8.a</span><br><span class="line">packagefile internal/bytealg=/usr/local/go/pkg/linux_amd64/internal/bytealg.a</span><br><span class="line">packagefile internal/cpu=/usr/local/go/pkg/linux_amd64/internal/cpu.a</span><br><span class="line">packagefile runtime/internal/atomic=/usr/local/go/pkg/linux_amd64/runtime/internal/atomic.a</span><br><span class="line">packagefile runtime/internal/math=/usr/local/go/pkg/linux_amd64/runtime/internal/math.a</span><br><span class="line">packagefile runtime/internal/sys=/usr/local/go/pkg/linux_amd64/runtime/internal/sys.a</span><br><span class="line">packagefile sort=/usr/local/go/pkg/linux_amd64/sort.a</span><br><span class="line">packagefile sync/atomic=/usr/local/go/pkg/linux_amd64/sync/atomic.a</span><br><span class="line">packagefile math/bits=/usr/local/go/pkg/linux_amd64/math/bits.a</span><br><span class="line">packagefile internal/poll=/usr/local/go/pkg/linux_amd64/internal/poll.a</span><br><span class="line">packagefile internal/syscall/unix=/usr/local/go/pkg/linux_amd64/internal/syscall/unix.a</span><br><span class="line">packagefile internal/testlog=/usr/local/go/pkg/linux_amd64/internal/testlog.a</span><br><span class="line">packagefile syscall=/usr/local/go/pkg/linux_amd64/syscall.a</span><br><span class="line">packagefile time=/usr/local/go/pkg/linux_amd64/time.a</span><br><span class="line">packagefile unicode=/usr/local/go/pkg/linux_amd64/unicode.a</span><br><span class="line">packagefile internal/race=/usr/local/go/pkg/linux_amd64/internal/race.a</span><br><span class="line">EOF</span><br><span class="line">mkdir -p $WORK/b001/exe/</span><br><span class="line">cd .</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/link -o $WORK/b001/exe/a.out -importcfg $WORK/b001/importcfg.link -buildmode=exe -buildid=vCNW2zZHTRjAfLGbu0Gw/NQfuV250impAGJ9_g3cW/WU9YqLv9eR4s95poEhRu/vCNW2zZHTRjAfLGbu0Gw -extld=gcc $WORK/b001/_pkg_.a</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/buildid -w $WORK/b001/exe/a.out # internal</span><br><span class="line">mv $WORK/b001/exe/a.out main</span><br></pre></td></tr></table></figure>
+<p>下面我们逐步骤阐述 build 命令工作过程。第2-3行创建了临时工作目录 <code>/tmp/go-build545340510/</code>，同时在这个目录下创建了目录<code>b029</code>以用于存放 util 包所对应的源码文件编译后的静态链接文件（归档文件）。然后在4-6行导入编译步骤依赖的静态链接文件，即所编译的源文件引入的依赖库所对应的静态链接文件，因为 util 包没有依赖任何库源码文件，因此这里并没有任何配置内容。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">WORK=/tmp/go-build634787878</span><br><span class="line">mkdir -p $WORK/b029/</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">b029</span><br><span class="line">├── importcfg</span><br><span class="line">└── _pkg_.a</span><br></pre></td></tr></table></figure>
+<p>接下来，在第7行进入 util 包所在的目录后，第8-10行使用 compile 命令工具执行一个编译命令以编译库源码文件 <code>slice_util.go</code>，具体地，使用 -o 选项指定编译生成的静态链接文件名<code>_pkg_.a</code>，-p 选项指定编译的源码包，而  -buildid 指定此次构建的 ID，最后 -pack 选项表示编译过程中绕过中间对象文件（后缀为 .o 的文件），而直接生成一个存档文件（静态链接文件），若不指定此选项，则会首先生成以 .o 为后缀的中间对象文件，然后将各对象文件打包到一个存档文件，compile 命令及其详细选项可参考<a href="https://golang.org/cmd/compile/" target="_blank" rel="noopener">这里</a>。使得一提的是，使用<code>go tool compile -N -l -S main.go</code>可以得到程序的汇编代码。最后，将生成的静态链接文件重命名后拷贝到一个临时的 cache 目录<code>/home/ubuntu/.cache/go-build/00/...</code>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd /home/ubuntu/workSpaces/go/src/github.com/qqzeng/helloworld/util</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/compile -o $WORK/b029/_pkg_.a -trimpath $WORK/b029 -p \</span><br><span class="line">github.com/qqzeng/helloworld/util -complete -buildid T0vxP0OAL4NQLqv8Z5hZ/T0vxP0OAL4NQLqv8Z5hZ -goversion \</span><br><span class="line">go1.12 -D "" -importcfg $WORK/b029/importcfg -pack ./slice_lib.go</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/buildid -w $WORK/b029/_pkg_.a # internal</span><br><span class="line">cp $WORK/b029/_pkg_.a /home/ubuntu/.cache/go-build/00/00c7955e923d12630ae21b9150bf5cd83ad34d446a411992f2818bd1953a03e2-d # internal</span><br></pre></td></tr></table></figure>
+<p>第13-25行则针对<code>main.go</code>执行上述类似的步骤。首先它创建<code>b001</code>来存储中间文件，同时在编译<code>main.go</code>命令源码文件之前，导入了其所依赖的三个静态链接文件，即 fmt、util 和 runtime。最后同样将生成的静态链接文件重命名后拷贝到相应的临时的 cache 目录<code>/home/ubuntu/.cache/go-build/63/...</code>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">b001</span><br><span class="line">├── exe</span><br><span class="line">├── importcfg</span><br><span class="line">├── importcfg.link</span><br><span class="line">└── _pkg_.a</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cat &gt;$WORK/b029/importcfg &lt;&lt; 'EOF' # internal</span><br><span class="line"><span class="meta">#</span> import config</span><br><span class="line">EOF</span><br><span class="line">cd /home/ubuntu/workSpaces/go/src/github.com/qqzeng/helloworld/util</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/compile -o $WORK/b029/_pkg_.a -trimpath $WORK/b029 -p \</span><br><span class="line">github.com/qqzeng/helloworld/util -complete -buildid T0vxP0OAL4NQLqv8Z5hZ/T0vxP0OAL4NQLqv8Z5hZ -goversion \</span><br><span class="line">go1.12 -D "" -importcfg $WORK/b029/importcfg -pack ./slice_lib.go</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/buildid -w $WORK/b029/_pkg_.a # internal</span><br><span class="line">cp $WORK/b029/_pkg_.a /home/ubuntu/.cache/go-build/00/00c7955e923d12630ae21b9150bf5cd83ad34d446a411992f2818bd1953a03e2-d # internal</span><br></pre></td></tr></table></figure>
+<p>然后，在26-55行导入了链接阶段所链接的静态链接文件列表。值得注意的是，一方面其自动为命令源码文件生成一个虚拟包 command-line-arguments，另外，还导入了标准库的一些其它静态链接文件。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">cat &gt;$WORK/b001/importcfg.link &lt;&lt; 'EOF' # internal</span><br><span class="line">packagefile command-line-arguments=$WORK/b001/_pkg_.a</span><br><span class="line">packagefile fmt=/usr/local/go/pkg/linux_amd64/fmt.a</span><br><span class="line">packagefile github.com/qqzeng/helloworld/util=$WORK/b029/_pkg_.a</span><br><span class="line">packagefile runtime=/usr/local/go/pkg/linux_amd64/runtime.a</span><br><span class="line"><span class="meta">#</span> ...</span><br><span class="line">packagefile internal/race=/usr/local/go/pkg/linux_amd64/internal/race.a</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>最后，第56行在<code>b001</code>目录下创建了目录<code>exe</code>用于存放链接后的二进制可执行文件，然后在此目录下使用 link 工具执行链接命令，同时通过选项 -extld=external linker（默认为 gcc 或 clang） 来链接 main 包及其依赖的静态链接文件。Go 语言可采用 static linking 或者 external linking 两种链接方式，关于链接的更多内容不在本文的介绍范围。最后将可执行的二进制文件重命名并移动到执行 build 命令的目录。关于 link 命令及其详细选项可参考<a href="https://golang.org/cmd/link/" target="_blank" rel="noopener">这里</a>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mkdir -p $WORK/b001/exe/</span><br><span class="line">cd .</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/link -o $WORK/b001/exe/a.out -importcfg $WORK/b001/importcfg.link -buildmode=exe -buildid=vCNW2zZHTRjAfLGbu0Gw/NQfuV250impAGJ9_g3cW/WU9YqLv9eR4s95poEhRu/vCNW2zZHTRjAfLGbu0Gw -extld=gcc $WORK/b001/_pkg_.a</span><br><span class="line">/usr/local/go/pkg/tool/linux_amd64/buildid -w $WORK/b001/exe/a.out # internal</span><br><span class="line">mv $WORK/b001/exe/a.out main</span><br></pre></td></tr></table></figure>
+<p>至此，整个 build 过程已经分析完毕。</p>
+<h2 id="go-build-的更多细节"><a href="#go-build-的更多细节" class="headerlink" title="go build 的更多细节"></a>go build 的更多细节</h2><p>关于 go build 命令，最后再补充几点。</p>
+<ul>
+<li><p><code>go build</code>命令在执行时，通常会先递归寻找 <code>main.go</code> 所依赖的包，及其依赖的依赖，直至底顶层的包，同时如果发现有循环依赖，则直接退出。因此，若机器包含有多个逻辑核，则编译代码包的顺序可能会存在一些不确定性，但其会保证被依赖代码包 A 要先于当前包 B（B依赖A）被编译[1]；</p>
+</li>
+<li><p>前面提到在编译各个包后，compile 命令工具会将编译后的静态链接文件缓存到目录<code>/home/ubuntu/.cache/go-build/..</code>，因此，当我们再次执行 build 命令时（前提是删除之前生成的二进制文件），会发现 build 过程省略了 compile 步骤（若未删除之前生成的二进制文件，则还会省略 link 步骤，即 build 没有任何影响）。具体而言，对于那些被缓存的包所对应的静态链接文件，其在临时目录<code>/tmp/go-build*/</code>下不会生成对应的目录和文件；</p>
+</li>
+<li><p>build 命令执行过程中同缓存相关的还有一个选项 -i，若开启此设置，则会将库源码文件编译生成的链接文件按源码文件中目录组织结构存放到<code>$GOPATH/pkg/${GOOS}_${GOARCH}/</code>目录。因此，当再次执行 build 命令时，同样不会再次编译对应的库源码包文件；</p>
+</li>
+<li><p>这篇文章没有涉及<code>go install</code>和<code>go run</code>两个命令，因为它们都基于<code>go build</code>命令，因此相对简单。其中 install 命令在 build 的基础上，还会安装编译后的结果文件到指定目录，准确而言是将结果文件（静态链接文件或者可执行文件）存放到相应的目录，这包括两个部分：其一是将各库源码包文件所对应的静态链接文件存放到<code>$GOPATH/pkg/${GOOS}_${GOARCH}/</code>目录，同时将生成的可执行二进制文件存放到<code>$GOPATH/bin/</code>目录（若设置了<code>$GOBIN</code>，则安装到<code>$GOBIN</code>目录）。一般而言，build 命令生成的可执行文件对于应用程序的分发、部署和测试很有帮助，而 install 命令则可以方便你在系统任意地方访问你构建的应用程序。而 run 命令则是在 build 命令的基础上执行二进制文件，并输出运行结果。</p>
+</li>
+</ul>
+<p>本文以一个简单简单是项目实例阐述<code>go build</code>命令的基本工作流程，并没有涉及过多原理性的知识点。换言之，本文的作用更多地在于使用一个实例来串联其中所涉及的 go tool 命令工具的介绍和使用。因此，读者亲自了解更多的内容并实践才能理解并掌握它们。『参考文献』部分给出了一些详细资料，文中给出的链接基本是官方文档内容[2]。</p>
+<p>文中实践源码在<a href="https://github.com/qqzeng/go-code-snippet/tree/master/helloworld" target="_blank" rel="noopener">这里</a>。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1]. <a href="https://github.com/hyper0x/go_command_tutorial" target="_blank" rel="noopener">https://github.com/hyper0x/go_command_tutorial</a><br>[2]. <a href="https://golang.org/cmd/go/" target="_blank" rel="noopener">https://golang.org/cmd/go/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/go/" rel="tag"># go</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/09/The-Log-Structured-File-System/" rel="next" title="The Log-Structured File System">
+                <i class="fa fa-chevron-left"></i> The Log-Structured File System
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Zeng Qiaoqiao</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">50</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="Email">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>Email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#以一个实例来剖析-go-build-命令执行过程"><span class="nav-number">1.</span> <span class="nav-text">以一个实例来剖析 go build 命令执行过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#go-build-的更多细节"><span class="nav-number">2.</span> <span class="nav-text">go build 的更多细节</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">3.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zeng Qiaoqiao</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">176.6k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+  </script>
+
+  
+
+  
+  
+
+
+  
+
+  
+
+  <!-- 代码块复制功能 -->
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+</body>
+</html>
