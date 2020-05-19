@@ -299,7 +299,7 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
 .need-share-button_wechat.need-share-button_link-box {
   color: #fff;
 
-  background: #FFFFFF;
+  background: #a2dc30;
 }
 .need-share-button_weibo {
   color: #d52b2b;
@@ -307,7 +307,7 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
 .need-share-button_weibo.need-share-button_link-box {
   color: #fff;
 
-  background: #FFFFFF;
+  background: #d52b2b;
 }
 .need-share-button_douban {
   color: #072;
@@ -318,7 +318,7 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
 .need-share-button_douban.need-share-button_link-box {
   color: #fff;
 
-  background: #FFFFFF;
+  background: #072;
 }
 .need-share-button_qqzone {
   color: #ffce00;
@@ -326,7 +326,7 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
 .need-share-button_qqzone.need-share-button_link-box {
   color: #fff;
 
-  background: #FFFFFF;
+  background: #ffce00;
 }
 .need-share-button_renren {
   color: #207cc5;
@@ -350,7 +350,7 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
 .need-share-button_twitter.need-share-button_link-box {
   color: #fff;
 
-  background: #FFFFFF;
+  background: #00acec;
 }
 .need-share-button_pinterest {
   color: #cd2027;
@@ -366,7 +366,7 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
 .need-share-button_facebook.need-share-button_link-box {
   color: #fff;
 
-  background: #FFFFFF;
+  background: #3b5998;
 }
 .need-share-button_googleplus {
   color: #d44132;
