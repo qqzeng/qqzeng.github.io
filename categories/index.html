@@ -100,7 +100,7 @@
 <meta property="og:site_name" content="Zeng Qiaoqiao">
 <meta property="og:description" content="你好呀">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-05-13T13:57:34.180Z">
+<meta property="og:updated_time" content="2020-05-18T17:29:51.056Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="categories">
 <meta name="twitter:description" content="你好呀">
@@ -337,14 +337,6 @@
 
 
           
-
-  
-    <div id="gitalk-container"></div>
-
-  
-
-
-
         </div>
         
           
@@ -422,9 +414,9 @@
                   </span>
                 
                   <span class="links-of-author-item">
-                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="email">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="Email">
                       
-                        <i class="fa fa-fw fa-envelope"></i>email</a>
+                        <i class="fa fa-fw fa-envelope"></i>Email</a>
                   </span>
                 
             </div>
@@ -510,6 +502,12 @@
       </div>
     
 
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
     
 
   </div>
@@ -631,23 +629,6 @@
 
 
 
-
-  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
-  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-  <script src="/js/src/md5.min.js"></script>
-   <script type="text/javascript">
-        var gitalk = new Gitalk({
-          clientID: '254c17f1918f80ab52dd',
-          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
-          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
-          repo: 'qqzeng.github.io',
-          owner: 'qqzeng',
-          admin: ['qqzeng'],
-          id: md5(location.pathname),
-          distractionFreeMode: 'true'
-        })
-        gitalk.render('gitalk-container')
-    </script>
 
   
 
@@ -994,6 +975,43 @@
 
 
   
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "box";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleRight";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
   
 
   

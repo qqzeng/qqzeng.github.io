@@ -361,8 +361,8 @@
       <tags>
         <tag>分布式系统</tag>
         <tag>分布式协调服务</tag>
-        <tag>原子广播协议</tag>
         <tag>分布式锁</tag>
+        <tag>原子广播协议</tag>
       </tags>
   </entry>
   <entry>
@@ -403,10 +403,10 @@
       </categories>
       <tags>
         <tag>分布式系统</tag>
-        <tag>逻辑时钟</tag>
-        <tag>lamport clock</tag>
         <tag>互斥算法</tag>
         <tag>资源共享</tag>
+        <tag>lamport clock</tag>
+        <tag>逻辑时钟</tag>
       </tags>
   </entry>
   <entry>
@@ -419,10 +419,10 @@
       </categories>
       <tags>
         <tag>分布式系统</tag>
-        <tag>时钟同步</tag>
-        <tag>逻辑时钟</tag>
-        <tag>物理时钟</tag>
         <tag>lamport clock</tag>
+        <tag>逻辑时钟</tag>
+        <tag>时钟同步</tag>
+        <tag>物理时钟</tag>
       </tags>
   </entry>
   <entry>

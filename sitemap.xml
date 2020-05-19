@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://qtozeng.top/categories/index.html</loc>
+    
+    <lastmod>2020-05-18T17:29:51.056Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://qtozeng.top/tags/index.html</loc>
     
     <lastmod>2020-05-18T17:22:10.289Z</lastmod>
@@ -121,13 +128,6 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/categories/index.html</loc>
-    
-    <lastmod>2019-05-13T13:57:34.180Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://qtozeng.top/2019/01/08/%E7%AE%80%E5%8D%95%E5%AF%B9%E6%AF%94-Raft-%E5%8F%8A-ZAB-%E5%8D%8F%E8%AE%AE/</loc>
     
     <lastmod>2019-05-13T13:57:34.180Z</lastmod>
@@ -191,14 +191,14 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2019/01/10/etcd-raft-%E7%BD%91%E7%BB%9C%E4%BC%A0%E8%BE%93%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
+    <loc>https://qtozeng.top/2019/01/15/etcd-raft-%E9%9B%86%E7%BE%A4%E9%85%8D%E7%BD%AE%E5%8F%98%E6%9B%B4%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
     
     <lastmod>2019-05-13T13:57:34.172Z</lastmod>
     
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2019/01/15/etcd-raft-%E9%9B%86%E7%BE%A4%E9%85%8D%E7%BD%AE%E5%8F%98%E6%9B%B4%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
+    <loc>https://qtozeng.top/2019/01/10/etcd-raft-%E7%BD%91%E7%BB%9C%E4%BC%A0%E8%BE%93%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
     
     <lastmod>2019-05-13T13:57:34.172Z</lastmod>
     
