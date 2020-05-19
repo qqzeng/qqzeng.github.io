@@ -129,8 +129,8 @@ scheme: Mist
 # Value before `||` delimeter is the target permalink.
 # Value after `||` delimeter is the name of FontAwesome icon. If icon (with or without delimeter) is not specified, globe icon will be loaded.
 #social:
-  #GitHub: https://github.com/yourname || github
-  #E-Mail: mailto:yourname@gmail.com || envelope
+  # GitHub: https://github.com/qqzeng || github
+  # E-Mail: mailto:qtozeng@gmail.com || envelope
   #Google: https://plus.google.com/yourname || google
   #Twitter: https://twitter.com/yourname || twitter
   #FB Page: https://www.facebook.com/yourname || facebook
@@ -143,6 +143,7 @@ scheme: Mist
 social_icons:
   enable: true
   GitHub: github
+  # Email: envelope
   icons_only: false
   transition: false
 
@@ -376,7 +377,7 @@ baidu_analytics: 32c9335b479b9d4ab2d32b6e9dd59ed8
 
 # Disqus
 disqus:
-  enable: true
+  enable: false
   shortname: qqzeng
   count: true
 
@@ -423,12 +424,23 @@ gitment:
   lazy: false # Comments lazy loading with a button
   cleanly: false # Hide 'Powered by ...' on footer, and more
   language:  # Force language, or auto switch by theme
-  github_user: # MUST HAVE, Your Github ID
-  github_repo: # MUST HAVE, The repo you use to store Gitment comments
-  client_id: # MUST HAVE, Github client id for the Gitment
-  client_secret: # EITHER this or proxy_gateway, Github access secret token for the Gitment
+  github_user: qqzeng # MUST HAVE, Your Github ID
+  github_repo: qqzeng.github.io # MUST HAVE, The repo you use to store Gitment comments
+  client_id: 254c17f1918f80ab52dd # MUST HAVE, Github client id for the Gitment
+  client_secret: 34c85cd4d80c0f06e9818833a9ae32a9ba4cc669 # EITHER this or proxy_gateway, Github access secret token for the Gitment
   proxy_gateway: # Address of api proxy, See: https://github.com/aimingoo/intersect
   redirect_protocol: # Protocol of redirect_uri with force_redirect_protocol when mint enabled
+
+
+gitalk:
+  enable: true
+  githubID: qqzeng  # 例：asdfv1929   
+  repo: qqzeng.github.io   # 例：asdfv1929.github.io
+  ClientID: 254c17f1918f80ab52dd
+  ClientSecret: 34c85cd4d80c0f06e9818833a9ae32a9ba4cc669
+  adminUser: qqzeng #指定可初始化评论账户
+  labels: 'gitalk' #GitHub issues的标签
+  distractionFreeMode: true
 
 # Baidu Share
 # Available value:
@@ -460,21 +472,22 @@ gitment:
 #           Technorati,Posterous,Tumblr,GoogleBookmarks,Newsvine,
 #           Evernote,Friendfeed,Vkontakte,Odnoklassniki,Mailru
 needmoreshare2:
-  enable: false
+  enable: true
   postbottom:
-    enable: false
+    enable: true #是否开启博客分享按钮
     options:
       iconStyle: box
       boxForm: horizontal
       position: bottomCenter
       networks: Weibo,Wechat,Douban,QQZone,Twitter,Facebook
   float:
-    enable: false
+    enable: false #网站分享按钮
     options:
       iconStyle: box
       boxForm: horizontal
       position: middleRight
       networks: Weibo,Wechat,Douban,QQZone,Twitter,Facebook
+
 
 # Google Webmaster tools verification setting
 # See: https://www.google.com/webmasters/

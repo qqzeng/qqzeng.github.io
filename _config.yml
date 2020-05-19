@@ -3,17 +3,17 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Zeng Qiaoqiao
+title: 一抹光辉油彩
 subtitle:
-description: "你好呀"
+description: ""
 keywords:
-author: qqzeng
+author: Zeng Qiaoqiao
 language: zh-Hans
 timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: https://qtozeng.com
+url: https://qtozeng.top
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -131,6 +131,11 @@ qiniu:
 # Social links
 social:
   GitHub: https://github.com/qqzeng
+  Email: mailto:qtozeng@gmail.com || envelope
+
+social_icons:
+  enable: true
+  email: envelope
 
 sitemap:
   path: sitemap.xml

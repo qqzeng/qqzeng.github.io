@@ -41,6 +41,9 @@ post:
     license_title: 版权声明
     license_content: '本博客所有文章除特别声明外，均采用
       <a href="%s" rel="external nofollow" target="_blank">%s</a> 许可协议。转载请注明出处！'
+  copy_button: 复制
+  copy_success: 复制成功
+  copy_failure: 复制失败
 
 page:
   totally: 共有

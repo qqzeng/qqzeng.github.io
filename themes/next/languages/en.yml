@@ -41,6 +41,9 @@ post:
     license_title: Copyright Notice
     license_content: 'All articles in this blog are licensed under
       <a href="%s" rel="external nofollow" target="_blank">%s</a> unless stating additionally.'
+  copy_button: Copy
+  copy_success: Copied
+  copy_failure: Copy failed
 
 page:
   totally: Totally

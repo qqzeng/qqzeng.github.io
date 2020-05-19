@@ -183,8 +183,8 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
 }
 .need-share-button_dropdown-box-vertical,
 .need-share-button_dropdown-box-horizontal {
-  -webkit-border-radius: 4px;
-          border-radius: 4px;
+  -webkit-border-radius: 0;
+          border-radius: 0;
 }
 .need-share-button_dropdown-box-vertical {
   width: 50px;
@@ -297,17 +297,17 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
   color: #a2dc30;
 }
 .need-share-button_wechat.need-share-button_link-box {
-  color: #a2dc30;
+  color: #fff;
 
-  background: #fff;
+  background: #a2dc30;
 }
 .need-share-button_weibo {
   color: #d52b2b;
 }
 .need-share-button_weibo.need-share-button_link-box {
-  color: #d52b2b;
+  color: #fff;
 
-  background: #fff;
+  background: #d52b2b;
 }
 .need-share-button_douban {
   color: #072;
@@ -316,17 +316,17 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
   content: '豆';
 }
 .need-share-button_douban.need-share-button_link-box {
-  color: #072;
+  color: #fff;
 
-  background: #fff;
+  background: #072;
 }
 .need-share-button_qqzone {
   color: #ffce00;
 }
 .need-share-button_qqzone.need-share-button_link-box {
-  color: #ffce00;
+  color: #fff;
 
-  background: #fff;
+  background: #ffce00;
 }
 .need-share-button_renren {
   color: #207cc5;
@@ -348,9 +348,9 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
   color: #00acec;
 }
 .need-share-button_twitter.need-share-button_link-box {
-  color: #00acec;
+  color: #fff;
 
-  background: #fff;
+  background: #00acec;
 }
 .need-share-button_pinterest {
   color: #cd2027;
@@ -364,9 +364,9 @@ src: url('data:application/octet-stream;base64,d09GRgABAAAAAA7IAA8AAAAAGBAAAQAAA
   color: #3b5998;
 }
 .need-share-button_facebook.need-share-button_link-box {
-  color: #3b5998;
+  color: #fff;
 
-  background: #fff;
+  background: #3b5998;
 }
 .need-share-button_googleplus {
   color: #d44132;
