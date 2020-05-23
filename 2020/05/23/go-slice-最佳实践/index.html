@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="go,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Go 语言切片提供了一种方便、有效且强大的用于处理序列数据的方式。切片和数组都是 Go 内置的数据类型。简单而言，切片类似于动态数组。考虑到 Go 中数组类型和其长度绑定，属于编译期数据类型，操作不够灵活，这导致数组的使用范围非常有限，可以说数组在 Go 中最大的应用就是为切片保存存储空间。相反，切片的应用场景则较广泛，但也较为复杂，切片的运用和程序性能息息相关。因此，本文通过一些示例程序揭示和解">
+<meta name="keywords" content="go">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go slice 最佳实践">
+<meta property="og:url" content="https://qtozeng.top/2020/05/23/go-slice-最佳实践/index.html">
+<meta property="og:site_name" content="一抹光辉油彩">
+<meta property="og:description" content="Go 语言切片提供了一种方便、有效且强大的用于处理序列数据的方式。切片和数组都是 Go 内置的数据类型。简单而言，切片类似于动态数组。考虑到 Go 中数组类型和其长度绑定，属于编译期数据类型，操作不够灵活，这导致数组的使用范围非常有限，可以说数组在 Go 中最大的应用就是为切片保存存储空间。相反，切片的应用场景则较广泛，但也较为复杂，切片的运用和程序性能息息相关。因此，本文通过一些示例程序揭示和解">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-05-23T05:23:08.168Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="go slice 最佳实践">
+<meta name="twitter:description" content="Go 语言切片提供了一种方便、有效且强大的用于处理序列数据的方式。切片和数组都是 Go 内置的数据类型。简单而言，切片类似于动态数组。考虑到 Go 中数组类型和其长度绑定，属于编译期数据类型，操作不够灵活，这导致数组的使用范围非常有限，可以说数组在 Go 中最大的应用就是为切片保存存储空间。相反，切片的应用场景则较广泛，但也较为复杂，切片的运用和程序性能息息相关。因此，本文通过一些示例程序揭示和解">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2020/05/23/go-slice-最佳实践/">
+
+
+
+
+
+  <title>go slice 最佳实践 | 一抹光辉油彩</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">一抹光辉油彩</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/05/23/go-slice-最佳实践/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">go slice 最佳实践</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-23T13:22:01+08:00">
+                2020-05-23
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index">
+                    <span itemprop="name">go</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  9,499
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  46
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Go 语言切片提供了一种方便、有效且强大的用于处理序列数据的方式。切片和数组都是 Go 内置的数据类型。简单而言，切片类似于动态数组。考虑到 Go 中数组类型和其长度绑定，属于编译期数据类型，操作不够灵活，这导致数组的使用范围非常有限，可以说数组在 Go 中最大的应用就是为切片保存存储空间。相反，切片的应用场景则较广泛，但也较为复杂，切片的运用和程序性能息息相关。因此，本文通过一些示例程序揭示和解决切片使用中相对令人困惑的地方，最重要的是，通过一些 benchmark 阐述和论证切片编程的典型最佳实践。</p>
+<a id="more"></a>
+<p>本文并非切片（slice） 的介绍或使用教程，因此假设你已具备切片和数组的基本知识，同时了解大致底层实现，比如<a href="https://tour.golang.org/moretypes/7" target="_blank" rel="noopener">熟悉 slice 的基本操作</a>、清楚<a href="https://golang.org/doc/effective_go.html#slices" target="_blank" rel="noopener">slice 的编程使用</a>，而且能基本了解 <a href="https://blog.golang.org/slices-intro" target="_blank" rel="noopener">slice 内部实现原理</a>以及 <a href="https://blog.golang.org/slices" target="_blank" rel="noopener">append 和 copy 的实现机制</a>。了解上述内容后，相信你对切片已经有比较深刻的认识。这些对于掌握切片编程的最佳实践至关重要。本文以 slice 为核心，阐述切片原理中令人隐蔽和棘手地方，同时，通过 <a href="https://golang.org/pkg/testing/#hdr-Benchmarks" target="_blank" rel="noopener">benchmark</a> 来论证切片编程的最佳实践。另外，本文所有实验均在 Ubuntu 18.04 x86_64，go1.14.3 linux/amd64 的环境下测试通过。为了节省篇幅，删除了文中示例代码的注释，所有示例代码可以在<a href="https://github.com/qqzeng/go-code-snippet/tree/master/slice-best-practice" target="_blank" rel="noopener">这里</a>找到。</p>
+<p>在阐述重点内容前，先了解关于切片的一些细节，这有助于理解切片是如何工作的，启示我们应该如何准确且高效地使用切片。</p>
+<ul>
+<li>当我们在谈论 slice 时，实际上我们指的是 <a href="https://golang.org/pkg/reflect/#SliceHeader" target="_blank" rel="noopener">slice header</a>，它包括长度，容量，底层数据的地址三个字段。这说明在 slice 的赋值和函数参数传递操作复制的是 slice header；</li>
+<li>slice 用于描述和其自身分开存储的数组的连续数据部分。换言之，数组代表 slice 底层数据存储，而 slice 描述数组的一部分；</li>
+<li>接上一条，Go 中只有值传递，即显式复制被传递的参数，而没有引用传递。另外，在 Go 中谈论引用类型的概念是不合适的，将其称之为<a href="https://go101.org/article/value-part.html" target="_blank" rel="noopener">指针持有者类型</a>（pointer holder）会更合适；</li>
+<li>当 slice 作为参数传递时，可以改变 slice 的元素，但不能改变 slice 本身。因此，若需要改变 slice 本身，可以将改变后的 slice 返回给调用方，也可以将 slice 的指针作为参数传递；</li>
+<li>数组类型和其长度绑定，换言之，相同元素类型但不同长度的数组（包括数组指针）属于不同数组类型，不能相互赋值。而元素类型相同的 slice 肯定是同一种类型；</li>
+<li>多个 slice 可能共享同一个底层数组，因此更改其中一个 slice 的底层数组，有可能会影响到其他切片的状态；</li>
+<li>append 操作会在切片容量不够的情况下，会执行扩容操作，扩容会改变元素原来的位置。换言之， append 操作不一定会改变底层的数组，因此，append 操作得到的 slice 和原来的 slice 有可能共享底层数组；</li>
+<li>slice 未提供专门的内置函数用于扩展 slice 容量，append 本质是追加元素而非扩展容量，扩展切片容量是 append 的副作用；</li>
+<li><a href="https://github.com/golang/go/blob/master/src/runtime/slice.go#L125" target="_blank" rel="noopener">slice 的扩容策略</a>包括两个步骤，一是将容量扩充为原 slice 容量的 2 倍或 1.25 倍，二是内存对齐操作。</li>
+</ul>
+<h2 id="nil-切片-amp-空切片"><a href="#nil-切片-amp-空切片" class="headerlink" title="nil 切片&amp;空切片"></a>nil 切片&amp;空切片</h2><p>Go 包含两种特殊状态的切片，即 nil 切片和空切片。这两种特殊状态的 slice 有时候会带来一些棘手的问题，因此，我们我们通过下面简单示例程序来了解它们，更详细的阐述在<a href="https://juejin.im/post/5bea58df6fb9a049f153bca8" target="_blank" rel="noopener">这里</a>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestSpecialStateOfSlice</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">	t.Run(<span class="string">"TestSSOS"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		<span class="keyword">var</span> s1 []<span class="keyword">int</span>            <span class="comment">// nil slice</span></span><br><span class="line">		<span class="keyword">var</span> s2 = []<span class="keyword">int</span>&#123;&#125;        <span class="comment">// empty slice</span></span><br><span class="line">		<span class="keyword">var</span> s3 = <span class="built_in">make</span>([]<span class="keyword">int</span>, <span class="number">0</span>) <span class="comment">// empty slice</span></span><br><span class="line">		<span class="keyword">var</span> s4 = *<span class="built_in">new</span>([]<span class="keyword">int</span>)    <span class="comment">// nil slice</span></span><br><span class="line"></span><br><span class="line">		fmt.Println(<span class="built_in">len</span>(s1), <span class="built_in">len</span>(s2), <span class="built_in">len</span>(s3), <span class="built_in">len</span>(s4)) <span class="comment">// 0 0 0 0</span></span><br><span class="line">		fmt.Println(<span class="built_in">cap</span>(s1), <span class="built_in">cap</span>(s2), <span class="built_in">cap</span>(s3), <span class="built_in">cap</span>(s4)) <span class="comment">// 0 0 0 0</span></span><br><span class="line">		fmt.Println(s1, s2, s3, s4) <span class="comment">// [] [] [] []</span></span><br><span class="line">		</span><br><span class="line">        fmt.Println(s1 == <span class="literal">nil</span>, s2 == <span class="literal">nil</span>, s3 == <span class="literal">nil</span>, s4 == <span class="literal">nil</span>) <span class="comment">// true false false true</span></span><br><span class="line">        </span><br><span class="line">		<span class="keyword">var</span> a1 = *(*[<span class="number">3</span>]<span class="keyword">int</span>)(unsafe.Pointer(&amp;s1))</span><br><span class="line">        <span class="comment">// var a1 = *(*reflect.SliceHeader)(unsafe.Pointer(&amp;s1))</span></span><br><span class="line">		<span class="keyword">var</span> a2 = *(*[<span class="number">3</span>]<span class="keyword">int</span>)(unsafe.Pointer(&amp;s2))</span><br><span class="line">		<span class="keyword">var</span> a3 = *(*[<span class="number">3</span>]<span class="keyword">int</span>)(unsafe.Pointer(&amp;s3))</span><br><span class="line">		<span class="keyword">var</span> a4 = *(*[<span class="number">3</span>]<span class="keyword">int</span>)(unsafe.Pointer(&amp;s4))</span><br><span class="line"></span><br><span class="line">		fmt.Println(a1) <span class="comment">// [0 0 0]</span></span><br><span class="line">		fmt.Println(a2) <span class="comment">// [6717704 0 0]</span></span><br><span class="line">		fmt.Println(a3) <span class="comment">// [6717704 0 0]</span></span><br><span class="line">		fmt.Println(a4) <span class="comment">// [0 0 0]</span></span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码中，首先需要理解四种初始化的确切含义。其中，内置 new 操作被用来为一个任何类型的值开辟内存并返回一个存储此值的指针， 用 new 开辟出来的值均为零值。因此，new 对于创建 slice (map) 没有太大价值。而 make 操作可用来创建 slice (以及map 和 channel)，并且被创建的 slice 中所有元素值均被初始化为零值。从上面的输出可以看出 nil 切片和零切片的打印内容没有什么差异，但空切片底层数组指向的是一个既定地址——<a href="https://github.com/golang/go/blob/master/src/runtime/malloc.go#L901" target="_blank" rel="noopener">zerobase</a> 。空切片和 nil 比较的结果为 false。且官方建议，为了避免混淆空切片和 nil 切片，尽可能使用 nil 切片。</p>
+<h2 id="切片遍历"><a href="#切片遍历" class="headerlink" title="切片遍历"></a>切片遍历</h2><p>Go 为我们提供 <code>for range</code>操作来遍历容器类型（slice、map和数组）的变量，相比于传统的<code>for</code>循环，<code>for range</code>循环操作有一些让人困惑的地方，同时，Go也在某些场合对<code>for range</code>操作进行了优化。因此，充分理解<code>for range</code>操作能提高容器迭代效率。下面，我们首先阐述<code>for range</code>循环中一些相对难以理解的地方，然后，通过一个 benchmark 来论证<code>for range</code>的最佳实践，最后，我们通过一个 benchmark 以简单比较数组和 slice 的<code>for range</code>操作效率。</p>
+<h3 id="range-循环操作的细节"><a href="#range-循环操作的细节" class="headerlink" title="range 循环操作的细节"></a>range 循环操作的细节</h3><p>我们首先通过下面的代码段了解<code>for range</code>操作的一些“奇怪”特征（输出显示在对应语句旁边）。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestRangeOfContainer</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">	t.Run(<span class="string">"TestROC1"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		arr := []MyInt&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">		<span class="keyword">for</span> _, v := <span class="keyword">range</span> arr &#123;</span><br><span class="line">			arr = <span class="built_in">append</span>(arr, v)</span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(arr) <span class="comment">// [1 2 3 1 2 3]</span></span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	printSeperateLine(<span class="string">"TestROC2"</span>)</span><br><span class="line">	t.Run(<span class="string">"TestROC2"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		arr := []MyInt&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">		newArr := []*MyInt&#123;&#125;</span><br><span class="line">		<span class="keyword">for</span> _, v := <span class="keyword">range</span> arr &#123;</span><br><span class="line">			newArr = <span class="built_in">append</span>(newArr, &amp;v)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">for</span> _, v := <span class="keyword">range</span> newArr &#123;</span><br><span class="line">			fmt.Print(*v, <span class="string">" "</span>) <span class="comment">// [3 3 3]</span></span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println()</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	t.Run(<span class="string">"TestROC3"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		<span class="keyword">type</span> Person <span class="keyword">struct</span> &#123;</span><br><span class="line">			name <span class="keyword">string</span></span><br><span class="line">			age  MyInt</span><br><span class="line">		&#125;</span><br><span class="line">		persons := [<span class="number">2</span>]Person&#123;&#123;<span class="string">"Alice"</span>, <span class="number">28</span>&#125;, &#123;<span class="string">"Bob"</span>, <span class="number">25</span>&#125;&#125;</span><br><span class="line">		<span class="keyword">for</span> i, p := <span class="keyword">range</span> persons &#123;</span><br><span class="line">            <span class="comment">// 0 &#123;Alice 28&#125;</span></span><br><span class="line">            <span class="comment">// 1 &#123;Bob 25&#125;</span></span><br><span class="line">			fmt.Println(i, p)</span><br><span class="line">			<span class="comment">// fail to update the element of original array </span></span><br><span class="line">            <span class="comment">// because of its duplicate &lt;persons&gt; is provided.</span></span><br><span class="line">			persons[<span class="number">1</span>].name = <span class="string">"Jack"</span></span><br><span class="line">			<span class="comment">// fail to update the field of original array </span></span><br><span class="line">            <span class="comment">// because of its being a element in its duplicate.</span></span><br><span class="line">			p.age = <span class="number">31</span></span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(<span class="string">"persons:"</span>, &amp;persons) <span class="comment">// persons: &amp;[&#123;Alice 28&#125; &#123;Jack 25&#125;]</span></span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	t.Run(<span class="string">"TestROC4"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		<span class="keyword">type</span> Person <span class="keyword">struct</span> &#123;</span><br><span class="line">			name <span class="keyword">string</span></span><br><span class="line">			age  MyInt</span><br><span class="line">		&#125;</span><br><span class="line">		persons := [<span class="number">2</span>]Person&#123;&#123;<span class="string">"Alice"</span>, <span class="number">28</span>&#125;, &#123;<span class="string">"Bob"</span>, <span class="number">25</span>&#125;&#125;</span><br><span class="line">		pp := &amp;persons</span><br><span class="line">		<span class="keyword">for</span> i, p := <span class="keyword">range</span> pp &#123;</span><br><span class="line">            <span class="comment">// 0 &#123;Alice 28&#125;</span></span><br><span class="line">            <span class="comment">// 1 &#123;Jack 25&#125;</span></span><br><span class="line">			fmt.Println(i, p)</span><br><span class="line">			<span class="comment">// this modification has effects on the iteration.</span></span><br><span class="line">			pp[<span class="number">1</span>].name = <span class="string">"Jack"</span></span><br><span class="line">			<span class="comment">// fail to update the field of original array pointer.</span></span><br><span class="line">			p.age = <span class="number">31</span></span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(<span class="string">"persons:"</span>, &amp;persons) <span class="comment">// 1 &#123;Jack 25&#125; persons: &amp;[&#123;Alice 28&#125; &#123;Jack 25&#125;]</span></span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	t.Run(<span class="string">"TestROC5"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		<span class="keyword">type</span> Person <span class="keyword">struct</span> &#123;</span><br><span class="line">			name <span class="keyword">string</span></span><br><span class="line">			age  MyInt</span><br><span class="line">		&#125;</span><br><span class="line">		persons := []Person&#123;&#123;<span class="string">"Alice"</span>, <span class="number">28</span>&#125;, &#123;<span class="string">"Bob"</span>, <span class="number">25</span>&#125;&#125;</span><br><span class="line">		<span class="keyword">for</span> i, p := <span class="keyword">range</span> persons &#123;</span><br><span class="line">            <span class="comment">// 0 &#123;Alice 28&#125;</span></span><br><span class="line">            <span class="comment">// 1 &#123;Jack 25&#125;</span></span><br><span class="line">			fmt.Println(i, p)</span><br><span class="line">			<span class="comment">// this modification has effects on the iteration.</span></span><br><span class="line">			persons[<span class="number">1</span>].name = <span class="string">"Jack"</span></span><br><span class="line">			<span class="comment">// fail to update the field of original slice.</span></span><br><span class="line">			p.age = <span class="number">31</span></span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(<span class="string">"persons:"</span>, &amp;persons) <span class="comment">// persons: &amp;[&#123;Alice 28&#125; &#123;Jack 25&#125;]</span></span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们简单解释上述测试的结果：</p>
+<ul>
+<li><p><code>TestROC1</code>测试用例中，若 range 操作所遍历的 slice 同初始化声明的 slice 为同一个变量时，则此循环将不会终止。换言之，range 操作所遍历的对象并非原有的 slice 变量；</p>
+</li>
+<li><p><code>TestROC2</code>测试用例中，若 range 循环提取值 v 为不同（地址的）变量，则后一个 range 循环将打印出原有 slice 的元素列表。换言之，range 循环操作提取的元素 v，其实是同一个变量（地址不变），循环过程只是将 slice 的元素值拷到到此变量；</p>
+</li>
+<li><p><code>TestROC3</code>测试用例中，循环中对原有数组的更新未能起作用，进一步说明 range 操作所遍历的对象并非原有的数组变量，另外，对原有数组元素的更新未能成功，进一步说明 range 循环操作提取的元素并非原有数组中的元素；</p>
+</li>
+<li><p><code>TestROC4</code>测试用例中，循环中成功更新原有数组指针，同时结合<code>TestROC3</code>，说明 range 操作所遍历的数组指针是原有数组指针的浅拷贝，同样，对原有数组指针中元素未能更新成功，说明 range 循环操作提取元素并非原有数组指针所指向元素；</p>
+</li>
+<li><code>TestROC5</code>测试用例的结果所得出的结论同<code>TestROC5</code>类似，只不过此容器变量为 slice 类型。</li>
+</ul>
+<p>综上所述，可得出如下三个结论：</p>
+<ul>
+<li>range 操作遍历的容器变量是原有容器变量的一个（匿名）副本。 且只有容器的直接部分（sizeof 函数所计算部分）被复制。数组是值类型，因此，range 操作的是数组的完整拷贝，而 slice 是指针持有者类型，因此，range 操作的 slice 副本，其和原有 slice 共享底层存储；</li>
+<li>range 操作中的每个循环步，会将容器副本中的一个键和值元素对复制给循环变量，因此，对循环变量的修改不会体现到原容器中，这也说明 range 循环元素元素尺寸较大的数组会带来较大的性能开销；</li>
+<li>range 操作所遍历的键和值将被赋值给同一对循环变量实例。</li>
+</ul>
+<h3 id="range-循环的最佳实践"><a href="#range-循环的最佳实践" class="headerlink" title="range 循环的最佳实践"></a>range 循环的最佳实践</h3><p>上一小节提到，对具有较大元素尺寸的数组应用 range 操作会导致较低的循环效率，下面通过一个 benchmark 来简单论证。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	arraySize   = <span class="number">1</span> &lt;&lt; <span class="number">15</span></span><br><span class="line">	arrayD2Size = <span class="number">1</span> &lt;&lt; <span class="number">5</span></span><br><span class="line">)</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkRangeOfArray</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	b.Run(<span class="string">"BenchmarkROA1"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		arr := [arraySize][arrayD2Size]MyInt&#123;&#125;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			<span class="keyword">for</span> i, v := <span class="keyword">range</span> arr &#123;</span><br><span class="line">				_, _ = i, v</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">	b.Run(<span class="string">"BenchmarkROA2"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		arr := [arraySize][arrayD2Size]MyInt&#123;&#125;</span><br><span class="line">		parr := &amp;arr</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			<span class="keyword">for</span> i, v := <span class="keyword">range</span> parr &#123;</span><br><span class="line">				_, _ = i, v</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">	b.Run(<span class="string">"BenchmarkROA3"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		arr := [arraySize][arrayD2Size]MyInt&#123;&#125;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			<span class="keyword">for</span> i, v := <span class="keyword">range</span> arr[:] &#123;</span><br><span class="line">				_, _ = i, v</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">	b.Run(<span class="string">"BenchmarkROA4"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		arr := [arraySize][arrayD2Size]MyInt&#123;&#125;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			<span class="keyword">for</span> i := <span class="keyword">range</span> arr &#123;</span><br><span class="line">				_ = i</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">	b.Run(<span class="string">"BenchmarkROA5"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		arr := [arraySize][arrayD2Size]MyInt&#123;&#125;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; <span class="built_in">len</span>(arr); j++ &#123;</span><br><span class="line">				_, _ = j, arr[j]</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们执行<code>go test -benchmem -run=^$ -bench=^BenchmarkRangeOfArray$ -count 1</code>来执行上面的 benchmark ，其在笔者机器上的测试结果如下。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">BenchmarkRangeOfArray/BenchmarkROA1                  <span class="number">670</span>           <span class="number">1531845</span> ns/op               <span class="number">0</span> B/op          <span class="number">0</span> allocs/op</span><br><span class="line">BenchmarkRangeOfArray/BenchmarkROA2                 <span class="number">3410</span>            <span class="number">366578</span> ns/op               <span class="number">0</span> B/op          <span class="number">0</span> allocs/op</span><br><span class="line">BenchmarkRangeOfArray/BenchmarkROA3                 <span class="number">3391</span>            <span class="number">360236</span> ns/op               <span class="number">0</span> B/op          <span class="number">0</span> allocs/op</span><br><span class="line">BenchmarkRangeOfArray/BenchmarkROA4                <span class="number">91201</span>             <span class="number">12965</span> ns/op               <span class="number">0</span> B/op          <span class="number">0</span> allocs/op</span><br><span class="line">BenchmarkRangeOfArray/BenchmarkROA5                <span class="number">98376</span>             <span class="number">12702</span> ns/op               <span class="number">0</span> B/op          <span class="number">0</span> allocs/op</span><br></pre></td></tr></table></figure>
+<p>从测试结果，可得出如下结论：</p>
+<ul>
+<li>当 range 直接遍历具有大尺寸的数组元素时，其遍历效率远低于遍历其对应的指针和切片；</li>
+<li>range 操作遍历数组指针和切片的效率接近，但都低于只提供循环索引变量的情况，同时也低于传统的 for 循环的遍历操作。这说明若在循环中不需要使用到循环变量，则省略它们是好的实践；</li>
+</ul>
+<p>当我们将<code>arrayD2Size</code>设置为 0 时（即不需要拷贝循环变量），我们发现所有测试结果都非常接近。另外，读者若有兴趣，可以变化<code>arrayD2Size</code>的大小以观察其对 range 遍历效率的影响。</p>
+<h3 id="range-操作的-memclr-优化"><a href="#range-操作的-memclr-优化" class="headerlink" title="range 操作的 memclr 优化"></a>range 操作的 memclr 优化</h3><p>所谓的 <a href="https://github.com/golang/go/blob/05c02444eb2d8b8d3ecd949c4308d8e2323ae087/src/runtime/memclr_386.s#L13" target="_blank" rel="noopener">memclr</a> 优化指的是，当我们使用 range 遍历操作来清空一个容器时，即将容器中每个元素赋值为其对应类型的零值字面量，则编译器会将整个循环优化成一个 memclr 调用，这显著提升清空容器的执行效率。下面我们通过一个简单的 benchmark 来比较 memclr 优化和使用传统的 for 循环来清空容器的效率比较。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	expLimit = <span class="number">26</span></span><br><span class="line">	incrUint = <span class="number">2</span></span><br><span class="line">	initExp  = <span class="number">6</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">memclr</span><span class="params">(s []MyInt)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="keyword">range</span> s &#123;</span><br><span class="line">		s[i] = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">memsetLoop</span><span class="params">(s []MyInt, v MyInt)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(s); i++ &#123;</span><br><span class="line">		s[i] = v</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkClearSlice</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; initExp+j*incrUint &lt; expLimit; j++ &#123;</span><br><span class="line">		sliceSize := <span class="number">1</span> &lt;&lt; <span class="keyword">uint</span>(initExp+j*incrUint)</span><br><span class="line">		b.Run(<span class="string">"BenchmarkCS"</span>+strconv.Itoa(j), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			sli := <span class="built_in">make</span>([]MyInt, sliceSize)</span><br><span class="line">			b.ResetTimer()</span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">				memclr(sli)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;)</span><br><span class="line">		b.Run(<span class="string">"BenchmarkCS"</span>+strconv.Itoa(j), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			sli := <span class="built_in">make</span>([]MyInt, sliceSize)</span><br><span class="line">			b.ResetTimer()</span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">				memsetLoop(sli, <span class="number">0</span>)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后，执行测试命令<code>go test -benchmem -run=^$ -bench=^BenchmarkClearSlice$ -count 1</code>，得到的结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">BenchmarkClearSlice/BenchmarkCS-1-64            92657308                11.7 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-64            33621434                34.5 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-256           39937538                30.1 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-256           11074920               109 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-1024          11525629               104 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-1024           2989976               417 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-4096           1785872               653 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-4096            617702              1647 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-16384           263352              4584 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-16384           150302              6888 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-65536            43773             27638 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-65536            38641             32088 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-262144           10000            108601 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-262144           10000            122657 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-1048576           2304            484845 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-1048576           2294            537908 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-4194304            549           2092379 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-4194304            220           5122413 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-1-16777216           141           8401282 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkClearSlice/BenchmarkCS-2-16777216            62          20834414 ns/op               0 B/op          0 allocs/op</span><br></pre></td></tr></table></figure>
+<p>上面的测试结果论证了 memclr 优化的有效性。同时，我们还可以使用 <a href="https://blog.golang.org/pprof" target="_blank" rel="noopener">pprof</a> 工具来具体查看程序中<code>memclr</code>方法和<code>memsetLoop</code>各自具体的 cpu 耗时，具体的使用方法这里就不展开了。读者还可以使用这个<a href="https://github.com/qqzeng/go-code-snippet/blob/master/slice-best-practice/memclr_pprof_case.go" target="_blank" rel="noopener">测试程序</a>，首先构建它，然后执行程序，它会生成相应的<code>cpu profile</code>，最后执行 pprof 命令来查看生成的报告 <code>go tool pprof memclr_pprof_case  -cpuprofile /tmp/profile442700233/cpu.pprof</code>，然后使用 top 命令查看程序中最耗时的那些函数，还可以使用<code>list/disasm &lt;function name&gt;</code>来查看具体耗时。pprof  执行结果如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">File: memclr_pprof_case</span><br><span class="line">Type: cpu</span><br><span class="line">Time: May 22, 2020 at 7:10pm (CST)</span><br><span class="line">Duration: 12.36s, Total samples = 11.58s (93.71%)</span><br><span class="line">Entering interactive mode (type &quot;help&quot; for commands, &quot;o&quot; for options)</span><br><span class="line">(pprof) top 5</span><br><span class="line">Showing nodes accounting for 11560ms, 99.83% of 11580ms total</span><br><span class="line">Dropped 15 nodes (cum &lt;= 57.90ms)</span><br><span class="line">Showing top 5 nodes out of 13</span><br><span class="line">      flat  flat%   sum%        cum   cum%</span><br><span class="line">    8000ms 69.08% 69.08%     8000ms 69.08%  main.memsetLoop</span><br><span class="line">    3420ms 29.53% 98.62%     3420ms 29.53%  runtime.memclrNoHeapPointers</span><br><span class="line">     140ms  1.21% 99.83%      140ms  1.21%  runtime.futex</span><br><span class="line">         0     0% 99.83%    11420ms 98.62%  main.main</span><br><span class="line">         0     0% 99.83%     3410ms 29.45%  main.memclr</span><br><span class="line">(pprof) list main.memesetLoop</span><br><span class="line">Total: 11.58s</span><br><span class="line">(pprof) list main.memsetLoop</span><br><span class="line">Total: 11.58s</span><br><span class="line">ROUTINE ======================== main.memsetLoop in /home/ubuntu/workSpaces/go/src/github.com/qqzeng/go-code-snippet/slice-best-practice/memclr_pprof_case.go</span><br><span class="line">        8s         8s (flat, cum) 69.08% of Total</span><br><span class="line">         .          .     17:   for i := range s &#123;</span><br><span class="line">         .          .     18:           s[i] = 0</span><br><span class="line">         .          .     19:   &#125;</span><br><span class="line">         .          .     20:&#125;</span><br><span class="line">         .          .     21:func memsetLoop(s []MyInt, v MyInt) &#123;</span><br><span class="line">     6.41s      6.41s     22:   for i := 0; i &lt; len(s); i++ &#123;</span><br><span class="line">     1.59s      1.59s     23:           s[i] = v</span><br><span class="line">         .          .     24:   &#125;</span><br><span class="line">         .          .     25:&#125;</span><br><span class="line">         .          .     26:</span><br><span class="line">         .          .     27:func testMemclr() &#123;</span><br><span class="line">         .          .     28:   sli := make([]MyInt, arraySize)</span><br><span class="line">(pprof) list main.memclr</span><br><span class="line">Total: 11.58s</span><br><span class="line">ROUTINE ======================== main.memclr in /home/ubuntu/workSpaces/go/src/github.com/qqzeng/go-code-snippet/slice-best-practice/memclr_pprof_case.go</span><br><span class="line">         0      3.41s (flat, cum) 29.45% of Total</span><br><span class="line">         .          .     12:   arraySize = 1 &lt;&lt; 26</span><br><span class="line">         .          .     13:   loopLimit = 100</span><br><span class="line">         .          .     14:)</span><br><span class="line">         .          .     15:</span><br><span class="line">         .          .     16:func memclr(s []MyInt) &#123;</span><br><span class="line">         .      3.41s     17:   for i := range s &#123;</span><br><span class="line">         .          .     18:           s[i] = 0</span><br><span class="line">         .          .     19:   &#125;</span><br><span class="line">         .          .     20:&#125;</span><br><span class="line">         .          .     21:func memsetLoop(s []MyInt, v MyInt) &#123;</span><br><span class="line">         .          .     22:   for i := 0; i &lt; len(s); i++ &#123;</span><br><span class="line">(pprof)</span><br></pre></td></tr></table></figure>
+<p>pprof 给出的结果同我们的 benchmark 接近，<code>memsetLoop</code>的耗时是<code>memclr</code>的两倍左右。</p>
+<h3 id="数组和切片的测试比较"><a href="#数组和切片的测试比较" class="headerlink" title="数组和切片的测试比较"></a>数组和切片的测试比较</h3><p>最后，我们对不同容量的数组和切片进行简单的性能测试。这个测试的主题和 range 操作没有太大联系，只是我们使用 range 循环来为数组和切片进行赋值。benchmark 程序如下，且为了节省篇幅，省略了更大容量数组的测试程序，全部代码可参考<a href="https://github.com/qqzeng/go-code-snippet/blob/master/slice-best-practice/slices/range_slice_test.go#L244" target="_blank" rel="noopener">这里</a>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	incrUint = <span class="number">2</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkBasicSlice</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	<span class="keyword">const</span> incrUint = <span class="number">3</span></span><br><span class="line">	<span class="keyword">const</span> expLimit = <span class="number">28</span></span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; initExp+j*incrUint &lt; expLimit; j++ &#123;</span><br><span class="line">		sliceSize := <span class="number">1</span> &lt;&lt; <span class="keyword">uint</span>(initExp+j*incrUint)</span><br><span class="line">		b.Run(<span class="string">"BenchmarkS-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">				s := <span class="built_in">make</span>([]MyInt, sliceSize)</span><br><span class="line">				<span class="keyword">for</span> i, v := <span class="keyword">range</span> s &#123;</span><br><span class="line">					s[i] = MyInt(<span class="number">1</span> + i)</span><br><span class="line">					_ = v</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkBasicArray</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	<span class="keyword">const</span> incrUint = <span class="number">3</span></span><br><span class="line">	<span class="keyword">const</span> (</span><br><span class="line">		arraySize6  = <span class="number">1</span> &lt;&lt; <span class="number">6</span></span><br><span class="line">		arraySize9  = <span class="number">1</span> &lt;&lt; (<span class="number">6</span> + incrUint)</span><br><span class="line">		arraySize12 = <span class="number">1</span> &lt;&lt; (<span class="number">6</span> + incrUint*<span class="number">2</span>)</span><br><span class="line">		arraySize15 = <span class="number">1</span> &lt;&lt; (<span class="number">6</span> + incrUint*<span class="number">3</span>)</span><br><span class="line">		arraySize18 = <span class="number">1</span> &lt;&lt; (<span class="number">6</span> + incrUint*<span class="number">4</span>)</span><br><span class="line">		arraySize21 = <span class="number">1</span> &lt;&lt; (<span class="number">6</span> + incrUint*<span class="number">5</span>)</span><br><span class="line">		arraySize24 = <span class="number">1</span> &lt;&lt; (<span class="number">6</span> + incrUint*<span class="number">6</span>)</span><br><span class="line">		arraySize27 = <span class="number">1</span> &lt;&lt; (<span class="number">6</span> + incrUint*<span class="number">7</span>)</span><br><span class="line">	)</span><br><span class="line">	b.Run(<span class="string">"BenchmarkA-"</span>+strconv.Itoa(arraySize6), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			a := [arraySize6]MyInt&#123;&#125;</span><br><span class="line">			<span class="keyword">for</span> i, v := <span class="keyword">range</span> a &#123;</span><br><span class="line">				a[i] = MyInt(<span class="number">1</span> + i)</span><br><span class="line">				_ = v</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行命令<code>go test -benchmem -run=^$ -bench=^BenchmarkBasic* -count 1</code>，测试结果如下所示。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">BenchmarkSlice/BenchmarkS-64             8226044               131 ns/op             512 B/op          1 allocs/op</span><br><span class="line">BenchmarkSlice/BenchmarkS-512            1420550               857 ns/op            4096 B/op          1 allocs/op</span><br><span class="line">BenchmarkSlice/BenchmarkS-4096            225555              5459 ns/op           32768 B/op          1 allocs/op</span><br><span class="line">BenchmarkSlice/BenchmarkS-32768            30286             42308 ns/op          262144 B/op          1 allocs/op</span><br><span class="line">BenchmarkSlice/BenchmarkS-262144            3770            331089 ns/op         2097152 B/op          1 allocs/op</span><br><span class="line">BenchmarkSlice/BenchmarkS-2097152            236           4803495 ns/op        16777216 B/op          1 allocs/op</span><br><span class="line">BenchmarkSlice/BenchmarkS-16777216            40          28614153 ns/op        134217728 B/op         1 allocs/op</span><br><span class="line">BenchmarkSlice/BenchmarkS-134217728            2        8294252180 ns/op        1073741824 B/op        1 allocs/op</span><br><span class="line"></span><br><span class="line">BenchmarkArray/BenchmarkA-64            25120772                46.8 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkArray/BenchmarkA-512            6202855               195 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkArray/BenchmarkA-4096            739294              1564 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkArray/BenchmarkA-32768           101179             12290 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkArray/BenchmarkA-262144           12030            100248 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkArray/BenchmarkA-2097152            273           4581004 ns/op        16777216 B/op          1 allocs/op</span><br><span class="line">BenchmarkArray/BenchmarkA-16777216            39          29075298 ns/op        134217728 B/op         1 allocs/op</span><br><span class="line">BenchmarkArray/BenchmarkA-134217728            2        8289524371 ns/op       1073741824 B/op        1 allocs/op</span><br></pre></td></tr></table></figure>
+<p>从测试结果来看，在容量较小时（小于 1 &lt;&lt; 21时，并非准确阈值），因为数组在编译时期已经分配好存储空间，而 slice 则需在运行时动态分配，因此，数组的效率要显著优于 slice 的效率（一倍左右），而当设置非常大的容量之后，二者的速度基本接近，但在笔者机器上运行多次，发现仍然是数组效率占优。读者不妨自己动手试试看。</p>
+<h2 id="切片的扩容"><a href="#切片的扩容" class="headerlink" title="切片的扩容"></a>切片的扩容</h2><p>在阐述 slice 的克隆、插入和删除相关的最佳实践之前，先简单介绍切片扩容操作，前面了解到切片并未提供显式的扩容接口，其中 append 操作可以按照一定的策略自动扩容，切片类似于动态数组，频繁的扩容必然影响程序效率。前文简单介绍了 slice 扩容策略，读者可通过自己阅读<a href="https://github.com/golang/go/blob/master/src/runtime/slice.go#L125" target="_blank" rel="noopener">源码</a>，或者参考<a href="https://jodezer.github.io/2017/05/golangSlice%E7%9A%84%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%99" target="_blank" rel="noopener">这里</a>以了解具体的扩容策略。</p>
+<h3 id="切片扩容的细节"><a href="#切片扩容的细节" class="headerlink" title="切片扩容的细节"></a>切片扩容的细节</h3><p>先简单了解因为切片的扩容操作导致的一些微妙的问题。我们看如下两段代码。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestGrowOfsli</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">	t.Run(<span class="string">"TestGOS-1"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		sli := []<span class="keyword">int</span>&#123;<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>, <span class="number">40</span>&#125;</span><br><span class="line">		newSli := <span class="built_in">append</span>(sli, <span class="number">50</span>)</span><br><span class="line">		fmt.Printf(<span class="string">"Before update sli = %v, Pointer = %p, len = %d, cap = %d\n"</span>, sli, &amp;sli, <span class="built_in">len</span>(sli), <span class="built_in">cap</span>(sli))</span><br><span class="line">		fmt.Printf(<span class="string">"Before update newSli = %v, Pointer = %p, len = %d, cap = %d\n"</span>, newSli, &amp;newSli, <span class="built_in">len</span>(newSli), <span class="built_in">cap</span>(newSli))</span><br><span class="line">		newSli[<span class="number">1</span>] += <span class="number">10</span></span><br><span class="line">		fmt.Printf(<span class="string">"After update sli = %v, Pointer = %p, len = %d, cap = %d\n"</span>, sli, &amp;sli, <span class="built_in">len</span>(sli), <span class="built_in">cap</span>(sli))</span><br><span class="line">		fmt.Printf(<span class="string">"After update newSli = %v, Pointer = %p, len = %d, cap = %d\n"</span>, newSli, &amp;newSli, <span class="built_in">len</span>(newSli), <span class="built_in">cap</span>(newSli))</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	t.Run(<span class="string">"TestGOS-2"</span>, <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">		array := [<span class="number">4</span>]<span class="keyword">int</span>&#123;<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>, <span class="number">40</span>&#125;</span><br><span class="line">		sli := array[<span class="number">0</span>:<span class="number">2</span>]</span><br><span class="line">		newSli := <span class="built_in">append</span>(sli, <span class="number">50</span>)</span><br><span class="line">		<span class="keyword">var</span> pArrayOfSli = (*[<span class="number">3</span>]<span class="keyword">int</span>)(unsafe.Pointer(&amp;array))</span><br><span class="line">		<span class="keyword">var</span> pArrOfnewSli = (*[<span class="number">3</span>]<span class="keyword">int</span>)(unsafe.Pointer(&amp;array))</span><br><span class="line">		fmt.Printf(<span class="string">"Before sli = %v, Pointer Slice = %p, Pointer Array Of Slice = %p, Pointer Array= %p, len = %d, cap = %d\n"</span>,</span><br><span class="line">			sli, &amp;sli, pArrayOfSli, &amp;array, <span class="built_in">len</span>(sli), <span class="built_in">cap</span>(sli))</span><br><span class="line">		fmt.Printf(<span class="string">"Before newSli = %v, Pointer Slice = %p, Pointer Array Of NewSlice = %p, Pointer Array= %p, len = %d, cap = %d\n"</span>,</span><br><span class="line">			newSli, &amp;newSli, pArrOfnewSli, &amp;array, <span class="built_in">len</span>(newSli), <span class="built_in">cap</span>(newSli))</span><br><span class="line">		newSli[<span class="number">1</span>] += <span class="number">10</span></span><br><span class="line">		fmt.Printf(<span class="string">"After sli = %v, Pointer = %p, len = %d, cap = %d\n"</span>, sli, &amp;sli, <span class="built_in">len</span>(sli), <span class="built_in">cap</span>(sli))</span><br><span class="line">		fmt.Printf(<span class="string">"After newSli = %v, Pointer = %p, len = %d, cap = %d\n"</span>, newSli, &amp;newSli, <span class="built_in">len</span>(newSli), <span class="built_in">cap</span>(newSli))</span><br><span class="line">		fmt.Printf(<span class="string">"After array = %v\n"</span>, array)</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行命令<code>go test -run=^TestGrowOfsli$</code>，测试结果如下所示。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Before append sli = [10 20 30 40], Pointer = 0xc00000c0e0, len = 4, cap = 4</span><br><span class="line">Before append newSli = [10 20 30 40 50], Pointer = 0xc00000c100, len = 5, cap = 8</span><br><span class="line">After append sli = [10 20 30 40], Pointer = 0xc00000c0e0, len = 4, cap = 4</span><br><span class="line">After append newSli = [10 30 30 40 50], Pointer = 0xc00000c100, len = 5, cap = 8</span><br><span class="line"></span><br><span class="line">Before sli = [10 20], Pointer Slice = 0xc00000c1c0, Pointer Array Of Slice = 0xc00001c220, Pointer Array= 0xc00001c220, len = 2, cap = 4</span><br><span class="line">Before newSli = [10 20 50], Pointer Slice = 0xc00000c1e0, Pointer Array Of NewSlice = 0xc00001c220, Pointer Array= 0xc00001c220, len = 3, cap = 4</span><br><span class="line">After sli = [10 30], Pointer = 0xc00000c1c0, len = 2, cap = 4</span><br><span class="line">After newSli = [10 30 50], Pointer = 0xc00000c1e0, len = 3, cap = 4</span><br><span class="line">After array = [10 30 50 40]</span><br></pre></td></tr></table></figure>
+<p>从<code>TestGOS-1</code>的输出结果来看：一方面，此时的 append 操作重新分配底层存储，即新的切片和原切片没有共享底层数组，另一方面，append 操作扩容后的新容量为 8(=2*4)，因此，在修改其中一个切片的元素，另一个切片的的元素并未受到相应影响。</p>
+<p>从<code>TestGOS-2</code>的输出结果来看：一方面，此时的 append 操作未重新分配底层存储，两个切片共享底层数组，值得注意的是，此时修改其中一个切片的元素，另一个切片以及底层的数组的元素值也同样被更新。</p>
+<p>综上所述，切片的 append 操作产生的结果切片不一定会重新分配底层存储，因此，对结果切片的更新操作也不一定会影响同其共享的切片，以及被共享的底层数组。这需要我们在编程时额外注意。</p>
+<h3 id="切片扩容的测试"><a href="#切片扩容的测试" class="headerlink" title="切片扩容的测试"></a>切片扩容的测试</h3><p>另外，我们通过一个简单的 benchmark 测试下频繁扩容的具体影响，代码如下。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkGrowSlice</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	<span class="keyword">const</span> innerLoops = <span class="number">100</span></span><br><span class="line">	<span class="keyword">const</span> preAllocSize = innerLoops * <span class="number">5</span></span><br><span class="line">	b.Run(<span class="string">"BenchmarkGS-1"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			<span class="keyword">var</span> s []<span class="keyword">int</span></span><br><span class="line">			<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; innerLoops; j++ &#123;</span><br><span class="line">				s = <span class="built_in">append</span>(s, []<span class="keyword">int</span>&#123;j, j + <span class="number">1</span>, j + <span class="number">2</span>, j + <span class="number">3</span>, j + <span class="number">4</span>&#125;...)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">	b.Run(<span class="string">"BenchmarkGS-2"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		b.ResetTimer()</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			s := <span class="built_in">make</span>([]<span class="keyword">int</span>, <span class="number">0</span>, preAllocSize)</span><br><span class="line">			<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; innerLoops; j++ &#123;</span><br><span class="line">				s = <span class="built_in">append</span>(s, []<span class="keyword">int</span>&#123;j, j + <span class="number">1</span>, j + <span class="number">2</span>, j + <span class="number">3</span>, j + <span class="number">4</span>&#125;...)</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="comment">// fmt.Println(cap(s))</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">	b.Run(<span class="string">"BenchmarkGS-3"</span>, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			s := <span class="built_in">make</span>([]<span class="keyword">int</span>, preAllocSize)</span><br><span class="line">			n := <span class="number">0</span></span><br><span class="line">			<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; innerLoops; j++ &#123;</span><br><span class="line">				n += <span class="built_in">copy</span>(s[n:], []<span class="keyword">int</span>&#123;j, j + <span class="number">1</span>, j + <span class="number">2</span>, j + <span class="number">3</span>, j + <span class="number">4</span>&#125;)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>三个测试用例的不同之处在于内存分配以及为 slice 添加元素的方式。执行测试命令<code>go test -benchmem -run=^$ -bench=^BenchmarkGrowSlice$ -count 1</code>，测试结果如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">BenchmarkGrowSlice/BenchmarkGS-1                  373908              3237 ns/op           12240 B/op          8 allocs/op</span><br><span class="line">BenchmarkGrowSlice/BenchmarkGS-2                 1000000              1172 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkGrowSlice/BenchmarkGS-3                 1107466              1048 ns/op               0 B/op          0 allocs/op</span><br></pre></td></tr></table></figure>
+<p>因为<code>BenchmarkGS-1</code>未提前分配内存，而使用 append 操作自动扩容。因此其在添加大量数据的场景下，会因频繁扩容而效率低下。而<code>BenchmarkGS-2</code>提前分配足够的内存，同时使用 append 操作来添加元素，因此执行添加元素操作时，实际上无需额外分配空间，这使得它的效率要远高于未提前分配内存且使用 append 操作的方式。最后的<code>BenchmarkGS-3</code>和 append 操作的效率类似。因此，可得出结论：实际编程中，对于 append 和 copy 操作，一般而言， append 是应用于未知所需容量大小的场景，而 copy 则是预先知道所需容量，因此，添加元素时只需拷贝元素即可。但即使 append 操作能够自动扩容，若知道所需容量的大小，提前分配足够的初始容量是一种好的实践方式，若不能确定所需要容量大小，分配一个经验值的容量大小也有利于减少 append 扩容操作的次数，提高程序效率。</p>
+<p>下文通过一些简单的 benchmark 以介绍切片克隆、删除以及插入切片元素的实践技巧。这部分内容来源于<a href="https://github.com/golang/go/wiki/SliceTricks" target="_blank" rel="noopener">这里</a>，并对它们扩展及测试，以形成对各种操作执行效率的基本认识。这部分详细参考代码在<a href="https://github.com/qqzeng/go-code-snippet/blob/master/slice-best-practice/slices/mod_slice_test.go" target="_blank" rel="noopener">这里</a>。</p>
+<h2 id="克隆切片"><a href="#克隆切片" class="headerlink" title="克隆切片"></a>克隆切片</h2><p>克隆切片元素可以使用 append 或 copy 操作，下面展示了切片克隆的三种具体实现方式。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Clone</span><span class="params">(ori []MyInt)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	oriClone := <span class="built_in">append</span>(ori[:<span class="number">0</span>:<span class="number">0</span>], ori...)</span><br><span class="line">	<span class="keyword">return</span> oriClone</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// if ori is nil, return a non-nil slice.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Clone2</span><span class="params">(ori []MyInt)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	oriClone := <span class="built_in">make</span>([]MyInt, <span class="built_in">len</span>(ori))</span><br><span class="line">	<span class="built_in">copy</span>(oriClone, ori)</span><br><span class="line">	<span class="keyword">return</span> oriClone</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// returns nil even if the source slice a is a non-nil empty slice.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Clone3</span><span class="params">(ori []MyInt)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	oriClone := <span class="built_in">append</span>([]MyInt(<span class="literal">nil</span>), ori...)</span><br><span class="line">	<span class="keyword">return</span> oriClone</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面是以上三种方式对应的测试程序。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	expLimit = <span class="number">26</span></span><br><span class="line">	incrUint = <span class="number">2</span></span><br><span class="line">	initExp  = <span class="number">6</span></span><br><span class="line">)</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">benchmarkCloneSlice</span><span class="params">(b *testing.B, f <span class="keyword">func</span>(b *testing.B, sz <span class="keyword">int</span>, cloner <span class="keyword">func</span>(ori []MyInt)</span> <span class="params">(result []MyInt)</span>))</span> &#123;</span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; initExp+j*incrUint &lt; expLimit; j++ &#123;</span><br><span class="line">		sliceSize := <span class="number">1</span> &lt;&lt; <span class="keyword">uint</span>(initExp+j*incrUint)</span><br><span class="line">		b.Run(<span class="string">"BenchmarkCS-1-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			f(b, sliceSize, Clone)</span><br><span class="line">		&#125;)</span><br><span class="line"></span><br><span class="line">		b.Run(<span class="string">"BenchmarkCS-2-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			f(b, sliceSize, Clone2)</span><br><span class="line">		&#125;)</span><br><span class="line"></span><br><span class="line">		b.Run(<span class="string">"BenchmarkCS-3-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			f(b, sliceSize, Clone3)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkCloneSlice</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	benchmarkCloneSlice(b, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B, sz <span class="keyword">int</span>, cloner <span class="keyword">func</span>(ori []MyInt)</span> <span class="params">(result []MyInt)</span>)</span> &#123;</span><br><span class="line">		sli := <span class="built_in">make</span>([]MyInt, sz)</span><br><span class="line">		b.ResetTimer()</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			_ = cloner(sli)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行测试命令<code>go test -benchmem -run=^$ -bench=^BenchmarkCloneSlice$ -count 1</code>，笔者机器上的测试结果如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-64             8705222               126 ns/op             512 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-64            11212414               111 ns/op             512 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-64            11065206               112 ns/op             512 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-256            3613802               338 ns/op            2048 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-256            3305574               367 ns/op            2048 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-256            3419361               358 ns/op            2048 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-1024            928869              1291 ns/op            8192 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-1024            893323              1671 ns/op            8192 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-1024            774730              1323 ns/op            8192 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-4096            274794              4509 ns/op           32768 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-4096            222540              6111 ns/op           32768 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-4096            267927              4381 ns/op           32768 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-16384            72402             17123 ns/op          131072 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-16384            50442             21794 ns/op          131072 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-16384            73422             16813 ns/op          131072 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-65536            17569             68165 ns/op          524288 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-65536            12440             97966 ns/op          524288 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-65536            17532             68458 ns/op          524288 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-262144            3733            302609 ns/op         2097152 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-262144            1802            667451 ns/op         2097152 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-262144            4084            306389 ns/op         2097152 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-1048576           1363            882149 ns/op         8388608 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-1048576            468           2566684 ns/op         8388608 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-1048576           1442            860908 ns/op         8388608 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-4194304            237           4942850 ns/op        33554432 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-4194304            170           6988974 ns/op        33554432 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-4194304            235           4960112 ns/op        33554432 B/op          1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-1-16777216            60          19953652 ns/op        134217728 B/op       1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-2-16777216            43          27613843 ns/op        134217728 B/op       1 allocs/op</span><br><span class="line">BenchmarkCloneSlice/BenchmarkCS-3-16777216            61          19484353 ns/op        134217728 B/op       1 allocs/op</span><br></pre></td></tr></table></figure>
+<p>从以上性能测试结果来看，第一种和第三种方式的克隆效率接近，都要优于第二种克隆方式。但值得注意的是，第二种克隆方式克隆 nil 切片会得到一个 non-nil 切片，而第三种克隆方式克隆一个空切片会得到一个 nil 切片，这可能不是你需要的，因此，在实际使用时需作额外判断。综上，第一种克隆方式是最简单有效的，它直接从已有切片派生一个 0 容量的新切片。</p>
+<h2 id="删除切片元素"><a href="#删除切片元素" class="headerlink" title="删除切片元素"></a>删除切片元素</h2><p>删除切片元素的一个关键点在于是否需要维持剩余元素的相对顺序，这对执行效率有较大影响。另外，删除切片元素包括删除单个和删除连续范围的切片元素。但事实上，删除单个切片元素是删除连续范围切片元素的一种特殊情况，二者的实现和性能表现都类似。因此这里只展示删除连续范围切片元素的测试结果。</p>
+<h3 id="删除单个切片元素"><a href="#删除单个切片元素" class="headerlink" title="删除单个切片元素"></a>删除单个切片元素</h3><h3 id="删除连续范围切片元素"><a href="#删除连续范围切片元素" class="headerlink" title="删除连续范围切片元素"></a>删除连续范围切片元素</h3><p>下面展示删除连续范围切片元素的三种具体实现方式，其中方式一和二维持剩余切片元素的相对顺序。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">DelRangeInOrder</span><span class="params">(s []MyInt, from <span class="keyword">int</span>, to <span class="keyword">int</span>)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	tmp := <span class="built_in">append</span>(s[:from], s[to:]...)</span><br><span class="line">	<span class="keyword">return</span> tmp</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">DelRangeInOrder2</span><span class="params">(s []MyInt, from <span class="keyword">int</span>, to <span class="keyword">int</span>)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	tmp := s[:from+<span class="built_in">copy</span>(s[from:], s[to:])]</span><br><span class="line">	<span class="keyword">return</span> tmp</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">DelRangeOutOfOrder</span><span class="params">(s []MyInt, from <span class="keyword">int</span>, to <span class="keyword">int</span>)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> n := to - from; <span class="built_in">len</span>(s)-to &lt; n &#123;</span><br><span class="line">		<span class="built_in">copy</span>(s[from:to], s[to:])</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">copy</span>(s[from:to], s[<span class="built_in">len</span>(s)-n:])</span><br><span class="line">	&#125;</span><br><span class="line">	tmp := s[:<span class="built_in">len</span>(s)-(to-from)]</span><br><span class="line">	<span class="keyword">return</span> tmp</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面是以上三种删除方式对应的测试程序。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	expLimit = <span class="number">26</span></span><br><span class="line">	incrUint = <span class="number">2</span></span><br><span class="line">	initExp  = <span class="number">6</span></span><br><span class="line">)</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateInterval</span><span class="params">(r *rand.Rand, max <span class="keyword">int</span>)</span> <span class="params">(<span class="keyword">int</span>, <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">	delIndexL := r.Intn(max)</span><br><span class="line">	delIndexH := r.Intn(max)</span><br><span class="line">	<span class="keyword">if</span> delIndexL &gt; delIndexH &#123;</span><br><span class="line">		<span class="keyword">return</span> delIndexH, delIndexL</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> delIndexL, delIndexH</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">benchmarkDeleteRangeOfSlice</span><span class="params">(b *testing.B, f <span class="keyword">func</span>(b *testing.B, sz <span class="keyword">int</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">	deleter <span class="keyword">func</span>(sli []MyInt, dl <span class="keyword">int</span>, dh <span class="keyword">int</span>)</span> <span class="params">(result []MyInt)</span>))</span> &#123;</span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; initExp+j*incrUint &lt; expLimit; j++ &#123;</span><br><span class="line">		sliceSize := <span class="number">1</span> &lt;&lt; <span class="keyword">uint</span>(initExp+j*incrUint)</span><br><span class="line">		b.Run(<span class="string">"BenchmarkDROS-1-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			f(b, sliceSize, DelRangeInOrder)</span><br><span class="line">		&#125;)</span><br><span class="line"></span><br><span class="line">		b.Run(<span class="string">"BenchmarkDROS-2-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			f(b, sliceSize, DelRangeInOrder2)</span><br><span class="line">		&#125;)</span><br><span class="line"></span><br><span class="line">		b.Run(<span class="string">"BenchmarkDROS-3-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			f(b, sliceSize, DelRangeOutOfOrder)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkDeleteRangeOfSlice</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	benchmarkDeleteRangeOfSlice(b, <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B, sz <span class="keyword">int</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">		deleter <span class="keyword">func</span>(sli []MyInt, dl <span class="keyword">int</span>, dh <span class="keyword">int</span>)</span> <span class="params">(result []MyInt)</span>)</span> &#123;</span><br><span class="line">		sli := <span class="built_in">make</span>([]MyInt, sz)</span><br><span class="line">		r := rand.New(rand.NewSource(time.Now().UnixNano()))</span><br><span class="line">		b.ResetTimer()</span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">			dl, dh := generateInterval(r, sz)</span><br><span class="line">			_ = deleter(sli, dl, dh)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行测试命令<code>go test -benchmem -run=^$ -bench=^BenchmarkDeleteRangeOfSlice$ -count 1</code>，笔者机器上的测试结果如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-64                 19558353                61.2 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-64                 18577694                63.6 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-64                 17482377                63.7 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-256                16634200                67.6 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-256                17841384                69.6 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-256                17188262                70.2 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-1024               12792736                95.7 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-1024               12631670                92.7 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-1024               15232003                79.5 ns/op             0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-4096                5089140               241 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-4096                5129475               235 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-4096                7656724               159 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-16384                619933              1913 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-16384                630433              1940 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-16384               1000000              1042 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-65536                 99871             11927 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-65536                103848             11668 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-65536                198235              6153 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-262144                13483             88173 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-262144                13726             90386 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-262144                42987             28412 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-1048576                2991            350443 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-1048576                3769            347662 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-1048576                8601            133422 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-4194304                 789           1515745 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-4194304                 826           1612763 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-4194304                2442            530678 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-1-16777216                220           5430883 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-2-16777216                190           6285572 ns/op               0 B/op          0 allocs/op</span><br><span class="line">BenchmarkDeleteRangeOfSlice2/BenchmarkDROS-3-16777216                384           2738002 ns/op               0 B/op          0 allocs/op</span><br></pre></td></tr></table></figure>
+<p>性能测试结果符合我们的猜想，不用维持剩余切片元素的相对顺序能显著提升性能。注意，三种方式删除 nil 或空切片会 panic。</p>
+<h2 id="插入切片"><a href="#插入切片" class="headerlink" title="插入切片"></a>插入切片</h2><p>插入切片元素同删除切片元素相对应，但不同的是，实际编程中，插入切片元素的实践一般指将一个切片所有元素插入到另一个切片。虽然也有将零散元素插入到切片的情况。但这里只展示将一个切片插入到另一个切片指定位置的测试结果。下面是两种插入方式，它们的根本区别在于一种是一次性分配足够的内存，同时结合 copy  操作，而另一种则直接使用 append 操作。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> MyInt <span class="keyword">int</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">InsertSlice</span><span class="params">(s []MyInt, elements []MyInt, i <span class="keyword">int</span>)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	s = <span class="built_in">append</span>(s[:i], <span class="built_in">append</span>(elements, s[i:]...)...)</span><br><span class="line">	<span class="keyword">return</span> s</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// More efficient but tedious</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">InsertSlice2</span><span class="params">(s []MyInt, elements []MyInt, i <span class="keyword">int</span>)</span> []<span class="title">MyInt</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">cap</span>(s)-<span class="built_in">len</span>(s) &gt;= <span class="built_in">len</span>(elements) &#123;</span><br><span class="line">		s = s[:<span class="built_in">len</span>(s)+<span class="built_in">len</span>(elements)]</span><br><span class="line">		<span class="built_in">copy</span>(s[i+<span class="built_in">len</span>(elements):], s[i:])</span><br><span class="line">		<span class="built_in">copy</span>(s[i:], elements)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		x := <span class="built_in">make</span>([]MyInt, <span class="number">0</span>, <span class="built_in">len</span>(elements)+<span class="built_in">len</span>(s))</span><br><span class="line">		x = <span class="built_in">append</span>(x, s[:i]...)</span><br><span class="line">		x = <span class="built_in">append</span>(x, elements...)</span><br><span class="line">		x = <span class="built_in">append</span>(x, s[i:]...)</span><br><span class="line">		s = x</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面是以上两种插入方式对应的测试程序。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	expLimit = <span class="number">26</span></span><br><span class="line">	incrUint = <span class="number">2</span></span><br><span class="line">	initExp  = <span class="number">6</span></span><br><span class="line">)</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkInsertSlice</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; initExp+j*incrUint &lt; expLimit; j++ &#123;</span><br><span class="line">		sliceSize := <span class="number">1</span> &lt;&lt; <span class="keyword">uint</span>(initExp+j*incrUint)</span><br><span class="line">		b.Run(<span class="string">"BenchmarkIS-1-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			sli := <span class="built_in">make</span>([]MyInt, sliceSize)</span><br><span class="line">			sli2 := <span class="built_in">make</span>([]MyInt, sliceSize/<span class="number">2</span>)</span><br><span class="line">			r := rand.New(rand.NewSource(time.Now().UnixNano()))</span><br><span class="line">			b.ResetTimer()</span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">				insertIndex := r.Intn(sliceSize)</span><br><span class="line">				_ = InsertSlice(sli, sli2, insertIndex)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;)</span><br><span class="line"></span><br><span class="line">		b.Run(<span class="string">"BenchmarkIS-2-"</span>+strconv.Itoa(sliceSize), <span class="function"><span class="keyword">func</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			sli := <span class="built_in">make</span>([]MyInt, sliceSize)</span><br><span class="line">			sli2 := <span class="built_in">make</span>([]MyInt, sliceSize/<span class="number">2</span>)</span><br><span class="line">			r := rand.New(rand.NewSource(time.Now().UnixNano()))</span><br><span class="line">			b.ResetTimer()</span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">				insertIndex := r.Intn(sliceSize)</span><br><span class="line">				_ = InsertSlice2(sli, sli2, insertIndex)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行测试命令<code>go test -benchmem -run=^$ -bench=^BenchmarkInsertSlice$ -count 1</code>，笔者机器上的测试结果如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-64            2187957               511 ns/op            1615 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-64            4695094               228 ns/op             768 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-256            819127              1337 ns/op            6487 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-256           2078091               513 ns/op            3072 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-1024           301641              4187 ns/op           25864 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-1024           647520              1836 ns/op           12288 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-4096            75786             14610 ns/op           96167 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-4096           137834              8866 ns/op           49152 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-16384           25744             47725 ns/op          348537 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-16384           34798             36605 ns/op          196608 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-65536            6430            175863 ns/op         1372954 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-65536            8308            139352 ns/op          786432 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-262144           1411            899223 ns/op         5491595 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-262144           1154            967825 ns/op         3145728 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-1048576           351           3325487 ns/op        21887040 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-1048576           313           3942896 ns/op        12582912 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-4194304            85          13348969 ns/op        86763014 B/op          2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-4194304            98          11056438 ns/op        50331648 B/op          1 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-1-16777216           21          57495901 ns/op        348690919 B/op       2 allocs/op</span><br><span class="line">BenchmarkInsertSlice/BenchmarkIS-2-16777216           28          41363541 ns/op        201326592 B/op        1 allocs/op</span><br></pre></td></tr></table></figure>
+<p>性能测试结果（注意内存次数分配）依旧证明了一次性分配足够的内存能显著提升性能。</p>
+<p>至此，关于 slice 的一些容易让人困惑的细节以及一些典型操作的最佳实践两个部分已经阐述完毕。</p>
+<p>简单小结，本文围绕 slice 介绍了两个方面的内容：</p>
+<ul>
+<li>关于理解 slice 原理的一些关键点，这些点也相对容易让人困惑。比如 nil 切片和空切片，以及切片的扩容操作；</li>
+<li>实际编程使用的涉及 slice 各种操作的最佳实践，包括 <code>for range</code>遍历切片、切片扩容、切片的克隆、往一个切片中插入另一个切片，删除切片的元素。</li>
+</ul>
+<p>但值得注意的是，本文提供的 benchmark 都是最简单的情况，因此可能得出的结论并不具有普适性，即实际应用中不能一概而论。但通过这些测试结果，得出的几个基本性结论是值得思考的。有兴趣的读者可以亲自实践并拓展。『参考文献』部分列出文中涉及的资料。</p>
+<p>文中实践源码在<a href="https://github.com/qqzeng/go-code-snippet/tree/master/slice-best-practice" target="_blank" rel="noopener">这里</a>。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1]. <a href="https://blog.golang.org/slices-intro" target="_blank" rel="noopener">https://blog.golang.org/slices-intro</a><br>[2]. <a href="https://blog.golang.org/slices" target="_blank" rel="noopener">https://blog.golang.org/slices</a><br>[3]. <a href="https://go101.org/article" target="_blank" rel="noopener">https://go101.org/article</a><br>[4]. <a href="https://juejin.im/post/5bea58df6fb9a049f153bca8" target="_blank" rel="noopener">https://juejin.im/post/5bea58df6fb9a049f153bca8</a><br>[5]. <a href="https://jodezer.github.io/2017/05/golangSlice%E7%9A%84%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%99" target="_blank" rel="noopener">https://jodezer.github.io/2017/05/golangSlice%E7%9A%84%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%99</a><br>[6]. <a href="https://blog.golang.org/pprof" target="_blank" rel="noopener">https://blog.golang.org/pprof</a><br>[7]. <a href="https://github.com/golang/go/wiki/SliceTricks" target="_blank" rel="noopener">https://github.com/golang/go/wiki/SliceTricks</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/go/" rel="tag"># go</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/05/19/go-build-命令基本工作过程/" rel="next" title="go build 命令基本工作过程">
+                <i class="fa fa-chevron-left"></i> go build 命令基本工作过程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Zeng Qiaoqiao</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">50</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="Email">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>Email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#nil-切片-amp-空切片"><span class="nav-number">1.</span> <span class="nav-text">nil 切片&amp;空切片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#切片遍历"><span class="nav-number">2.</span> <span class="nav-text">切片遍历</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#range-循环操作的细节"><span class="nav-number">2.1.</span> <span class="nav-text">range 循环操作的细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#range-循环的最佳实践"><span class="nav-number">2.2.</span> <span class="nav-text">range 循环的最佳实践</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#range-操作的-memclr-优化"><span class="nav-number">2.3.</span> <span class="nav-text">range 操作的 memclr 优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数组和切片的测试比较"><span class="nav-number">2.4.</span> <span class="nav-text">数组和切片的测试比较</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#切片的扩容"><span class="nav-number">3.</span> <span class="nav-text">切片的扩容</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#切片扩容的细节"><span class="nav-number">3.1.</span> <span class="nav-text">切片扩容的细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#切片扩容的测试"><span class="nav-number">3.2.</span> <span class="nav-text">切片扩容的测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#克隆切片"><span class="nav-number">4.</span> <span class="nav-text">克隆切片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#删除切片元素"><span class="nav-number">5.</span> <span class="nav-text">删除切片元素</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#删除单个切片元素"><span class="nav-number">5.1.</span> <span class="nav-text">删除单个切片元素</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除连续范围切片元素"><span class="nav-number">5.2.</span> <span class="nav-text">删除连续范围切片元素</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插入切片"><span class="nav-number">6.</span> <span class="nav-text">插入切片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">7.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zeng Qiaoqiao</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">186.1k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+  </script>
+
+  
+
+  
+  
+
+
+  
+
+  
+
+  <!-- 代码块复制功能 -->
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+</body>
+</html>

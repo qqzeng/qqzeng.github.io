@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="一抹光辉油彩">
 <meta property="og:description" content="Go 是一种支持原生并发、带垃圾回收同时编译速度快的语言，这一定程度上归功于其实现了语言自身的 runtime，这类似于 C 运行时 libc。正如官方文档所说，Go 是一种快速的、静态类型的编译语言，以至于让人感觉其就像一种动态类型的解释语言。本文从原理上阐述go build命令具体工作过程，即阐述 Go 项目如何从由语言源码构成的代码文件转换成机器码组成的可执行二进制文件。简单而言，逻辑上，b">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-05-19T11:47:46.085Z">
+<meta property="og:updated_time" content="2020-05-23T03:27:47.890Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="go build 命令基本工作过程">
 <meta name="twitter:description" content="Go 是一种支持原生并发、带垃圾回收同时编译速度快的语言，这一定程度上归功于其实现了语言自身的 runtime，这类似于 C 运行时 libc。正如官方文档所说，Go 是一种快速的、静态类型的编译语言，以至于让人感觉其就像一种动态类型的解释语言。本文从原理上阐述go build命令具体工作过程，即阐述 Go 项目如何从由语言源码构成的代码文件转换成机器码组成的可执行二进制文件。简单而言，逻辑上，b">
@@ -393,7 +393,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,425
+                  3,423
                 </span>
               words
 
@@ -461,7 +461,7 @@
 <li><p>这篇文章没有涉及<code>go install</code>和<code>go run</code>两个命令，因为它们都基于<code>go build</code>命令，因此相对简单。其中 install 命令在 build 的基础上，还会安装编译后的结果文件到指定目录，准确而言是将结果文件（静态链接文件或者可执行文件）存放到相应的目录，这包括两个部分：其一是将各库源码包文件所对应的静态链接文件存放到<code>$GOPATH/pkg/${GOOS}_${GOARCH}/</code>目录，同时将生成的可执行二进制文件存放到<code>$GOPATH/bin/</code>目录（若设置了<code>$GOBIN</code>，则安装到<code>$GOBIN</code>目录）。一般而言，build 命令生成的可执行文件对于应用程序的分发、部署和测试很有帮助，而 install 命令则可以方便你在系统任意地方访问你构建的应用程序。而 run 命令则是在 build 命令的基础上执行二进制文件，并输出运行结果。</p>
 </li>
 </ul>
-<p>本文以一个简单简单是项目实例阐述<code>go build</code>命令的基本工作流程，并没有涉及过多原理性的知识点。换言之，本文的作用更多地在于使用一个实例来串联其中所涉及的 go tool 命令工具的介绍和使用。因此，读者亲自了解更多的内容并实践才能理解并掌握它们。『参考文献』部分给出了一些详细资料，文中给出的链接基本是官方文档内容[2]。</p>
+<p>本文以一个简单是项目实例阐述<code>go build</code>命令的基本工作流程，并没有涉及过多原理性的知识点。换言之，本文的作用更多地在于使用一个实例来串联其中所涉及的 go tool 命令工具的介绍和使用。因此，读者亲自了解更多的内容并实践才能理解并掌握它们。『参考文献』部分给出了一些详细资料，文中给出的链接基本是官方文档内容[2]。</p>
 <p>文中实践源码在<a href="https://github.com/qqzeng/go-code-snippet/tree/master/helloworld" target="_blank" rel="noopener">这里</a>。</p>
 <h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1]. <a href="https://github.com/hyper0x/go_command_tutorial" target="_blank" rel="noopener">https://github.com/hyper0x/go_command_tutorial</a><br>[2]. <a href="https://golang.org/cmd/go/" target="_blank" rel="noopener">https://golang.org/cmd/go/</a></p>
 
@@ -518,6 +518,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/05/23/go-slice-最佳实践/" rel="prev" title="go slice 最佳实践">
+                go slice 最佳实践 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -597,7 +601,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-count">36</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -702,7 +706,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">176.6k</span>
+    <span title="Site words total count">186.1k</span>
   
 </div>
 
