@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="一抹光辉油彩">
 <meta property="og:description" content="Go 语言切片提供了一种方便、有效且强大的用于处理序列数据的方式。切片和数组都是 Go 内置的数据类型。简单而言，切片类似于动态数组。考虑到 Go 中数组类型和其长度绑定，属于编译期数据类型，操作不够灵活，这导致数组的使用范围非常有限，可以说数组在 Go 中最大的应用就是为切片保存存储空间。相反，切片的应用场景则较广泛，但也较为复杂，切片的运用和程序性能息息相关。因此，本文通过一些示例程序揭示和解">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-05-23T05:23:08.168Z">
+<meta property="og:updated_time" content="2020-05-23T05:44:52.244Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="go slice 最佳实践">
 <meta name="twitter:description" content="Go 语言切片提供了一种方便、有效且强大的用于处理序列数据的方式。切片和数组都是 Go 内置的数据类型。简单而言，切片类似于动态数组。考虑到 Go 中数组类型和其长度绑定，属于编译期数据类型，操作不够灵活，这导致数组的使用范围非常有限，可以说数组在 Go 中最大的应用就是为切片保存存储空间。相反，切片的应用场景则较广泛，但也较为复杂，切片的运用和程序性能息息相关。因此，本文通过一些示例程序揭示和解">
@@ -393,7 +393,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  9,499
+                  9,472
                 </span>
               words
 
@@ -440,8 +440,8 @@
 <li>接上一条，Go 中只有值传递，即显式复制被传递的参数，而没有引用传递。另外，在 Go 中谈论引用类型的概念是不合适的，将其称之为<a href="https://go101.org/article/value-part.html" target="_blank" rel="noopener">指针持有者类型</a>（pointer holder）会更合适；</li>
 <li>当 slice 作为参数传递时，可以改变 slice 的元素，但不能改变 slice 本身。因此，若需要改变 slice 本身，可以将改变后的 slice 返回给调用方，也可以将 slice 的指针作为参数传递；</li>
 <li>数组类型和其长度绑定，换言之，相同元素类型但不同长度的数组（包括数组指针）属于不同数组类型，不能相互赋值。而元素类型相同的 slice 肯定是同一种类型；</li>
-<li>多个 slice 可能共享同一个底层数组，因此更改其中一个 slice 的底层数组，有可能会影响到其他切片的状态；</li>
-<li>append 操作会在切片容量不够的情况下，会执行扩容操作，扩容会改变元素原来的位置。换言之， append 操作不一定会改变底层的数组，因此，append 操作得到的 slice 和原来的 slice 有可能共享底层数组；</li>
+<li>多个 slice 可能共享同一个底层数组，因此更改其中一个 slice 的底层数组，可能影响其他切片的状态；</li>
+<li>append 操作在切片容量不够的情况下，会执行扩容操作，扩容会改变元素原来的位置。即， append 操作不一定改变底层数组，因此，append 操作得到的 slice 和原来的 slice 有可能共享底层数组；</li>
 <li>slice 未提供专门的内置函数用于扩展 slice 容量，append 本质是追加元素而非扩展容量，扩展切片容量是 append 的副作用；</li>
 <li><a href="https://github.com/golang/go/blob/master/src/runtime/slice.go#L125" target="_blank" rel="noopener">slice 的扩容策略</a>包括两个步骤，一是将容量扩充为原 slice 容量的 2 倍或 1.25 倍，二是内存对齐操作。</li>
 </ul>
@@ -535,7 +535,7 @@
 </ul>
 <p>但值得注意的是，本文提供的 benchmark 都是最简单的情况，因此可能得出的结论并不具有普适性，即实际应用中不能一概而论。但通过这些测试结果，得出的几个基本性结论是值得思考的。有兴趣的读者可以亲自实践并拓展。『参考文献』部分列出文中涉及的资料。</p>
 <p>文中实践源码在<a href="https://github.com/qqzeng/go-code-snippet/tree/master/slice-best-practice" target="_blank" rel="noopener">这里</a>。</p>
-<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1]. <a href="https://blog.golang.org/slices-intro" target="_blank" rel="noopener">https://blog.golang.org/slices-intro</a><br>[2]. <a href="https://blog.golang.org/slices" target="_blank" rel="noopener">https://blog.golang.org/slices</a><br>[3]. <a href="https://go101.org/article" target="_blank" rel="noopener">https://go101.org/article</a><br>[4]. <a href="https://juejin.im/post/5bea58df6fb9a049f153bca8" target="_blank" rel="noopener">https://juejin.im/post/5bea58df6fb9a049f153bca8</a><br>[5]. <a href="https://jodezer.github.io/2017/05/golangSlice%E7%9A%84%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%99" target="_blank" rel="noopener">https://jodezer.github.io/2017/05/golangSlice%E7%9A%84%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%99</a><br>[6]. <a href="https://blog.golang.org/pprof" target="_blank" rel="noopener">https://blog.golang.org/pprof</a><br>[7]. <a href="https://github.com/golang/go/wiki/SliceTricks" target="_blank" rel="noopener">https://github.com/golang/go/wiki/SliceTricks</a></p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1]. <a href="https://blog.golang.org/slices-intro" target="_blank" rel="noopener">https://blog.golang.org/slices-intro</a><br>[2]. <a href="https://blog.golang.org/slices" target="_blank" rel="noopener">https://blog.golang.org/slices</a><br>[3]. <a href="https://go101.org/article" target="_blank" rel="noopener">https://go101.org/article</a><br>[4]. <a href="https://juejin.im/post/5bea58df6fb9a049f153bca8" target="_blank" rel="noopener">https://juejin.im/post/5bea58df6fb9a049f153bca8</a><br>[5]. <a href="https://jodezer.github.io/2017/05/golangSlice%E7%9A%84%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%99" target="_blank" rel="noopener">go slice growslice</a><br>[6]. <a href="https://blog.golang.org/pprof" target="_blank" rel="noopener">https://blog.golang.org/pprof</a><br>[7]. <a href="https://github.com/golang/go/wiki/SliceTricks" target="_blank" rel="noopener">https://github.com/golang/go/wiki/SliceTricks</a></p>
 
       
     </div>
