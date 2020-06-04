@@ -4,7 +4,7 @@
   <url>
     <loc>https://qtozeng.top/2020/06/04/go-%E5%87%BD%E6%95%B0%E5%92%8C%E6%96%B9%E6%B3%95%E8%BF%90%E8%A1%8C%E6%97%B6%E8%B0%83%E7%94%A8%E8%A7%A3%E6%9E%90/</loc>
     
-    <lastmod>2020-06-04T12:40:21.636Z</lastmod>
+    <lastmod>2020-06-04T12:54:48.588Z</lastmod>
     
   </url>
   
@@ -247,13 +247,6 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2018/11/16/MapReduce-%E5%8E%9F%E5%9E%8B%E5%AE%9E%E7%8E%B0/</loc>
-    
-    <lastmod>2019-05-13T13:57:34.168Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://qtozeng.top/2019/01/16/etcd-raft-LeaseRead-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
     
     <lastmod>2019-05-13T13:57:34.168Z</lastmod>
@@ -261,14 +254,21 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2019/03/07/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/</loc>
+    <loc>https://qtozeng.top/2018/11/16/MapReduce-%E5%8E%9F%E5%9E%8B%E5%AE%9E%E7%8E%B0/</loc>
+    
+    <lastmod>2019-05-13T13:57:34.168Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://qtozeng.top/2018/10/25/Live-Sequence-Protocol-%E5%AE%9E%E7%8E%B0/</loc>
     
     <lastmod>2019-05-13T13:57:34.167Z</lastmod>
     
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2018/10/25/Live-Sequence-Protocol-%E5%AE%9E%E7%8E%B0/</loc>
+    <loc>https://qtozeng.top/2019/03/07/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/</loc>
     
     <lastmod>2019-05-13T13:57:34.167Z</lastmod>
     
