@@ -304,6 +304,196 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/07/06/k8s-中安装-gitlab-runner/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/07/06/k8s-中安装-gitlab-runner/" itemprop="url">k8s 中安装 gitlab runner</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-07-06T06:08:17+08:00">
+                2019-07-06
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/devops/" itemprop="url" rel="index">
+                    <span itemprop="name">devops</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/devops/持续集成/" itemprop="url" rel="index">
+                    <span itemprop="name">持续集成</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  8,407
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  35
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>最近工作的内容属于<code>devops</code>领域方向，研究的课题是基于<code>k8s</code>并集成<code>gitlab-ci</code>的持续集成部署方案。个人以前只使用过<code>Jenkins</code>来做持续集成部署(<code>ci/cd</code>)，而且，当时应该是部署在云主机上的。<code>gitlab</code>本身一个企业级代码托管平台，在<code>8.0</code>版本加入了<code>ci</code>，并且默认为每个项目开启。持续集成基本解放了软件项目的开发测试到最终的部署上线的繁琐流程，简单而言，它保证了每一次往版本库提交的代码都符合预期。我们知道<code>docker</code>解决了应用打包和发布这一运维技术难题，简单而言，<code>docker</code>所提供的极为方便的打包机制直接打包了应用运行所需要的整个操作系统，从而保证了本地环境和云端环境的高度一致。但毕竟在整个云计算领域中，<code>docker</code>只是整个容器生态的一个承载点，换言之，与开发者更为密切相关的事情是定义容器组织和管理规范的容器编排技术，这属于一个更高的层次，是一个平台级的技术。<code>kuberentes</code>正是这样一个开源平台，简而言之，<code>kubernetes</code>项目解决的问题是容器的编排、调度以及集群管理，当然，它也提供了一些高级的运维功能，如路由网关、水平扩展、监控、备份以及灾难恢复等。这也使得<code>kubernetes</code>从一诞生就备受关注。因此，将<code>gitlab-ci</code>与<code>k8s</code>进行整合是<code>ci/cd</code>实践中值得期待的方案。本系列博客会阐述个人基于<code>k8s</code>并集成<code>gitlab-ci</code>的持续集成部署方案的实现过程。实践环节包括两个部分，其一是在<code>k8s</code>中安装<code>gitlab runner</code>，其二是研究集成<code>gitlab-ci</code>和<code>k8s</code>来实现一个以<code>build-&gt;test-&gt;deploy</code>为核心的持续集成部署流程。本文的内容为第一个部分。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/07/06/k8s-中安装-gitlab-runner/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/05/19/nsq-diskqueue-持久化存储源码简析/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -1913,196 +2103,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/">
-
-    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="一抹光辉油彩">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/" itemprop="url">etcd-raft ReadIndex 线性一致性读源码简析</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-15T21:25:02+08:00">
-                2019-01-15
-              </time>
-            
-
-            
-
-            
-
-
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式系统</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/分布式协调服务/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式协调服务</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  6,435
-                </span>
-              words
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  26
-                </span>
-              mins
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>上篇文章阐述了<code>etcd-raft</code>集群配置变更源码的相关逻辑，同时，在理论层面，从正反两个方面简要y论述了一次集群配置变更只能涉及到一个节点的原因。本文的主题为<code>etcd-raft</code>使用<code>ReadIndex</code>来实现线性一致性(<code>linearizability</code>)的实现原理。这包括两个方面，首先简要阐述线性一致性的理论知识，其次是结合<code>etcd-raft</code>的源码来简单梳理其如何使用<code>ReadIndex</code>来保证读请求的线性一致性。线性一致性广泛被应用于分布式应用中，是用于衡量一个并发系统是否正确的重要标准，我们通常谈论的<code>CAP</code>中的<code>C</code>指的即为线性一致性。需要说明的是，<code>etcd</code>是基于<code>raft</code>来提供一致性保证，虽然共识算法被用于保证状态的一致性，但并不代表实现共识算法的系统就自动具备了线性一致性，这是两个概念，换言之，<code>etcd-raft</code>必须在实现<code>raft</code>的基础上额外增加一些逻辑来保证系统具备线性一致性。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/01/15/etcd-raft-ReadIndex-线性一致性读源码简析/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2152,7 +2152,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2241,7 +2241,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">200.8k</span>
+    <span title="Site words total count">205.5k</span>
   
 </div>
 

@@ -1,3 +1,4 @@
+https://qtozeng.top/2020/06/04/go-函数和方法运行时调用解析/
 https://qtozeng.top/2020/05/26/go-map-原理剖析/
 https://qtozeng.top/2020/05/23/go-slice-最佳实践/
 https://qtozeng.top/2020/05/19/go-build-命令基本工作过程/

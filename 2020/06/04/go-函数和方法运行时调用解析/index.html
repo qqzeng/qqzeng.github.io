@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="go,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Go 中函数是一等公民，即可以把函数当作值来使用，Go 中的函数灵活且强大。而除了可以使用函数之外，Go 也支持面向对象语言所支持的方法的概念，Go 允许我们为任何类型定义方法。函数和方法都表示对过程的抽象。从概念上看，函数接受一些参数作为输入然后处理之后产生一些输出。且对于相同的输入，函数总是产生相同的输出。换言之，函数不依赖于状态。而 Go 中的方法则类似于附加到特定类型上的函数，它定义类型的">
+<meta name="keywords" content="go">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go 函数和方法运行时调用解析">
+<meta property="og:url" content="https://qtozeng.top/2020/06/04/go-函数和方法运行时调用解析/index.html">
+<meta property="og:site_name" content="一抹光辉油彩">
+<meta property="og:description" content="Go 中函数是一等公民，即可以把函数当作值来使用，Go 中的函数灵活且强大。而除了可以使用函数之外，Go 也支持面向对象语言所支持的方法的概念，Go 允许我们为任何类型定义方法。函数和方法都表示对过程的抽象。从概念上看，函数接受一些参数作为输入然后处理之后产生一些输出。且对于相同的输入，函数总是产生相同的输出。换言之，函数不依赖于状态。而 Go 中的方法则类似于附加到特定类型上的函数，它定义类型的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-04T12:40:21.636Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="go 函数和方法运行时调用解析">
+<meta name="twitter:description" content="Go 中函数是一等公民，即可以把函数当作值来使用，Go 中的函数灵活且强大。而除了可以使用函数之外，Go 也支持面向对象语言所支持的方法的概念，Go 允许我们为任何类型定义方法。函数和方法都表示对过程的抽象。从概念上看，函数接受一些参数作为输入然后处理之后产生一些输出。且对于相同的输入，函数总是产生相同的输出。换言之，函数不依赖于状态。而 Go 中的方法则类似于附加到特定类型上的函数，它定义类型的">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2020/06/04/go-函数和方法运行时调用解析/">
+
+
+
+
+
+  <title>go 函数和方法运行时调用解析 | 一抹光辉油彩</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">一抹光辉油彩</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/06/04/go-函数和方法运行时调用解析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">go 函数和方法运行时调用解析</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-06-04T20:37:15+08:00">
+                2020-06-04
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index">
+                    <span itemprop="name">go</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4,716
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  18
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Go 中函数是一等公民，即可以把函数当作值来使用，Go 中的函数灵活且强大。而除了可以使用函数之外，Go 也支持面向对象语言所支持的方法的概念，Go 允许我们为任何类型定义方法。函数和方法都表示对过程的抽象。从概念上看，函数接受一些参数作为输入然后处理之后产生一些输出。且对于相同的输入，函数总是产生相同的输出。换言之，函数不依赖于状态。而 Go 中的方法则类似于附加到特定类型上的函数，它定义类型的行为，并且一般需要使用该类型的状态。但若从实现上来看，二者没有本质区别，方法只是一个带有额外接收者参数的函数。本文从底层来探究函数和方法在运行时如何被调用。</p>
+<a id="more"></a>
+<p>本文并不详细介绍 Go 中的函数和方法的基本用法（可以参考<a href="https://tour.golang.org/basics/4" target="_blank" rel="noopener">这里</a>和<a href="https://tour.golang.org/methods/1" target="_blank" rel="noopener">这里</a>），及它们的基本特性。本文通过一些示例程序，以及它们的运行时调用原理以简单对比函数和方法的调用。这需要你了解一些基础的 Go 汇编知识，可以<a href="https://github.com/cch123/golang-notes/blob/master/assembly.md" target="_blank" rel="noopener">参考</a>这里或<a href="https://golang.org/doc/asm" target="_blank" rel="noopener">这里</a>。具体地，本文首先通过一些示例程序来切入，然后分析函数及方法在运行时调用原理。</p>
+<h2 id="一个示例程序"><a href="#一个示例程序" class="headerlink" title="一个示例程序"></a>一个示例程序</h2><p>从一个简单的示例程序切入，以阐述函数和方法（值类型接收者和指针类型接收者）调用。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//go:noinline</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Add</span><span class="params">(a <span class="keyword">int32</span>, b <span class="keyword">int32</span>)</span> <span class="title">int32</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Calculator <span class="keyword">struct</span> &#123;</span><br><span class="line">	val <span class="keyword">int32</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:noinline</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c Calculator)</span> <span class="title">Value</span><span class="params">()</span> <span class="title">int32</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> c.val</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:noinline</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Calculator)</span> <span class="title">SetValue</span><span class="params">(val <span class="keyword">int32</span>)</span></span> &#123;</span><br><span class="line">	c.val = val</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:noinline</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Calculator)</span> <span class="title">Add</span><span class="params">(incr <span class="keyword">int32</span>)</span></span> &#123;</span><br><span class="line">	c.val += incr</span><br><span class="line">&#125;<span class="comment">// no used</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Add(<span class="number">10</span>, <span class="number">21</span>) <span class="comment">// 0. 函数调用</span></span><br><span class="line"></span><br><span class="line">	cal := Calculator&#123;val: <span class="number">0</span>&#125;</span><br><span class="line">	cal.Value()    <span class="comment">// 1. 值类型变量调用值类型接收者的方法</span></span><br><span class="line">	(&amp;cal).Value() <span class="comment">// 2. 指针类型变量调用值类型接收者的方法</span></span><br><span class="line"></span><br><span class="line">	(&amp;cal).SetValue(<span class="number">10</span>)              <span class="comment">// 3. 指针类型变量调用指针类型接收者的方法</span></span><br><span class="line">	cal.SetValue(<span class="number">10</span>)                 <span class="comment">// 4. 值类型变量调用指针类型接收者的方法</span></span><br><span class="line">	(*Calculator).SetValue(&amp;cal, <span class="number">10</span>) <span class="comment">// 5. 直接调用方法所对应的一个函数以调用对应的方法</span></span><br><span class="line"></span><br><span class="line">	fmt.Println(Calculator.Value(cal)) <span class="comment">// 10</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码段逻辑比较简单，也没有复杂的语法，但对于初学者可能觉得有点奇怪。具体地，我们创建了一个结构变量 cal，一方面，在【1】处使用它调用值类型接收者（receiver type）的方法<code>main.Calculator.Value</code>，这是显而易见的，但我们在【2】处使用一个指针类型变量（即 &amp;cal）来调用一个值类型接收者的方法<code>Value</code>（毕竟，类型 <code>*Calculator</code> 并没有拥有一个<code>Value</code>方法），这在编译和运行时都没有问题。另一方面，在【3】处使用它调用指针类型接收者的方法<code>main.(*Calculator).SetValue</code>，这同样显而易见，但我们在【4】处使用一个值类型变量来调用一个指针类型接收者的方法<code>SetValue</code>，这种语法同样在编译和运行时也没有问题。而在【5】处，我们以一种奇怪的方式来调用指针类型接收者方法<code>SetValue</code>（但它似乎更像是一种函数调用）。</p>
+<p>我们直接说结论，然后在下一小节通过观察其编译后的汇编输出来观察其运行时真正的调用原理。</p>
+<ul>
+<li>当使用一个指针类型的变量来调用值类型接收者的方法时，实际上编译器会将指针类型变量进行解引用为对应类型的值，然后使用对应的值类型变量来调用值类型接收者的方法。具体地，编译器会将<code>(&amp;cal).SetValue</code>自动改写成<code>cal.SetValue</code>。</li>
+<li>当使用一个值类型的变量来调用指针类型接收者类型的方法时，这实际上是编译器的语法糖，且此语法糖只针对可寻址的值类型的变量有效。具体地，编译器会将<code>cal.SetValue</code>自动替换成<code>(&amp;cal).SetValue</code>。</li>
+<li>编译器会为每一个方法声明自动隐式声明一个相对应的函数。具体地，编译器会为方法<code>SetValue(int)</code>生成一个函数<code>(*Calculator).SetValue(*Calculator, int)</code>，其中函数体中的内容即为对应方法体中的内容，且需要注意的是，其中<code>(*Calculator).Value</code>为函数名称，函数参数列表中第一个参数为对应类型的指针变量，函数体的内容即为方法体的内容。而<code>Value()</code>方法也是类似的。这正印证前文所说的任何方法都是一个带有额外接收者参数的函数这一表述。</li>
+</ul>
+<h2 id="函数和方法的运行时调用原理"><a href="#函数和方法的运行时调用原理" class="headerlink" title="函数和方法的运行时调用原理"></a>函数和方法的运行时调用原理</h2><p>我们使用命令<code>go tool compile -S method_cases.go</code>，注意，我们没有采用<code>-l -N</code>来禁止编译器优化（事实上，其输出的汇编内容类似，只是多了一些额外的指令）。</p>
+<h3 id="函数调用过程"><a href="#函数调用过程" class="headerlink" title="函数调用过程"></a>函数调用过程</h3><p>作为对比，首先看一下<code>Add(10, 21)</code>函数调用过程，其调用过程比较简单。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">0x0000 00000 (method_cases.go:29)	TEXT	&quot;&quot;.main(SB), ABIInternal, $96-0</span><br><span class="line">;; ...省略了除函数/方法调用外的所有代码...</span><br><span class="line">;; 调用函数 main.Add</span><br><span class="line">0x002f 00047 (method_cases.go:30)   MOVQ    $90194313226, AX             ;; 将 (10, 21) 移动到 ..</span><br><span class="line">0x0039 00057 (method_cases.go:30)   MOVQ    AX, (SP)                     ;; ..栈顶（即参数 #1 和参数 #2）</span><br><span class="line">0x003d 00061 (method_cases.go:30)   CALL    &quot;&quot;.Add(SB)                   ;; 调用函数 main.Add</span><br></pre></td></tr></table></figure>
+<p>可以发现，整个函数调用的过程很直接，考虑到 Go 的函数（方法）调用都是传值，换言之，其主要是通过将函数调用所需的参数拷贝到栈上（若有返回值，则调用方同样需准备好返回值在栈上空间），换言之，参数和返回值被存储在调用方的栈帧中，最后，函数调用被翻译成直接跳转指令，目标是<code>.text</code> 段的全局函数符号。</p>
+<h3 id="结构体变量创建过程"><a href="#结构体变量创建过程" class="headerlink" title="结构体变量创建过程"></a>结构体变量创建过程</h3><p>接下来，简单了解 Calculator 结构变量的创建初始化过程。实际上，struct 类型变量的创建方式有多种，可通过字面量创建对应的值类型变量（示例程序中即是），也可以通过 new 来创建其零值的指针变量，当然，也可直接创建对应类型的零值值类型变量。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">;; 使用 runtime.newobject 创建 Calculator 结构的变量</span><br><span class="line"><span class="number">0x0034</span> <span class="number">00052</span> (method_cases.<span class="keyword">go</span>:<span class="number">32</span>)	LEAQ	<span class="keyword">type</span>.<span class="string">""</span>.Calculator(SB), AX	 ;; 将 Calculator 结构的类型描述符(_type)的指针移动到..</span><br><span class="line"><span class="number">0x003b</span> <span class="number">00059</span> (method_cases.<span class="keyword">go</span>:<span class="number">32</span>)	MOVQ	AX, (SP)					 ;; ..栈顶（即runtime.newobject的参数）</span><br><span class="line"><span class="number">0x003f</span> <span class="number">00063</span> (method_cases.<span class="keyword">go</span>:<span class="number">32</span>)	CALL	runtime.newobject(SB)		 ;; 调用函数 runtime.newobject</span><br><span class="line"><span class="number">0x0044</span> <span class="number">00068</span> (method_cases.<span class="keyword">go</span>:<span class="number">32</span>)	MOVQ	<span class="number">8</span>(SP), AX					 ;; 将分配好的内存对象拷贝到..</span><br><span class="line"><span class="number">0x0049</span> <span class="number">00073</span> (method_cases.<span class="keyword">go</span>:<span class="number">32</span>)	MOVQ	AX, <span class="string">""</span>.&amp;cal+<span class="number">64</span>(SP)			 ;; ..cal 变量中(相对于伪SP的<span class="number">104</span>偏移位置)</span><br></pre></td></tr></table></figure>
+<p>整个过程比较简单，但需要注意的是，并不是针对所有的结构类型的字面量的创建操作，编译器都会使用<code>runtime.newobject</code>函数来显式为其分配内存。换言之，被创建的变量有可能在栈上也有可能在堆中。我们通过如下代码进行测试。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Add(<span class="number">10</span>, <span class="number">21</span>)</span><br><span class="line"></span><br><span class="line">	cal := Calculator&#123;val: <span class="number">1</span>&#125;</span><br><span class="line">	cal.Value()</span><br><span class="line">	(&amp;cal).Value()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>即将第一小节中的 main 方法进行精简，这导致编译器直接在栈上创建了对应结构变量。下面是结构创建对应的汇编输出。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">; 这里直接在栈上创建一个结构变量</span><br><span class="line"><span class="number">0x0030</span> <span class="number">00048</span> (method_cases.<span class="keyword">go</span>:<span class="number">31</span>) MOVL    $<span class="number">0</span>, <span class="string">""</span>.cal+<span class="number">20</span>(SP)</span><br><span class="line"><span class="number">0x0038</span> <span class="number">00056</span> (method_cases.<span class="keyword">go</span>:<span class="number">31</span>) MOVL    $<span class="number">1</span>, <span class="string">""</span>.cal+<span class="number">20</span>(SP)</span><br></pre></td></tr></table></figure>
+<p>显然，生成的汇编没有什么地方有对 <code>type.&quot;&quot;.Calculator(SB)</code> 的引用，编译器并没有在堆中显式为结构变量分配内存，而是直接将变量初始化在栈上。更进一步地，我们看后面两行方法调用的输出（读者可以先了解正常情况下，方法调用被编译后的汇编代码，即接下来的两个小节的内容，最后再来了解此部分内容）。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">;; 直接在栈上创建了 cal 变量的拷贝，以调用方法 main.Calculator.Value</span><br><span class="line"><span class="number">0x0040</span> <span class="number">00064</span> (method_cases_1.<span class="keyword">go</span>:<span class="number">32</span>) MOVL    $<span class="number">1</span>, (SP)</span><br><span class="line"><span class="number">0x0047</span> <span class="number">00071</span> (method_cases_1.<span class="keyword">go</span>:<span class="number">32</span>) CALL    <span class="string">""</span>.Calculator.Value(SB)</span><br></pre></td></tr></table></figure>
+<p>可以发现，编译器在这里做一些优化，并没有拷贝对应的接收者变量，尽管拷贝的目标地址是我们调用对应方法需要传入的 receiver 所处栈地址位置。这是因为 receiver 是值类型，且编译器能够通过静态分析推测出其值，这种情况下编译器认为不需要对其从它原来的位置进行拷贝了。 相反，只需简单地在栈上创建一个新的和 cal 变量相等的值即可。</p>
+<p>我们继续观察<code>(&amp;cal).Value</code>的汇编输出。它同上一个方法调用不一样，它将接收者变量显式拷贝到栈上。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">;; 这里没有新建 receiver 变量的拷贝，但其直接拷贝值类型的 receiver 变量，来调用方法 main.Calculator.Value,</span><br><span class="line">;; 而未调用方法 main.(*Calculator).Value</span><br><span class="line"><span class="number">0x004c</span> <span class="number">00076</span> (method_cases_1.<span class="keyword">go</span>:<span class="number">33</span>) MOVL    <span class="string">""</span>.cal+<span class="number">20</span>(SP), AX</span><br><span class="line"><span class="number">0x0050</span> <span class="number">00080</span> (method_cases_1.<span class="keyword">go</span>:<span class="number">33</span>) MOVL    AX, (SP)</span><br><span class="line"><span class="number">0x0053</span> <span class="number">00083</span> (method_cases_1.<span class="keyword">go</span>:<span class="number">33</span>) CALL    <span class="string">""</span>.Calculator.Value(SB)</span><br></pre></td></tr></table></figure>
+<h3 id="调用值类型接收者的方法"><a href="#调用值类型接收者的方法" class="headerlink" title="调用值类型接收者的方法"></a>调用值类型接收者的方法</h3><p>下面阐述值类型接收者的方法的调用过程。这根据调用者为值类型还是指针类型分为两种情况，对应示例程序的【1】和【2】。其中，调用者为值类型的方法调用过程如下。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">;; 值类型 receiver 调用方法 main.Calculator.Value</span><br><span class="line"><span class="number">0x004e</span> <span class="number">00078</span> (method_cases.<span class="keyword">go</span>:<span class="number">33</span>)	MOVL	(AX), CX					 ;; 解引用 cal 变量的，并将其拷贝到..</span><br><span class="line"><span class="number">0x0050</span> <span class="number">00080</span> (method_cases.<span class="keyword">go</span>:<span class="number">33</span>)	MOVL	CX, (SP)				     ;; ..栈顶（即参数）</span><br><span class="line"><span class="number">0x0053</span> <span class="number">00083</span> (method_cases.<span class="keyword">go</span>:<span class="number">33</span>)	CALL	<span class="string">""</span>.Calculator.Value(SB)		 ;; 调用函数 main.Calculator.Value</span><br></pre></td></tr></table></figure>
+<p>考虑到<code>Value</code>方法没有显式参数列表，因此，其调用过程只是将对应值类型的 receiver 拷贝到调用栈再直接调用目标方法即可。</p>
+<p>作为对比，调用者为指针类型的方法调用过程如下。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">;; 指针类型 receiver 调用方法 main.Calculator.Value</span><br><span class="line"><span class="number">0x0058</span> <span class="number">00088</span> (method_cases.<span class="keyword">go</span>:<span class="number">34</span>)	MOVQ	<span class="string">""</span>.&amp;cal+<span class="number">64</span>(SP), AX			 ;; 将 cal 变量的指针（地址）拷贝到 AX</span><br><span class="line"><span class="number">0x005d</span> <span class="number">00093</span> (method_cases.<span class="keyword">go</span>:<span class="number">34</span>)	MOVL	(AX), CX					 ;; 将 cal 指针变量解引用，同时拷贝到..</span><br><span class="line"><span class="number">0x005f</span> <span class="number">00095</span> (method_cases.<span class="keyword">go</span>:<span class="number">34</span>)	MOVL	CX, (SP)					 ;; ..栈顶（即参数）</span><br><span class="line"><span class="number">0x0062</span> <span class="number">00098</span> (method_cases.<span class="keyword">go</span>:<span class="number">34</span>)	CALL	<span class="string">""</span>.Calculator.Value(SB)		 ;; 调用函数 main.Calculator.Value</span><br></pre></td></tr></table></figure>
+<p>可以发现，当使用一个指针类型的变量来调用值类型接收者的方法时，编译器首先将此指针类型变量解引用，再使用解引用后的值来调用值类型接收者的方法。这符合上文给出的结论。而且，其同样是将值类型的 receiver 拷贝到调用栈，再跳转到被调用方法。</p>
+<p>但事实上，对于使用指针类型的变量来调用值类型接收者的方法，还有另一种调用方式。采用上述调用方式的原因在于，编译器分析发现 receiver 变量并没有逃逸到堆上。换言之，若 receiver 在栈上，且 receiver 本身很小，则此时只需较少的汇编指令就可以将其先解引用再将其拷贝到栈上，然后直接调用对应的方法。</p>
+<p>然而，若 receiver 逃逸到堆上，则编译器会采用另一种方式来调用。具体地，编译器会为每一个值类型接收者的方法生成一个对应的指针类型接收者的方法（这些方法因为不存在于源代码中，因此编译器会将其标记为 <code>&lt;autogenerated&gt;</code>），然后在生成的指针类型接收者方法中先拷贝对应的参数，同时，保证此指针类型接收者不为 nil，最后调用原来的值类型接收者的方法（准确而言，调用的是编译器为此值类型接收者的方法生成的对应的函数，具体参阅『方法的调用即则为对应类型的隐式函数的调用』）。下面是编译器为值类型接收者的<code>Value</code>方法生成的指针类型的<code>Value</code>方法的详细注释的汇编代码。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0x0000</span> <span class="number">00000</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	TEXT	<span class="string">""</span>.(*Calculator).Value(SB), DUPOK|WRAPPER|ABIInternal, $<span class="number">24</span><span class="number">-16</span></span><br><span class="line">;; ...省略了除方法调用外的所有代码...</span><br><span class="line"><span class="number">0x0026</span> <span class="number">00038</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	MOVQ	<span class="string">""</span>..this+<span class="number">32</span>(SP), AX			 ;; 判断 cal 指针变量..</span><br><span class="line"><span class="number">0x002b</span> <span class="number">00043</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	TESTQ	AX, AX						 ;; ..是否为 <span class="literal">nil</span></span><br><span class="line"><span class="number">0x002e</span> <span class="number">00046</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	JEQ	<span class="number">76</span>								 ;; 若为 <span class="literal">nil</span>，则跳转到 <span class="number">76</span> 行，即 <span class="built_in">panic</span></span><br><span class="line"><span class="number">0x0030</span> <span class="number">00048</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	MOVL	(AX), AX					 ;; 解引用 cal 指针变量..</span><br><span class="line"><span class="number">0x0032</span> <span class="number">00050</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	MOVL	AX, (SP)					 ;; ..同时，将其拷贝到栈顶（main.Calculator.Value的参数#<span class="number">1</span>）</span><br><span class="line"></span><br><span class="line">;; ...拷贝其它参数（若方法包含有其它参数的情况）...</span><br><span class="line"></span><br><span class="line">;; 调用方法（函数） main.Calculator.Value，同时拷贝返回值，然后返回</span><br><span class="line"><span class="number">0x0035</span> <span class="number">00053</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	CALL	<span class="string">""</span>.Calculator.Value(SB)</span><br><span class="line"><span class="number">0x003a</span> <span class="number">00058</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	MOVL	<span class="number">8</span>(SP), AX					 </span><br><span class="line"><span class="number">0x003e</span> <span class="number">00062</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	MOVL	AX, <span class="string">""</span>.~r0+<span class="number">40</span>(SP)			 </span><br><span class="line"><span class="number">0x0042</span> <span class="number">00066</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	MOVQ	<span class="number">16</span>(SP), BP</span><br><span class="line"><span class="number">0x0047</span> <span class="number">00071</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	ADDQ	$<span class="number">24</span>, SP</span><br><span class="line"><span class="number">0x004b</span> <span class="number">00075</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	RET</span><br><span class="line"></span><br><span class="line">;; 若指针接收者类型（pointer receiver）变量为 <span class="literal">nil</span>，则直接调用 runtime.panicwrap</span><br><span class="line"><span class="number">0x004c</span> <span class="number">00076</span> (&lt;autogenerated&gt;:<span class="number">1</span>)	CALL	runtime.panicwrap(SB)</span><br><span class="line">;; ...省略了除方法调用外的所有代码...</span><br></pre></td></tr></table></figure>
+<h3 id="调用指针类型接收者的方法"><a href="#调用指针类型接收者的方法" class="headerlink" title="调用指针类型接收者的方法"></a>调用指针类型接收者的方法</h3><p>类似地，下文开始阐述指针类型接收者的方法调用过程。同样根据调用者的类型分为两种情况，对应示例程度的【3】和【4】。首先，看一下调用者为指针类型的方法调用过程。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">;; 指针类型 receiver 调用方法 main.(*Calculator).SetValue</span><br><span class="line"><span class="number">0x0067</span> <span class="number">00103</span> (method_cases.<span class="keyword">go</span>:<span class="number">36</span>)	MOVQ	<span class="string">""</span>.&amp;cal+<span class="number">64</span>(SP), AX		 	 ;; 将 cal 变量的指针（地址）拷贝到 AX</span><br><span class="line"><span class="number">0x006c</span> <span class="number">00108</span> (method_cases.<span class="keyword">go</span>:<span class="number">36</span>)	MOVQ	AX, (SP)					 ;; 对 cal 指针变量拷贝到栈顶</span><br><span class="line"><span class="number">0x0070</span> <span class="number">00112</span> (method_cases.<span class="keyword">go</span>:<span class="number">36</span>)	MOVL	$<span class="number">10</span>, <span class="number">8</span>(SP)				     ;; 为方法传入参数 <span class="number">10</span> （第二个参数）</span><br><span class="line"><span class="number">0x0078</span> <span class="number">00120</span> (method_cases.<span class="keyword">go</span>:<span class="number">36</span>)	CALL	<span class="string">""</span>.(*Calculator).SetValue(SB);; 调用 main.(*Calculator).SetValue</span><br></pre></td></tr></table></figure>
+<p>同值类型变量调用值类型接收者的方法类似，只不过此时拷贝到调用栈上的是对应的指针变量，且同样是栈中参数列表中的第一个位置。我们重点看一下值类型的调用者。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">;; 值类型 receiver 调用方法 main.(*Calculator).SetValue</span><br><span class="line">;; 同 (&amp;cal).SetValue(<span class="number">10</span>) 的汇编输出类似</span><br><span class="line"><span class="number">0x007d</span> <span class="number">00125</span> (method_cases.<span class="keyword">go</span>:<span class="number">37</span>)	MOVQ	<span class="string">""</span>.&amp;cal+<span class="number">64</span>(SP), AX</span><br><span class="line"><span class="number">0x0082</span> <span class="number">00130</span> (method_cases.<span class="keyword">go</span>:<span class="number">37</span>)	MOVQ	AX, (SP)</span><br><span class="line"><span class="number">0x0086</span> <span class="number">00134</span> (method_cases.<span class="keyword">go</span>:<span class="number">37</span>)	MOVL	$<span class="number">10</span>, <span class="number">8</span>(SP)</span><br><span class="line"><span class="number">0x008e</span> <span class="number">00142</span> (method_cases.<span class="keyword">go</span>:<span class="number">37</span>)	CALL	<span class="string">""</span>.(*Calculator).SetValue(SB)</span><br></pre></td></tr></table></figure>
+<p>显然，它和使用指针类型的变量的调用方法的汇编输出完全一样，即仍然将对应指针类型的变量拷贝到调用栈上。换言之，这种语法只是编译器的语法糖。</p>
+<h3 id="方法的调用即则为对应类型的隐式函数的调用"><a href="#方法的调用即则为对应类型的隐式函数的调用" class="headerlink" title="方法的调用即则为对应类型的隐式函数的调用"></a>方法的调用即则为对应类型的隐式函数的调用</h3><p>最后，我们重点看一下示例程序的【5】的汇编输出。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">;; (*Calculator).SetValue(&amp;cal, <span class="number">10</span>) 的调用过程</span><br><span class="line">;; 同 (&amp;cal).SetValue(<span class="number">10</span>) 的汇编输出类似</span><br><span class="line"><span class="number">0x0093</span> <span class="number">00147</span> (method_cases.<span class="keyword">go</span>:<span class="number">38</span>)	MOVQ	<span class="string">""</span>.&amp;cal+<span class="number">64</span>(SP), AX</span><br><span class="line"><span class="number">0x0098</span> <span class="number">00152</span> (method_cases.<span class="keyword">go</span>:<span class="number">38</span>)	MOVQ	AX, (SP)</span><br><span class="line"><span class="number">0x009c</span> <span class="number">00156</span> (method_cases.<span class="keyword">go</span>:<span class="number">38</span>)	MOVL	$<span class="number">10</span>, <span class="number">8</span>(SP)</span><br><span class="line"><span class="number">0x00a4</span> <span class="number">00164</span> (method_cases.<span class="keyword">go</span>:<span class="number">38</span>)	CALL	<span class="string">""</span>.(*Calculator).SetValue(SB)</span><br></pre></td></tr></table></figure>
+<p>事实上，<code>(*Calculator).SetValue(&amp;cal, 10)</code>的调用方式和前面使用值类型或者指针类型来调用指针类型的接收者的方法的作用是一样的，而且，它们的编译后的汇编代码也是一样的。而且，观察一下这三种调用方式最终调用对应的<code>SetValue</code>函数。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">0x0078 00120 (method_cases.go:36)	CALL	&quot;&quot;.(*Calculator).SetValue(SB);; 调用 main.(*Calculator).SetValue</span><br><span class="line">0x008e 00142 (method_cases.go:37)	CALL	&quot;&quot;.(*Calculator).SetValue(SB)</span><br><span class="line">0x00a4 00164 (method_cases.go:38)	CALL	&quot;&quot;.(*Calculator).SetValue(SB)</span><br></pre></td></tr></table></figure>
+<p>可以发现函数调用指令 CALL 后面跟的目标是同一个<code>.text</code> 段的全局函数符号。换言之，所有的方法调用最终都会被改写成编译器为其隐式声明的函数调用。其中，所有这些隐式声明的函数的第一个参数为对应方法的接收者（值或者指针类型），其余的参数同方法的参数列表一样，而其函数体即为对应方法体的内容。需要注意的是，考虑到<code>(*Calculator).SetValue</code>实际上并非一个合法的函数名称，换言之，我们不能在源代码中显式声明具有类似名称的函数，只有编译器才能创建。而且，当编译器为每一个方法创建对应的隐式函数之后，那些方法的方法体都会被改写成调用对应的函数。</p>
+<p>因此，结合『调用值类型接收者的方法』小节最后所阐述的内容，可以发现，对于每一个值类型接收者的方法，编译器会为其生成一个指针类型接收者的方法和这两个方法所对应的两个隐式声明的函数。</p>
+<p>最后，值得注意的是，关于函数及方法使用的最佳实践，相信读者大致了解。但关于值类型和指针类型接收者使用的最佳实践呢？官方提供了一份<a href="https://github.com/golang/go/wiki/CodeReviewComments#receiver-type" target="_blank" rel="noopener">指南</a>。总的来说，我们需要关注的几点是：</p>
+<ul>
+<li>显然，当需要修改接收者变量时，必须使用指针类型接收者；</li>
+<li>值类型的接收者的方法调用需要拷贝对应的值变量，因此，较大的值变量的开销不容忽略；</li>
+<li>过多的指针类型接收者可能会导致垃圾回收器负担过重；</li>
+<li>对于 map、chan 以及函数类型的接收者，需要使用值类型；</li>
+<li>如果接收者包含 sync 标准库包中的类型，则应该使用指针类型接收者；</li>
+<li>如果不能确定使用何种类型，则使用指针类型接收者。</li>
+</ul>
+<p>至此，本文相关内容已经阐述完毕，本文的重点在于通过解析函数和方法（值类型和指针类型接收者）调用的汇编过程，以阐述值类型接收者和指针类型接收者的方法被调用时的具体原理，以及方法调用和函数调用的关系。</p>
+<p>本文参考代码在<a href="https://github.com/qqzeng/go-code-snippet/tree/master/method-function" target="_blank" rel="noopener">这里</a>。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1]. <a href="https://go101.org/article/method.html" target="_blank" rel="noopener">https://go101.org/article/method.html</a><br>[2]. <a href="https://github.com/teh-cmc/go-internals/blob/master/chapter2_interfaces/README.md#function-and-method-calls" target="_blank" rel="noopener">https://github.com/teh-cmc/go-internals/blob/master/chapter2_interfaces/README.md#function-and-method-calls</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/go/" rel="tag"># go</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/05/26/go-map-原理剖析/" rel="next" title="go map 原理剖析">
+                <i class="fa fa-chevron-left"></i> go map 原理剖析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Zeng Qiaoqiao</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">50</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="Email">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>Email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一个示例程序"><span class="nav-number">1.</span> <span class="nav-text">一个示例程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#函数和方法的运行时调用原理"><span class="nav-number">2.</span> <span class="nav-text">函数和方法的运行时调用原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#函数调用过程"><span class="nav-number">2.1.</span> <span class="nav-text">函数调用过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结构体变量创建过程"><span class="nav-number">2.2.</span> <span class="nav-text">结构体变量创建过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#调用值类型接收者的方法"><span class="nav-number">2.3.</span> <span class="nav-text">调用值类型接收者的方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#调用指针类型接收者的方法"><span class="nav-number">2.4.</span> <span class="nav-text">调用指针类型接收者的方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#方法的调用即则为对应类型的隐式函数的调用"><span class="nav-number">2.5.</span> <span class="nav-text">方法的调用即则为对应类型的隐式函数的调用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">3.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zeng Qiaoqiao</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">205.5k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+  </script>
+
+  
+
+  
+  
+
+
+  
+
+  
+
+  <!-- 代码块复制功能 -->
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+</body>
+</html>
