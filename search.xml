@@ -452,8 +452,8 @@
       <tags>
         <tag>分布式系统</tag>
         <tag>分布式协调服务</tag>
-        <tag>分布式锁</tag>
         <tag>原子广播协议</tag>
+        <tag>分布式锁</tag>
       </tags>
   </entry>
   <entry>

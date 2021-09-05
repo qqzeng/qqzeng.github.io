@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,分布式协调服务,原子广播协议,分布式锁,">
+  <meta name="keywords" content="gossip,集群成员管理,故障检测,组成员协议,">
 
 
 
@@ -93,18 +93,18 @@
 
 
 
-<meta name="description" content="ZooKeeper是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(coordination service)。虽然ZooKeeper被认为是 Google Chubby的开源实现，但其设计理念却存在较大差异：ZooKeeper致力于提供一个简单且高性能(high performance)的内核(kernel)以为客户端（应用程序）构">
-<meta name="keywords" content="分布式系统,分布式协调服务,原子广播协议,分布式锁">
+<meta name="description" content="上一篇文章简要剖析了基于 SWIM+Lifeguard 的组成员协议 memberlist 协议库的基本原理，另外，也阐明了如何关联 memberlist 和上层应用，即 memberlist 暴露一些 Delegate 接口以让上层应用能够  hook 到协议层内部，以为上层应用提供协议用途之外的能力。而 Serf 基于 memberlist 为分布式应用提供诸如集群成员管理、集成成员故障检测以">
+<meta name="keywords" content="gossip,集群成员管理,故障检测,组成员协议">
 <meta property="og:type" content="article">
-<meta property="og:title" content="理解分布式协调服务 zookeeper">
-<meta property="og:url" content="https://qtozeng.top/2018/12/04/理解分布式协调服务-ZooKeeper/index.html">
+<meta property="og:title" content="Serf 原理剖析">
+<meta property="og:url" content="https://qtozeng.top/2020/11/01/serf/index.html">
 <meta property="og:site_name" content="一抹光辉油彩">
-<meta property="og:description" content="ZooKeeper是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(coordination service)。虽然ZooKeeper被认为是 Google Chubby的开源实现，但其设计理念却存在较大差异：ZooKeeper致力于提供一个简单且高性能(high performance)的内核(kernel)以为客户端（应用程序）构">
+<meta property="og:description" content="上一篇文章简要剖析了基于 SWIM+Lifeguard 的组成员协议 memberlist 协议库的基本原理，另外，也阐明了如何关联 memberlist 和上层应用，即 memberlist 暴露一些 Delegate 接口以让上层应用能够  hook 到协议层内部，以为上层应用提供协议用途之外的能力。而 Serf 基于 memberlist 为分布式应用提供诸如集群成员管理、集成成员故障检测以">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-05-13T13:57:34.179Z">
+<meta property="og:updated_time" content="2020-11-03T00:31:02.490Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="理解分布式协调服务 zookeeper">
-<meta name="twitter:description" content="ZooKeeper是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(coordination service)。虽然ZooKeeper被认为是 Google Chubby的开源实现，但其设计理念却存在较大差异：ZooKeeper致力于提供一个简单且高性能(high performance)的内核(kernel)以为客户端（应用程序）构">
+<meta name="twitter:title" content="Serf 原理剖析">
+<meta name="twitter:description" content="上一篇文章简要剖析了基于 SWIM+Lifeguard 的组成员协议 memberlist 协议库的基本原理，另外，也阐明了如何关联 memberlist 和上层应用，即 memberlist 暴露一些 Delegate 接口以让上层应用能够  hook 到协议层内部，以为上层应用提供协议用途之外的能力。而 Serf 基于 memberlist 为分布式应用提供诸如集群成员管理、集成成员故障检测以">
 
 
 
@@ -134,13 +134,13 @@
 
 
 
-  <link rel="canonical" href="https://qtozeng.top/2018/12/04/理解分布式协调服务-ZooKeeper/">
+  <link rel="canonical" href="https://qtozeng.top/2020/11/01/serf/">
 
 
 
 
 
-  <title>理解分布式协调服务 zookeeper | 一抹光辉油彩</title>
+  <title>Serf 原理剖析 | 一抹光辉油彩</title>
   
 
 
@@ -308,7 +308,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2018/12/04/理解分布式协调服务-ZooKeeper/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/11/01/serf/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Zeng Qiaoqiao">
@@ -325,7 +325,7 @@
 
         
         
-          <h2 class="post-title" itemprop="name headline">理解分布式协调服务 zookeeper</h2>
+          <h2 class="post-title" itemprop="name headline">Serf 原理剖析</h2>
         
 
         <div class="post-meta">
@@ -337,8 +337,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-04T19:23:30+08:00">
-                2018-12-04
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-01T18:07:15+08:00">
+                2020-11-01
               </time>
             
 
@@ -373,8 +373,8 @@
                 
               
                 <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/分布式协调服务/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式协调服务</span>
+                  <a href="/categories/分布式系统/组成员协议/" itemprop="url" rel="index">
+                    <span itemprop="name">组成员协议</span>
                   </a>
                 </span>
 
@@ -404,7 +404,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,427
+                  3,761
                 </span>
               words
 
@@ -441,32 +441,39 @@
       
 
       
-        <p><code>ZooKeeper</code>是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(<code>coordination service</code>)。虽然<code>ZooKeeper</code>被认为是 Google <code>Chubby</code>的开源实现，但其设计理念却存在较大差异：<code>ZooKeeper</code>致力于提供一个简单且高性能(<code>high performance</code>)的内核(<code>kernel</code>)以为客户端（应用程序）构建更复杂、更高层(<code>high level</code>)的协调原语(<code>coordination primitives</code>)。换言之，<code>ZooKeeper</code>并不针对特定应用或者具体某一协调服务而设计实现，它只提供构建应用协调原语的内核，而将具体协调原语的构建逻辑放权给客户端，并且，它确保了客户端在不需要更改内核服务的前提下，能够灵活构建出新的、更高级的且更强大的协调原语，比如分布式互斥锁、分布式队列等。<code>ZooKeeper</code>为每个客户端操作提供<code>FIFO</code>顺序保证，并且为所有写操作提供<code>linearlizablity</code>保证。<code>ZooKeeper</code>的实现原理为构建在其之上的服务提供高性能保证。</p>
+        <p>上一篇文章简要剖析了基于 SWIM+Lifeguard 的组成员协议 memberlist 协议库的基本原理，另外，也阐明了如何关联 memberlist 和上层应用，即 memberlist 暴露一些 Delegate 接口以让上层应用能够  hook 到协议层内部，以为上层应用提供协议用途之外的能力。而 Serf 基于 memberlist 为分布式应用提供诸如集群成员管理、集成成员故障检测以及自定义事件传播等功能，显然，Serf 是一个完全去中心化的、具备强大故障容忍能力的工具。本文简要阐述 Serf 原理，以了解如何基于 memberlist 构建能解决分布式场景下典型问题的工具。</p>
 <a id="more"></a>
-<p><a href="https://scholar.google.com/scholar_url?url=https://www.usenix.org/event/usenix10/tech/full_papers/Hunt.pdf&amp;hl=zh-CN&amp;sa=T&amp;oi=gsb-ggp&amp;ct=res&amp;cd=0&amp;d=16979330189653726967&amp;ei=n4kGXN6bNYSwyQTtrY2YBw&amp;scisig=AAGBfm3u4LNga1CwiXqT9W5TbZFnKyv21Q" target="_blank" rel="noopener">Zookeeper</a> 为分布式应用提供诸如配置管理(<code>configuration managation</code>)、leader 选举等协调服务，这通过为应用程序提供构建协调原语的 <code>API</code>来实现。并且，与那些提供阻塞原语的服务不同，<code>ZooKeeper</code>实现的 <a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm" target="_blank" rel="noopener">wait-free</a> 数据对象确保其容错和高性能特性，因为若利用阻塞原语来构建协调服务，可能会导致那些慢的(<code>slow</code>)或者有错误的(<code>faulty</code>)的客户端影响正常的客户端的服务性能。此博客阐述个人对<code>ZooKeeper</code>的理解，并从一个<code>ZooKeeper</code>的应用实例开始讨论，分别阐述<code>ZooKeeper</code>两个<code>ordering guarantees</code>、。因为本文并非对原论文的完整翻译，因此你需要提前阅读原论文，确保熟知<code>ZooKeeper</code>数据模型以及客户端<code>API</code>等内容，而且，博客也会省略论文所阐述的利用<code>ZooKeeper</code>来实现部分协调服务部分，具体内容可以参考原论文。</p>
-<h2 id="一个应用实例阐述"><a href="#一个应用实例阐述" class="headerlink" title="一个应用实例阐述"></a>一个应用实例阐述</h2><p>我们知道<code>MapReduce</code>需要知道集群<code>master</code>的<code>ip:port</code>以使得其它节点能够与<code>master</code>建立连接通信，为此，<code>MapReduce</code>可以利用<code>ZooKeeper</code>作为动态配置服务，让<code>master candidate</code>在<code>ZooKeeper</code>上并发注册（创建）各自<code>ephemeral</code>类型的<code>ip:port</code>节点，并让<code>slave</code>监听对应节点的<code>watch event</code>，因此一旦有<code>master candidate</code>注册成功（且只能有一个创建成功），则其它节点将能获取到<code>master</code>的<code>ip:port</code>。</p>
-<p>若使用基于<code>raft</code>构建的复制状态机实现，比如在<code>raft</code>集群上构建一个<code>key/value</code>存储系统来存放<code>GFS master</code>的元信息。则整个过程大致如下：首先，<code>master candidate</code>向<code>raft</code>发送<code>Put(&quot;gfs-master&quot;, &quot;ip:port&quot;)</code>命令日志，当<code>raft</code>集群<code>apply</code>此命令日志后，其它节点可通过向<code>raft</code>发送<code>Get(&quot;gfs-master&quot;)</code>命令来获取<code>master</code>的<code>ip:port</code>。但此过程存在几个问题：其一，若多个<code>master candidate</code>同时向<code>raft</code>发送节点地址的注册命令日志，此时将产生<code>race condition</code>，其会导致后发送的命令被应用到状态机，因此<code>master candidate</code>需要进一步判断自己是否成为真正的<code>master</code>（不能仅通过发送了节点地址命令日志来确定）；其二，若<code>master</code>失效，其地址项日志必须要从存储中移除，那么谁来执行此操作？因此，必须对<code>master</code>的元数据信息设置<code>timeout timestamp</code>，并且让<code>master</code>通过定期向<code>raft</code>发送<code>Put(ip:port, timestamp)</code>日志来更新<code>timeout</code>的<code>timestamp</code>，而集群其它节点通过向<code>raft</code>轮询(<code>poll</code>)此<code>timestamp</code>来确保<code>master</code>正常工作，毫无疑问，这将产生大量不必要的<code>poll cost</code>。对比使用<code>ZooKeeper</code>来提供此协调服务（上一段），问题是如何被<code>ZooKeeper</code>高效便捷地解决呢？首先它会确保在多个<code>master candidate</code>同时注册地址信息时，只会有一个操作成功；其次，<code>ZooKeeper</code>的<code>session</code>机制简化了<code>timestamp timeout</code>设置，一旦<code>master</code>宕机，其在<code>ZooKeeper</code>上注册的元信息节点将会自动清除。而且，对应的节点移除消息也会通知到其它节点，避免了<code>slave</code>的大量的轮询消耗。由此可见，使用<code>ZooKeeper</code>来进行集群配置信息的管理，有利于简化服务实现的逻辑。</p>
-<h2 id="ZooKeeper-两个-ordering-guarantees"><a href="#ZooKeeper-两个-ordering-guarantees" class="headerlink" title="ZooKeeper 两个 ordering guarantees"></a>ZooKeeper 两个 ordering guarantees</h2><p>在讨论<code>ZooKeeper</code>两个基本的<code>ordering guarantees</code>之前，先了解什么是 <code>wait-free</code>，你可以从<a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm" target="_blank" rel="noopener">维基</a>或者 <a href="https://cs.brown.edu/~mph/Herlihy91/p124-herlihy.pdf" target="_blank" rel="noopener">Herlihy的论文</a> 上找到其明确定义：</p>
-<blockquote>
-<p>A wait-free implementation of a concurrent data object is one that guarantees that any process can complete any operation in a finite number of steps, regardless of the execution speeds of the other processes.</p>
-<p>Wait-freedom is the strongest non-blocking guarantee of progress, combining guaranteed system-wide throughput with starvation-freedom. An algorithm is wait-free if every operation has a bound on the number of steps the algorithm will take before the operation completes</p>
-</blockquote>
-<p>而对于<code>ZooKeeper</code>而言，其提供的<code>API</code>被称为是<code>wait-free</code>的，因为<code>ZooKeeper</code>直接响应客户端请求，即此请求的返回并不会受到其它客户端操作的影响（通常是<code>slow</code>或者<code>faulty</code>）。换言之，若此客户端请求为写节点数据操作，只要<code>ZooKeeper</code>收到状态变更，则会立即响应此客户端。如果在这之前某一客户端监听了此节点的数据变更事件，则一旦此节点的数据发生变化，则<code>ZooKeeper</code>会推送变更事件给监听的客户端，然后立即返回给写数据的客户端，并不会等待此监听客户端确认此事件。相比于同步阻塞的调用，<code>wait-free</code>明显提供更好的性能，因为客户端不用同步等待每次调用的返回，且其可以进行异步的批量调用<code>batch call</code>操作，以均摊(<code>amortize</code>)网络传输和IO开销。<code>wait-free</code>的<code>API</code>是<code>ZooKeeper</code>具备高性能的基础，因此也是<code>ZooKeeper</code>的设计核心。</p>
-<p><code>ZooKeeper</code>提供了两个基本的<code>ordering guarantees</code>：<code>Linearizable writes</code>及<code>FIFO client order</code>。<code>Linearizable write</code>表示对<code>ZooKeeper</code>的节点状态更新的请求都是线性化的(<code>serializable</code>)，而<code>FIFO client order</code>则表示对于同一个客户端而言，<code>ZooKeeper</code>会保证其操作的执行顺序与客户端发送此操作的顺序一致。毫无疑问，这是两个很强的保证。</p>
-<p><code>ZooKeeper</code>提供了<code>Linearizable write</code>，那什么是<code>Linearizablility</code>？<a href="https://cs.brown.edu/~mph/Herlihy91/p124-herlihy.pdf" target="_blank" rel="noopener">Herlihy的论文</a>同样给出了其定义，为了方便，你也可以参考<a href="https://medium.com/databasss/on-ways-to-agree-part-2-path-to-atomic-broadcast-662cc86a4e5f" target="_blank" rel="noopener">这里</a>或者<a href="http://www.bailis.org/blog/linearizability-versus-serializability/" target="_blank" rel="noopener">这里</a>。</p>
-<blockquote>
-<p>Linearizability is a correctness condition for concurrent objects that provides the illusion that each operation applied by concurrent processes takes effect instantaneously at some point between its invocation and its response, implying that the meaning of a concurrent object’s operations can be given by pre- and post-conditions.</p>
-</blockquote>
-<p>简单而言，<code>Linearizability</code>是分布式系统领域的概念（区别于数据库领域与事务相关的概念<code>Serializability</code>），一个分布式系统若实现了<code>linearizability</code>，它必须能够保证系统中存在一个时间点，在此时间点之后，整个系统会提交到新的状态，且绝不会返回到旧的状态，此过程是即时的(<code>instantaneous</code>)，一旦这个值被提交，其它所有的进程都会看到，系统的写操作会保证是全局有序(<code>totally ordered</code>)。</p>
-<p>而<code>ZooKeeper</code>论文提到其<code>write</code>具备<code>Linearizability</code>，确切而言是<code>A-linearizability</code>(<code>asynchronous linearizability</code>)。简而言之，<code>Linearizability</code>原本（原论文）是针对单个对象，单个操作(<code>single object, single operation</code>)而言的，但<code>ZooKeeper</code>扩大其应用范围，它允许客户端同时执行多个操作（读写），并且保证每个操作同样会遵循<code>Linearizability</code>。</p>
-<p>值得注意的是，<code>ZooKeeper</code>对其操作（<code>create</code>,<code>delete</code>等）提供<code>pipelining</code>特性，即<code>ZooKeeper</code>允许客户端批量地执行异步操作（比如发送了<code>setData</code>操作后可以立即调用<code>geData</code>），而不需要等到上一个操作的结果返回。毫无疑问，这降低了操作的延迟(<code>lantency</code>)，增加了客户端服务的吞吐量(<code>throughtout</code>)，也是<code>ZooKeeper</code>高性能的保证。但通常情况下，这会带来一个问题，因为所有操作都是异步的，因此这些操作可能会被重排序(<code>re-order</code>)，这肯定不是客户端希望发生的（比如对于两个写操作而言，<code>re-order</code>后会产生奇怪的行为）。因此，对于特定客户端，<code>ZooKeeper</code>还提供<code>client FIFO order</code>的保证。</p>
-<h2 id="ZooKeeper-实现原理"><a href="#ZooKeeper-实现原理" class="headerlink" title="ZooKeeper 实现原理"></a>ZooKeeper 实现原理</h2><p>同分布式存储系统类似，<code>ZooKeeper</code>也会对数据进行冗余备份。在客户端发送请求之前，它会连接到一个<code>ZooKeeper server</code>，并将后续的请求提交给对应的<code>server</code>，当<code>server</code>收到请求后，有做如下三个保证：其一，若请求所操作的节点被某些客户端注册了监听事件，它会向对应的客户端推送事件通知。其二，若此请求为写操作，则<code>server</code>一次性只会对一个请求做处理（不会同时处理其它的读或者写请求）。其三，写操作最终是交由<code>leader</code>来处理（若接收请求的<code>server</code>并非<code>leader</code>，其主动会对请求进行转发），<code>leader</code>会利用<code>Zab</code>（原子广播协议，<code>ZooKeper atomic broadcast</code>）对此请求进行协调，最终各节点会对请求的执行结果达成一致，并将结果 <code>replica</code>到<code>ensemble servers</code>。<code>ZooKeeper</code>将数据存储到内存中（更快），但为了保证数据存储的可靠性，在将数据写到内存数据库前，也会将数据写到磁盘等外部存储。同时，对操作做好相应的<code>replay log</code>，并且其定期会对数据库进行<code>snapshot</code>。</p>
-<p>若请求为读操作，则接收请求的<code>server</code>直接在本地对请求进行处理（因此读操作仅仅是在<code>server</code>的本地内存数据库进行检索处理，这也是<code>ZooKeeper</code>高性能的保证）。正因为如此，同<code>GFS</code>可能向客户端返回过期数据的特点类似，<code>ZooKeeper</code>也有此问题。如果应用程序不希望得到过期数据（即只允许得到最近一次写入的数据），则可以采用<code>sync</code>操作进行读操作前的写操作同步，即如果在读操作之前集群还有<code>pending</code>的写操作，会阻塞直至写操作完成。值得注意的是，每一次的读操作都会携带一个<code>zxid</code>，它表示<code>ZooKeeper</code>最近一次执行事务的编号（关于事务，后面会介绍），因此<code>zxid</code>定义了读操作与写操作之间的偏序关系。同时，当客户端连接到<code>server</code>时，如果此<code>server</code>发现其本地存储的当前<code>zxid</code>小于客户端提供的<code>zxid</code>的大小，其会拒绝客户端的连接请求，直至其将本地数据库同步至全局最新的状态。</p>
-<p>在<code>ZooKeeper</code>内部，它会将接收到的写操作转换为事务(<code>transaction</code>)操作。因为<code>ZooKeeper</code>可能需要同时处理若干个操作，因此其会提前计算好操作被提交后数据库所处的状态。这里给出论文中提到的一个事务转换的示例：如果客户端发送一个条件更新的命令<code>setData</code>并附带上目标节点的<code>version number</code>及数据内容，当<code>ZooKeeper server</code>收到请求后，会根据更新后的数据，版本号以及更新的时间戳，为此请求生成一个<code>setDataTXN</code>事务。当事务执行出错时（比如版本号不对应），则会产生一个<code>errorTXN</code>的事务。</p>
-<p>值得注意的是，<code>ZooKeeper</code>内部所构建的事务操作是幂等的(<code>idempotent</code>)。这有利于<code>ZooKeeper</code>执行失效恢复过程。具体而言，为了应对节点宕机等故障，<code>ZooKeeper</code>会定期进行<code>snapshot</code>操作，<code>ZooKeeper</code>称其为<code>fuzzy snapshot</code>。但与普通的分布式系统不同的是，它在进行快照时，并不会锁定当前<code>ZooKeeper</code>集群（一旦锁定，便不能处理客户端的写操作，且快照的时间一般也相对较长，因此会降低客户端的服务性能），它会对其树形存储进行深度优先搜索，并将搜索过程中所遍历的每一个节点的元信息及数据写到磁盘。因为<code>ZooKeeper</code>快照期间并没有锁定<code>ZooKeeper</code>的状态，因此在此过程中，若有<code>server</code>在同步写操作，则写操作可能只被<code>replica</code>到部分节点，最终使得<code>snapshot</code>的结果处于不一致的状态。但正是由于<code>ZooKeeper</code>的事务操作是<code>idempontent</code>，因此，在<code>recover</code>过程应用<code>snapshot</code>时，还会重新按顺序提交从快照启动开始到结束所涉及到的事务操作。原论文给出了一个快照恢复过程示例。因此我们会发现，<code>fuzzy snapshot</code>同样是<code>ZooKeeper</code> 高性能的体现。另外，事务幂等的特性也使得<code>ZooKeeper</code>不需要保存请求消息的ID（保存的目的是为了防止对重复执行同一请求消息），因为事务的重复执行并不会导致节点数据的不一致性。由此可见，事务幂等性的大大设计简化了<code>ZooKeeper</code>的请求处理过程及日志恢复的过程。</p>
-<p>最后，关于原论文所阐述的基于<code>ZooKeeper</code>内核来构建协调服务的相关实例部分，<a href="https://github.com/qqzeng/zkprimitives" target="_blank" rel="noopener">参考实现代码在这里</a>。</p>
-<p>参考文献</p>
-<p>[1] Hunt P, Konar M, Junqueira F P, et al. ZooKeeper: Wait-free Coordination for Internet-scale Systems[C]//USENIX annual technical conference. 2010, 8(9).<br>[2] Herlihy M P, Wing J M. Linearizability: A correctness condition for concurrent objects[J]. ACM Transactions on Programming Languages and Systems (TOPLAS), 1990, 12(3): 463-492.<br>[3] <a href="https://medium.com/databasss/on-ways-to-agree-part-2-path-to-atomic-broadcast-662cc86a4e5f" target="_blank" rel="noopener">https://medium.com/databasss/on-ways-to-agree-part-2-path-to-atomic-broadcast-662cc86a4e5f</a><br>[4] <a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Non-blocking_algorithm</a><br>[5] <a href="http://www.bailis.org/blog/linearizability-versus-serializability/" target="_blank" rel="noopener">http://www.bailis.org/blog/linearizability-versus-serializability/</a></p>
+<p>本文非详细的源码解读教程，只会介绍 Serf 的基本特性以及组成 Serf 的关键组件。因此，若读者有兴趣，可在参阅本文之后详细阅读源码。另外，建议读者在阅读本文前，先了解上一（几）篇文章的内容，这有助于读者理解源码，可参考【这里】和【这里】。最后，本文的分析基于版本。</p>
+<p>具体地，本文首先阐述 Serf 的典型实践场景以及提供的基本能力，即了解 Serf 能够解决分布式系统中的哪些问题，而这些能力是通过 hook 到 memberlist 协议库底层来实现的。接下来，重点剖析 Serf 所包含的关键组件，关键组件即代表着 Serf 的基本原理，也代表着对外提供能力的基础构建块，这同样有助于把握阅读源码时的切入点和脉络。最后，简单阐述 Serf 如何利用底层协议库 memberlist 为其提供的 hook 接口。</p>
+<h2 id="serf-的应用场景和基本能力"><a href="#serf-的应用场景和基本能力" class="headerlink" title="serf 的应用场景和基本能力"></a>serf 的应用场景和基本能力</h2><p>Serf 基于组成员协议库 memberlist 并将 memberlist 拥有的能力进行“变现”和输出。上文提到，Serf 能够应用于集群成员管理和集成成员故障检测等场景，这些都是基于底层的 memberlist 协议库实现的。另外，Serf 还支持自定义事件和查询的广播。</p>
+<p>具体地，关于集成成员管理，Serf 可以为我们维护集群成员列表，同时，在集成成员动态发生变化时（如节点加入、离开或者失败等），能够执行预先自定义的脚本。这拥有很多实际应用，比如 Serf 实例可以我们负载均衡器维护后端的一系列业务服务器，以使得在业务服务器集群在动态扩张和收缩时（即节点上线和下线），能够即时通知负载均衡器触发相应动作。类似地，它也可以为后端业务服务器动态维护一个底层的存储实例列表。</p>
+<p>另外，关于集群成员故障检测，Serf 可自动且即时（秒级）地发现集群中的故障节点，并且通知集群中其它存活的成员，同时，还可以自动触发预先配置的对应事件关联的 handler。且默认情况下，Serf 会自动周期性的重连失败的节点，以使得集群不会因为节点的短暂故障下线而处于非预期状态。</p>
+<p>其次，Serf 可以为我们传播自定义（用户）事件（Event），即 Serf 可以将用户自定义的事件广播到集群（显然集群本身的事件，如节点加入等，也可以注册相应的 handler），因此，理论上所有成员都可以收到此事件消息，因为我们可以为事件注册对应的 handler，这可以让节点在收到这些事件后触发动作。此外，我们也可以设置 filter，以指定事件的目标发送节点集合。这同样拥有很多实际应用，比如我们可以集群就绪后通过 Serf 向集群中广播服务部署事件事件以触发节点上的服务部署进程。类似地，我们可以定配置变更的事件，以让节点重新加载配置。值得注意的是，用户自定义事件是一次性的单向广播（fire-and-forget），换言之，收到事件消息的节点只需触发关联的 handler 即可，无需响应或返回执行结果。</p>
+<p>最后，Serf 还允许我们将自定义查询（Query）广播到集群，查询是基于事件的，换言之，其也是一种用户自定义事件，但其提供了一种简单的实时请求-响应机制，即收到查询消息的节点可以简单应答也可以执行对应的 handler，并将执行结果返回，因此，Query 能够提供更强的能力。基于此，我们可以实时地收集运行中的集群的指标信息，如通过自定义查询以定期收集节点的负载信息。但值得注意的是，查询消息可能不会被所有节点收到并处理，考虑到自定义查询侧重于请求的实时性，因此在广播自查询时，若有节点正处于故障状态，或者处于不同的网络分区，此节点将不会收到此查询消息，且后续 Serf 也不会重新广播此查询消息，<strong>这不同于自定义事件的广播。</strong></p>
+<h2 id="serf-的关键组件"><a href="#serf-的关键组件" class="headerlink" title="serf 的关键组件"></a>serf 的关键组件</h2><p>本节通过阐述 Serf 的几个关键组件来剖析 Serf 的基本原理。如下图所示，Serf 允许我们执行特定的命令来操作 Serf 集群。比如，我们可通过执行<code>serf agent</code>以默认配置启动一个或多个 Serf 节点，此时，即存在一个或多个包含单节点的集群，然后可以执行<code>serf join node-addr</code>来将隔离的集群进行合并，当然，也叫可在启动 agent 的同时加入已存在的集群，通过<code>serf agent -join=node-addr</code>来实现。上层的命令程序将通过 RPCClient 发送相应的 rpc 请求到 agent IPC，agent IPC 在收到 rpc 请求后，充当一个请求路由器 handler 的功能，随即将请求转发给 serf agent 处理，serf agent 进一步将请求中继给 serf 实例处理，serf 实例是核心枢纽，它会底层的 memberlist 协议库以及各个关键组件（如Query、EventHandler、Snapshotter、Coalescence等）对请求进行处理。最后，若请求需要响应返回，则通过 udp 发送请求执行结果。</p>
+<h3 id="serf-agent-启动逻辑"><a href="#serf-agent-启动逻辑" class="headerlink" title="serf agent 启动逻辑"></a>serf agent 启动逻辑</h3><p>基于上述 serf 基本执行流程，简单介绍 serf agent 启动逻辑：当用户执行<code>serf agent</code>命令时，它首先配置 Serf agent，比如配置 agent 之间的通信地址、初始化底层依赖的 memberlist 配置以及其它配置，随后创建 agent 实例。接下来，它开始启动 agent，在此过程中，其首先注册自定义事件 handler（若有设置），然后正式启动 agent，在启动 agent 的过程中，创建 Serf 实例，同时启动事件监听和处理循环，并在设置 rpc listener 后启动 agent IPC 用以响应和处理用户执行的命令。最后，它开始加入指定的 agent 节点（若有配置），然后等待退出信号。这即为一个 Serf agent 的启动逻辑。当然，在创建 Serf 实例的过程中，还做了其它一系列操作，比如创建 Query，并启动 Query 处理循环，创建 Coordinate 系统、加载 Snapshot 并恢复、配置事件和查询的广播队列、创建 memberlist 实例，最后启动一系列异步 goroutine，用于回收故障节点、周期性重连故障节点等。</p>
+<p>在梳理完 serf agent 启动逻辑后，下面简要介绍 serf 依托的各个组件的基本原理：</p>
+<h3 id="lamport-时钟"><a href="#lamport-时钟" class="headerlink" title="lamport 时钟"></a>lamport 时钟</h3><p><a href="https://qtozeng.top/2018/11/05/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%97%B6%E9%97%B4%E3%80%81%E6%97%B6%E9%92%9F%E4%B8%8E%E4%BA%8B%E4%BB%B6%E9%A1%BA%E5%BA%8F/">lamport 时钟</a>用于规定分布式系统中事件发生的先后顺序。考虑到机器的物理时钟因各种原因（如时钟漂移）而并不准确，因此，Leslie Lamport 提出了逻辑时钟的概念，其大致是基于事件发生的因果关系来定义分布式系统中事件的发生顺序，它虽然不能保证此顺序即为实际以物理时钟为依据的排序结果，但它保证能够正确排列系统中具有因果关系的事件，这使得分布式系统在逻辑上不会颠倒具有因果关系的事件的发生顺序，这在绝大部分情况下是足够的。</p>
+<h3 id="coordinate-系统"><a href="#coordinate-系统" class="headerlink" title="coordinate 系统"></a>coordinate 系统</h3><p>coordinate 系统是基于 <a href="https://www.cs.ucsb.edu/~ravenben/classes/276/papers/vivaldi-sigcomm04.pdf" target="_blank" rel="noopener">vivaldi 算法</a>，其通过启发式学习算法，不断计算节点通信时的 RTT 来动态学习系统网络拓扑的算法。在分布式系统中，节点若能知道整个系统中节点分布，即网络的拓扑结构，那么其可作为节点之间进行通信的依据，即节点可选择离其拓扑距离最近的 k 个节点进行广播通信，这样可以尽可能减少网络中充斥着大量的消息，即可以避免网络风暴，而且，通过调整 k 的大小，可以个性消息的传播速度、效率以及对网络带宽的影响。</p>
+<h3 id="coalescence-机制"><a href="#coalescence-机制" class="headerlink" title="coalescence 机制"></a>coalescence 机制</h3><p>coalescence 机制指的是 serf 可将指定时间窗口内的连续若干个 event 合并成一个 event 进行广播发送的机制。比如，当集群中有 5 个成员（几乎）同时加入时，在满足要求的前提下，coalescence 机制会对这 5 条 event 进行合并，因此，只会压入一条  event 到 event channel，避免了集群因这些事件的影响而出现的潜在的 flapping 行为。有两个参数同 coalescence 机制相关，一个是决定执行合并操作的周期，另一个参数指定了允许持续合并的 event 之间的最大时间间隔，即在超过此时间间隔后，即使未达到合并操作周期，也必须执行合并操作，将 event 压入到 event channel。</p>
+<h3 id="snapshotter-机制"><a href="#snapshotter-机制" class="headerlink" title="snapshotter 机制"></a>snapshotter 机制</h3><p>serf 提供的 snapshotter 机制类似于日志的快照机制，snapshotter 机制允许在 serf  失败重启时，通过加载保存有一系列事务数据的快照文件以帮助其快速恢复到宕机前的状态。具体地，agent 收到消息时，snapshotter 机制将成员事件以及对应的 lamport 时钟值写入文件，并定期对文件执行 checkpoint 和 roll over 的操作。因此，在 agent 重启时，通过 replay 快照文件所包含的所有成员事件以获取 agent 需要加入的节点的列表，同时，lamport 时钟值还可以避免 replay 过期的事件。</p>
+<h3 id="event-处理器"><a href="#event-处理器" class="headerlink" title="event 处理器"></a>event 处理器</h3><p>当执行命令<code>serf event name [payload]</code>，它首先构建对应类型的 rpc 请求头和请求参数，然后基于 RPCClient 发送此 rpc 请求，请求会被 agent IPC  接收，然后转交给 agent 处理，agent 进一步转交给 serf 实例处理，serf 实例首先对 event 消息进行简单检查，检查项包括消息大小是否超过限制等，然后更新 serf 实例本地的 lamport 时钟，接着开始处理 event 消息，消息处理逻辑比较简单，在判断消息是否过期（serf 会维护最近收到的 event 缓冲队列，因此，若收到的消息比缓冲中最旧的消息更旧，则证明其是过期的消息），同时判断消息是否已被处理（即判断此消息是否存在于缓冲队列中），在所有检查通过后，其将消息压入 event channel，这使得 event 可以被 event handler、query 以及 snapshotter 组件接收并进行针对性处理。最后，将此 event 消息加入到 event 关联的广播消息队列中，此广播消息队列中的消息会附加到 memberlist 协议库的 gossip 消息中广播出去。</p>
+<h3 id="query-处理器"><a href="#query-处理器" class="headerlink" title="query 处理器"></a>query 处理器</h3><p>可以通过命令<code>serf query load</code>来向 serf 中发送 query 消息。query 消息的处理过程同 event 处理过程类似。其区别在于，query 消息还可制定响应策略，这包括设置目标节点是否应该返回 ack，以及目标节点是否允许再一次此 query 消息。此外，agent IPC 会为所有的目标接收节点设置一个响应超时时限，在定时器超时后，直接返回，不会再等待节点返回 ack 或执行结果。</p>
+<h3 id="密钥管理器"><a href="#密钥管理器" class="headerlink" title="密钥管理器"></a>密钥管理器</h3><p>密钥处理器（Key Manager）用于管理 serf 集群中的加密密钥（encryption keyring）。</p>
+<h2 id="serf-如何利用协议库提供的-hook-接口"><a href="#serf-如何利用协议库提供的-hook-接口" class="headerlink" title="serf 如何利用协议库提供的 hook 接口"></a>serf 如何利用协议库提供的 hook 接口</h2><p>最后，我们阐述 serf 和底层协议库是如何交互的，即 serf 如何利用底层协议库的 hook 接口。首先，serf 实现了 memberlist 提供的 Delegate 接口。其中，</p>
+<ul>
+<li><p>NodeMeta 接口使得 serf 实例将其 tags 作为节点的元数据通过广播发送到各个节点；</p>
+</li>
+<li><p>NotifyMsg 接口使得 serf 借助底层协议库传播自自定义的一系列 userMsg，因此，此接口即可作为 userMsg 的 dispatcher，根据 userMsg 具体类型来调用 serf 实例提供对应的 handler。换言之，上一篇文章所说的 memberlist 在收到 userMsg 时会回调上层应用 serf 的逻辑，即将此 userMsg 交由 serf 处理；</p>
+</li>
+<li>GetBroadcasts 接口使得 serf 实例借助底层协议库基于 gossip 的消息广播机制来广播自己需要广播的消息，即将 serf 层需要广播的消息附加到底层 memberlist 的 gossip 消息中来达到发送到各节点的目的；其中，serf 层包含了诸如事件广播队列 eventBroadcasts、查询广播队列 queryBroadcasts，以及一个<strong>通用广播队列</strong>；</li>
+<li>LocalState 接口使得 serf 实例借助底层协议库定期执行的 push-pull-merge 操作来通过 messagePushPull 消息来交换 serf 实例层各节点的本地状态。如实例最后一个处理消息的时间、实例本地的已 left 成员的视图列表等。定期执行这些信息交互，可使得 serf 实例集群状态快速收敛；</li>
+<li>最后，MergeRemoteState 接口使得 serf 实例可以处理其它节点发送给它的 messagePushPull 消息，然后，针对消息中的内容，以将其合并到（借助其调整）实例本地存储的状态。如针对源节点发送的已 left 成员视图列表，本节点会当作收到对应 left 成员的 leave 消息。StatusLTimes</li>
+</ul>
+<p>另外，eventDelegate 各接口的实现，即调用 serf 实例的关联的接口。pingDelegate 也是类似，将 PingVersion 作为 pingMsg 的 payLoad，并将节点的 coordinate 信息编码到 pingMsg 中。</p>
+<p>Query</p>
+<p>实时性、通过tag过滤目标发送对象、定制返回策略（是否返回Ack以及是否应该继续广播）</p>
+<p>传送方式（通过 GetBroadcasts 接口附带出去，event 也是类似）</p>
 
       
     </div>
@@ -484,13 +491,13 @@
       
         <div class="post-tags">
           
-            <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
+            <a href="/tags/gossip/" rel="tag"># gossip</a>
           
-            <a href="/tags/分布式协调服务/" rel="tag"># 分布式协调服务</a>
+            <a href="/tags/集群成员管理/" rel="tag"># 集群成员管理</a>
           
-            <a href="/tags/原子广播协议/" rel="tag"># 原子广播协议</a>
+            <a href="/tags/故障检测/" rel="tag"># 故障检测</a>
           
-            <a href="/tags/分布式锁/" rel="tag"># 分布式锁</a>
+            <a href="/tags/组成员协议/" rel="tag"># 组成员协议</a>
           
         </div>
       
@@ -518,8 +525,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/11/16/MapReduce-原型实现/" rel="next" title="MapReduce 原型实现">
-                <i class="fa fa-chevron-left"></i> MapReduce 原型实现
+              <a href="/2020/10/24/memberlist-原理剖析/" rel="next" title="memberlist 原理剖析">
+                <i class="fa fa-chevron-left"></i> memberlist 原理剖析
               </a>
             
           </div>
@@ -528,8 +535,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2018/12/11/浅析分布式事务/" rel="prev" title="浅析分布式事务">
-                浅析分布式事务 <i class="fa fa-chevron-right"></i>
+              <a href="/2021/09/05/浅析组成员资格协议-SWIM/" rel="prev" title="浅析组成员资格协议 SWIM">
+                浅析组成员资格协议 SWIM <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -681,7 +688,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一个应用实例阐述"><span class="nav-number">1.</span> <span class="nav-text">一个应用实例阐述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZooKeeper-两个-ordering-guarantees"><span class="nav-number">2.</span> <span class="nav-text">ZooKeeper 两个 ordering guarantees</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZooKeeper-实现原理"><span class="nav-number">3.</span> <span class="nav-text">ZooKeeper 实现原理</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#serf-的应用场景和基本能力"><span class="nav-number">1.</span> <span class="nav-text">serf 的应用场景和基本能力</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#serf-的关键组件"><span class="nav-number">2.</span> <span class="nav-text">serf 的关键组件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#serf-agent-启动逻辑"><span class="nav-number">2.1.</span> <span class="nav-text">serf agent 启动逻辑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lamport-时钟"><span class="nav-number">2.2.</span> <span class="nav-text">lamport 时钟</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#coordinate-系统"><span class="nav-number">2.3.</span> <span class="nav-text">coordinate 系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#coalescence-机制"><span class="nav-number">2.4.</span> <span class="nav-text">coalescence 机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#snapshotter-机制"><span class="nav-number">2.5.</span> <span class="nav-text">snapshotter 机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#event-处理器"><span class="nav-number">2.6.</span> <span class="nav-text">event 处理器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#query-处理器"><span class="nav-number">2.7.</span> <span class="nav-text">query 处理器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#密钥管理器"><span class="nav-number">2.8.</span> <span class="nav-text">密钥管理器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#serf-如何利用协议库提供的-hook-接口"><span class="nav-number">3.</span> <span class="nav-text">serf 如何利用协议库提供的 hook 接口</span></a></li></ol></div>
             
 
           </div>

@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="分布式系统,分布式协调服务,原子广播协议,分布式锁,">
+  <meta name="keywords" content="分布式系统,gossip,组成员资格协议,成员发现,失败检测,负载均衡,">
 
 
 
@@ -93,18 +93,18 @@
 
 
 
-<meta name="description" content="ZooKeeper是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(coordination service)。虽然ZooKeeper被认为是 Google Chubby的开源实现，但其设计理念却存在较大差异：ZooKeeper致力于提供一个简单且高性能(high performance)的内核(kernel)以为客户端（应用程序）构">
-<meta name="keywords" content="分布式系统,分布式协调服务,原子广播协议,分布式锁">
+<meta name="description" content="SWIM](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf))（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership">
+<meta name="keywords" content="分布式系统,gossip,组成员资格协议,成员发现,失败检测,负载均衡">
 <meta property="og:type" content="article">
-<meta property="og:title" content="理解分布式协调服务 zookeeper">
-<meta property="og:url" content="https://qtozeng.top/2018/12/04/理解分布式协调服务-ZooKeeper/index.html">
+<meta property="og:title" content="浅析组成员资格协议 SWIM">
+<meta property="og:url" content="https://qtozeng.top/2021/09/05/浅析组成员资格协议-SWIM/index.html">
 <meta property="og:site_name" content="一抹光辉油彩">
-<meta property="og:description" content="ZooKeeper是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(coordination service)。虽然ZooKeeper被认为是 Google Chubby的开源实现，但其设计理念却存在较大差异：ZooKeeper致力于提供一个简单且高性能(high performance)的内核(kernel)以为客户端（应用程序）构">
+<meta property="og:description" content="SWIM](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf))（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-05-13T13:57:34.179Z">
+<meta property="og:updated_time" content="2021-09-05T07:17:39.150Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="理解分布式协调服务 zookeeper">
-<meta name="twitter:description" content="ZooKeeper是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(coordination service)。虽然ZooKeeper被认为是 Google Chubby的开源实现，但其设计理念却存在较大差异：ZooKeeper致力于提供一个简单且高性能(high performance)的内核(kernel)以为客户端（应用程序）构">
+<meta name="twitter:title" content="浅析组成员资格协议 SWIM">
+<meta name="twitter:description" content="SWIM](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf))（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership">
 
 
 
@@ -134,13 +134,13 @@
 
 
 
-  <link rel="canonical" href="https://qtozeng.top/2018/12/04/理解分布式协调服务-ZooKeeper/">
+  <link rel="canonical" href="https://qtozeng.top/2021/09/05/浅析组成员资格协议-SWIM/">
 
 
 
 
 
-  <title>理解分布式协调服务 zookeeper | 一抹光辉油彩</title>
+  <title>浅析组成员资格协议 SWIM | 一抹光辉油彩</title>
   
 
 
@@ -308,7 +308,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2018/12/04/理解分布式协调服务-ZooKeeper/">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2021/09/05/浅析组成员资格协议-SWIM/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Zeng Qiaoqiao">
@@ -325,7 +325,7 @@
 
         
         
-          <h2 class="post-title" itemprop="name headline">理解分布式协调服务 zookeeper</h2>
+          <h2 class="post-title" itemprop="name headline">浅析组成员资格协议 SWIM</h2>
         
 
         <div class="post-meta">
@@ -337,8 +337,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-04T19:23:30+08:00">
-                2018-12-04
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-05T15:04:08+08:00">
+                2021-09-05
               </time>
             
 
@@ -373,8 +373,8 @@
                 
               
                 <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/分布式协调服务/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式协调服务</span>
+                  <a href="/categories/分布式系统/组成员资格协议/" itemprop="url" rel="index">
+                    <span itemprop="name">组成员资格协议</span>
                   </a>
                 </span>
 
@@ -404,7 +404,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,427
+                  3,509
                 </span>
               words
 
@@ -441,32 +441,43 @@
       
 
       
-        <p><code>ZooKeeper</code>是 Yahoo! 于 2010 年在 USENIX 会议上发表的一篇论文中提出的，被用作分布式应用程序的协调服务(<code>coordination service</code>)。虽然<code>ZooKeeper</code>被认为是 Google <code>Chubby</code>的开源实现，但其设计理念却存在较大差异：<code>ZooKeeper</code>致力于提供一个简单且高性能(<code>high performance</code>)的内核(<code>kernel</code>)以为客户端（应用程序）构建更复杂、更高层(<code>high level</code>)的协调原语(<code>coordination primitives</code>)。换言之，<code>ZooKeeper</code>并不针对特定应用或者具体某一协调服务而设计实现，它只提供构建应用协调原语的内核，而将具体协调原语的构建逻辑放权给客户端，并且，它确保了客户端在不需要更改内核服务的前提下，能够灵活构建出新的、更高级的且更强大的协调原语，比如分布式互斥锁、分布式队列等。<code>ZooKeeper</code>为每个客户端操作提供<code>FIFO</code>顺序保证，并且为所有写操作提供<code>linearlizablity</code>保证。<code>ZooKeeper</code>的实现原理为构建在其之上的服务提供高性能保证。</p>
+        <p><a href="[SWIM.pdf (cornell.edu">SWIM</a>](<a href="https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf))（Scalable" target="_blank" rel="noopener">https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf))（Scalable</a> Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或故障而相应动态更新。组成员资格协议被广泛应用于分布式场景，包括成员发现（member discovery）、失败检测（failure detection）以及负载均衡（load balancing）等。SWIM 采用的点对点（peer-to-peer）以及随机探测（randomized probe-based）通信的设计使得其相比与传统的基于心跳（heartbeating）的成员协议，具有更好的可扩展性和鲁棒性，即能更好地容忍网络和节点故障，而且也更容易实现、部署和维护。值得一提的是，考虑到它使用的是基于 gossip 的成员更新传播，因此它也是弱一致性或者最终一致性的，即同一时刻，不同成员的本地集群成员视图可能存在差异，但在有限的时间内会趋于一致。</p>
 <a id="more"></a>
-<p><a href="https://scholar.google.com/scholar_url?url=https://www.usenix.org/event/usenix10/tech/full_papers/Hunt.pdf&amp;hl=zh-CN&amp;sa=T&amp;oi=gsb-ggp&amp;ct=res&amp;cd=0&amp;d=16979330189653726967&amp;ei=n4kGXN6bNYSwyQTtrY2YBw&amp;scisig=AAGBfm3u4LNga1CwiXqT9W5TbZFnKyv21Q" target="_blank" rel="noopener">Zookeeper</a> 为分布式应用提供诸如配置管理(<code>configuration managation</code>)、leader 选举等协调服务，这通过为应用程序提供构建协调原语的 <code>API</code>来实现。并且，与那些提供阻塞原语的服务不同，<code>ZooKeeper</code>实现的 <a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm" target="_blank" rel="noopener">wait-free</a> 数据对象确保其容错和高性能特性，因为若利用阻塞原语来构建协调服务，可能会导致那些慢的(<code>slow</code>)或者有错误的(<code>faulty</code>)的客户端影响正常的客户端的服务性能。此博客阐述个人对<code>ZooKeeper</code>的理解，并从一个<code>ZooKeeper</code>的应用实例开始讨论，分别阐述<code>ZooKeeper</code>两个<code>ordering guarantees</code>、。因为本文并非对原论文的完整翻译，因此你需要提前阅读原论文，确保熟知<code>ZooKeeper</code>数据模型以及客户端<code>API</code>等内容，而且，博客也会省略论文所阐述的利用<code>ZooKeeper</code>来实现部分协调服务部分，具体内容可以参考原论文。</p>
-<h2 id="一个应用实例阐述"><a href="#一个应用实例阐述" class="headerlink" title="一个应用实例阐述"></a>一个应用实例阐述</h2><p>我们知道<code>MapReduce</code>需要知道集群<code>master</code>的<code>ip:port</code>以使得其它节点能够与<code>master</code>建立连接通信，为此，<code>MapReduce</code>可以利用<code>ZooKeeper</code>作为动态配置服务，让<code>master candidate</code>在<code>ZooKeeper</code>上并发注册（创建）各自<code>ephemeral</code>类型的<code>ip:port</code>节点，并让<code>slave</code>监听对应节点的<code>watch event</code>，因此一旦有<code>master candidate</code>注册成功（且只能有一个创建成功），则其它节点将能获取到<code>master</code>的<code>ip:port</code>。</p>
-<p>若使用基于<code>raft</code>构建的复制状态机实现，比如在<code>raft</code>集群上构建一个<code>key/value</code>存储系统来存放<code>GFS master</code>的元信息。则整个过程大致如下：首先，<code>master candidate</code>向<code>raft</code>发送<code>Put(&quot;gfs-master&quot;, &quot;ip:port&quot;)</code>命令日志，当<code>raft</code>集群<code>apply</code>此命令日志后，其它节点可通过向<code>raft</code>发送<code>Get(&quot;gfs-master&quot;)</code>命令来获取<code>master</code>的<code>ip:port</code>。但此过程存在几个问题：其一，若多个<code>master candidate</code>同时向<code>raft</code>发送节点地址的注册命令日志，此时将产生<code>race condition</code>，其会导致后发送的命令被应用到状态机，因此<code>master candidate</code>需要进一步判断自己是否成为真正的<code>master</code>（不能仅通过发送了节点地址命令日志来确定）；其二，若<code>master</code>失效，其地址项日志必须要从存储中移除，那么谁来执行此操作？因此，必须对<code>master</code>的元数据信息设置<code>timeout timestamp</code>，并且让<code>master</code>通过定期向<code>raft</code>发送<code>Put(ip:port, timestamp)</code>日志来更新<code>timeout</code>的<code>timestamp</code>，而集群其它节点通过向<code>raft</code>轮询(<code>poll</code>)此<code>timestamp</code>来确保<code>master</code>正常工作，毫无疑问，这将产生大量不必要的<code>poll cost</code>。对比使用<code>ZooKeeper</code>来提供此协调服务（上一段），问题是如何被<code>ZooKeeper</code>高效便捷地解决呢？首先它会确保在多个<code>master candidate</code>同时注册地址信息时，只会有一个操作成功；其次，<code>ZooKeeper</code>的<code>session</code>机制简化了<code>timestamp timeout</code>设置，一旦<code>master</code>宕机，其在<code>ZooKeeper</code>上注册的元信息节点将会自动清除。而且，对应的节点移除消息也会通知到其它节点，避免了<code>slave</code>的大量的轮询消耗。由此可见，使用<code>ZooKeeper</code>来进行集群配置信息的管理，有利于简化服务实现的逻辑。</p>
-<h2 id="ZooKeeper-两个-ordering-guarantees"><a href="#ZooKeeper-两个-ordering-guarantees" class="headerlink" title="ZooKeeper 两个 ordering guarantees"></a>ZooKeeper 两个 ordering guarantees</h2><p>在讨论<code>ZooKeeper</code>两个基本的<code>ordering guarantees</code>之前，先了解什么是 <code>wait-free</code>，你可以从<a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm" target="_blank" rel="noopener">维基</a>或者 <a href="https://cs.brown.edu/~mph/Herlihy91/p124-herlihy.pdf" target="_blank" rel="noopener">Herlihy的论文</a> 上找到其明确定义：</p>
-<blockquote>
-<p>A wait-free implementation of a concurrent data object is one that guarantees that any process can complete any operation in a finite number of steps, regardless of the execution speeds of the other processes.</p>
-<p>Wait-freedom is the strongest non-blocking guarantee of progress, combining guaranteed system-wide throughput with starvation-freedom. An algorithm is wait-free if every operation has a bound on the number of steps the algorithm will take before the operation completes</p>
-</blockquote>
-<p>而对于<code>ZooKeeper</code>而言，其提供的<code>API</code>被称为是<code>wait-free</code>的，因为<code>ZooKeeper</code>直接响应客户端请求，即此请求的返回并不会受到其它客户端操作的影响（通常是<code>slow</code>或者<code>faulty</code>）。换言之，若此客户端请求为写节点数据操作，只要<code>ZooKeeper</code>收到状态变更，则会立即响应此客户端。如果在这之前某一客户端监听了此节点的数据变更事件，则一旦此节点的数据发生变化，则<code>ZooKeeper</code>会推送变更事件给监听的客户端，然后立即返回给写数据的客户端，并不会等待此监听客户端确认此事件。相比于同步阻塞的调用，<code>wait-free</code>明显提供更好的性能，因为客户端不用同步等待每次调用的返回，且其可以进行异步的批量调用<code>batch call</code>操作，以均摊(<code>amortize</code>)网络传输和IO开销。<code>wait-free</code>的<code>API</code>是<code>ZooKeeper</code>具备高性能的基础，因此也是<code>ZooKeeper</code>的设计核心。</p>
-<p><code>ZooKeeper</code>提供了两个基本的<code>ordering guarantees</code>：<code>Linearizable writes</code>及<code>FIFO client order</code>。<code>Linearizable write</code>表示对<code>ZooKeeper</code>的节点状态更新的请求都是线性化的(<code>serializable</code>)，而<code>FIFO client order</code>则表示对于同一个客户端而言，<code>ZooKeeper</code>会保证其操作的执行顺序与客户端发送此操作的顺序一致。毫无疑问，这是两个很强的保证。</p>
-<p><code>ZooKeeper</code>提供了<code>Linearizable write</code>，那什么是<code>Linearizablility</code>？<a href="https://cs.brown.edu/~mph/Herlihy91/p124-herlihy.pdf" target="_blank" rel="noopener">Herlihy的论文</a>同样给出了其定义，为了方便，你也可以参考<a href="https://medium.com/databasss/on-ways-to-agree-part-2-path-to-atomic-broadcast-662cc86a4e5f" target="_blank" rel="noopener">这里</a>或者<a href="http://www.bailis.org/blog/linearizability-versus-serializability/" target="_blank" rel="noopener">这里</a>。</p>
-<blockquote>
-<p>Linearizability is a correctness condition for concurrent objects that provides the illusion that each operation applied by concurrent processes takes effect instantaneously at some point between its invocation and its response, implying that the meaning of a concurrent object’s operations can be given by pre- and post-conditions.</p>
-</blockquote>
-<p>简单而言，<code>Linearizability</code>是分布式系统领域的概念（区别于数据库领域与事务相关的概念<code>Serializability</code>），一个分布式系统若实现了<code>linearizability</code>，它必须能够保证系统中存在一个时间点，在此时间点之后，整个系统会提交到新的状态，且绝不会返回到旧的状态，此过程是即时的(<code>instantaneous</code>)，一旦这个值被提交，其它所有的进程都会看到，系统的写操作会保证是全局有序(<code>totally ordered</code>)。</p>
-<p>而<code>ZooKeeper</code>论文提到其<code>write</code>具备<code>Linearizability</code>，确切而言是<code>A-linearizability</code>(<code>asynchronous linearizability</code>)。简而言之，<code>Linearizability</code>原本（原论文）是针对单个对象，单个操作(<code>single object, single operation</code>)而言的，但<code>ZooKeeper</code>扩大其应用范围，它允许客户端同时执行多个操作（读写），并且保证每个操作同样会遵循<code>Linearizability</code>。</p>
-<p>值得注意的是，<code>ZooKeeper</code>对其操作（<code>create</code>,<code>delete</code>等）提供<code>pipelining</code>特性，即<code>ZooKeeper</code>允许客户端批量地执行异步操作（比如发送了<code>setData</code>操作后可以立即调用<code>geData</code>），而不需要等到上一个操作的结果返回。毫无疑问，这降低了操作的延迟(<code>lantency</code>)，增加了客户端服务的吞吐量(<code>throughtout</code>)，也是<code>ZooKeeper</code>高性能的保证。但通常情况下，这会带来一个问题，因为所有操作都是异步的，因此这些操作可能会被重排序(<code>re-order</code>)，这肯定不是客户端希望发生的（比如对于两个写操作而言，<code>re-order</code>后会产生奇怪的行为）。因此，对于特定客户端，<code>ZooKeeper</code>还提供<code>client FIFO order</code>的保证。</p>
-<h2 id="ZooKeeper-实现原理"><a href="#ZooKeeper-实现原理" class="headerlink" title="ZooKeeper 实现原理"></a>ZooKeeper 实现原理</h2><p>同分布式存储系统类似，<code>ZooKeeper</code>也会对数据进行冗余备份。在客户端发送请求之前，它会连接到一个<code>ZooKeeper server</code>，并将后续的请求提交给对应的<code>server</code>，当<code>server</code>收到请求后，有做如下三个保证：其一，若请求所操作的节点被某些客户端注册了监听事件，它会向对应的客户端推送事件通知。其二，若此请求为写操作，则<code>server</code>一次性只会对一个请求做处理（不会同时处理其它的读或者写请求）。其三，写操作最终是交由<code>leader</code>来处理（若接收请求的<code>server</code>并非<code>leader</code>，其主动会对请求进行转发），<code>leader</code>会利用<code>Zab</code>（原子广播协议，<code>ZooKeper atomic broadcast</code>）对此请求进行协调，最终各节点会对请求的执行结果达成一致，并将结果 <code>replica</code>到<code>ensemble servers</code>。<code>ZooKeeper</code>将数据存储到内存中（更快），但为了保证数据存储的可靠性，在将数据写到内存数据库前，也会将数据写到磁盘等外部存储。同时，对操作做好相应的<code>replay log</code>，并且其定期会对数据库进行<code>snapshot</code>。</p>
-<p>若请求为读操作，则接收请求的<code>server</code>直接在本地对请求进行处理（因此读操作仅仅是在<code>server</code>的本地内存数据库进行检索处理，这也是<code>ZooKeeper</code>高性能的保证）。正因为如此，同<code>GFS</code>可能向客户端返回过期数据的特点类似，<code>ZooKeeper</code>也有此问题。如果应用程序不希望得到过期数据（即只允许得到最近一次写入的数据），则可以采用<code>sync</code>操作进行读操作前的写操作同步，即如果在读操作之前集群还有<code>pending</code>的写操作，会阻塞直至写操作完成。值得注意的是，每一次的读操作都会携带一个<code>zxid</code>，它表示<code>ZooKeeper</code>最近一次执行事务的编号（关于事务，后面会介绍），因此<code>zxid</code>定义了读操作与写操作之间的偏序关系。同时，当客户端连接到<code>server</code>时，如果此<code>server</code>发现其本地存储的当前<code>zxid</code>小于客户端提供的<code>zxid</code>的大小，其会拒绝客户端的连接请求，直至其将本地数据库同步至全局最新的状态。</p>
-<p>在<code>ZooKeeper</code>内部，它会将接收到的写操作转换为事务(<code>transaction</code>)操作。因为<code>ZooKeeper</code>可能需要同时处理若干个操作，因此其会提前计算好操作被提交后数据库所处的状态。这里给出论文中提到的一个事务转换的示例：如果客户端发送一个条件更新的命令<code>setData</code>并附带上目标节点的<code>version number</code>及数据内容，当<code>ZooKeeper server</code>收到请求后，会根据更新后的数据，版本号以及更新的时间戳，为此请求生成一个<code>setDataTXN</code>事务。当事务执行出错时（比如版本号不对应），则会产生一个<code>errorTXN</code>的事务。</p>
-<p>值得注意的是，<code>ZooKeeper</code>内部所构建的事务操作是幂等的(<code>idempotent</code>)。这有利于<code>ZooKeeper</code>执行失效恢复过程。具体而言，为了应对节点宕机等故障，<code>ZooKeeper</code>会定期进行<code>snapshot</code>操作，<code>ZooKeeper</code>称其为<code>fuzzy snapshot</code>。但与普通的分布式系统不同的是，它在进行快照时，并不会锁定当前<code>ZooKeeper</code>集群（一旦锁定，便不能处理客户端的写操作，且快照的时间一般也相对较长，因此会降低客户端的服务性能），它会对其树形存储进行深度优先搜索，并将搜索过程中所遍历的每一个节点的元信息及数据写到磁盘。因为<code>ZooKeeper</code>快照期间并没有锁定<code>ZooKeeper</code>的状态，因此在此过程中，若有<code>server</code>在同步写操作，则写操作可能只被<code>replica</code>到部分节点，最终使得<code>snapshot</code>的结果处于不一致的状态。但正是由于<code>ZooKeeper</code>的事务操作是<code>idempontent</code>，因此，在<code>recover</code>过程应用<code>snapshot</code>时，还会重新按顺序提交从快照启动开始到结束所涉及到的事务操作。原论文给出了一个快照恢复过程示例。因此我们会发现，<code>fuzzy snapshot</code>同样是<code>ZooKeeper</code> 高性能的体现。另外，事务幂等的特性也使得<code>ZooKeeper</code>不需要保存请求消息的ID（保存的目的是为了防止对重复执行同一请求消息），因为事务的重复执行并不会导致节点数据的不一致性。由此可见，事务幂等性的大大设计简化了<code>ZooKeeper</code>的请求处理过程及日志恢复的过程。</p>
-<p>最后，关于原论文所阐述的基于<code>ZooKeeper</code>内核来构建协调服务的相关实例部分，<a href="https://github.com/qqzeng/zkprimitives" target="_blank" rel="noopener">参考实现代码在这里</a>。</p>
-<p>参考文献</p>
-<p>[1] Hunt P, Konar M, Junqueira F P, et al. ZooKeeper: Wait-free Coordination for Internet-scale Systems[C]//USENIX annual technical conference. 2010, 8(9).<br>[2] Herlihy M P, Wing J M. Linearizability: A correctness condition for concurrent objects[J]. ACM Transactions on Programming Languages and Systems (TOPLAS), 1990, 12(3): 463-492.<br>[3] <a href="https://medium.com/databasss/on-ways-to-agree-part-2-path-to-atomic-broadcast-662cc86a4e5f" target="_blank" rel="noopener">https://medium.com/databasss/on-ways-to-agree-part-2-path-to-atomic-broadcast-662cc86a4e5f</a><br>[4] <a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Non-blocking_algorithm</a><br>[5] <a href="http://www.bailis.org/blog/linearizability-versus-serializability/" target="_blank" rel="noopener">http://www.bailis.org/blog/linearizability-versus-serializability/</a></p>
+<p>本文内容包含三个部分，首先简单介绍组成员资格协协议包含的失败检测的几个关键特征或指标，以及 SWIM 的特点或者优势，然后阐述 SWIM 包含的两个基本组件——失败检测和成员更新传播，最后阐述原论文中描述的 SWIM 的扩展内容或增强特性。</p>
+<p>为了更好的理解失败检测协议的效率和可扩展性，从理论和实践角度，其需要保证或考虑如下几个关键属性：</p>
+<ul>
+<li>强完整性（strong completeness）。组中任意成员的故障需要被所有非故障成员检测到；</li>
+<li>失败检测速度（speed of failure detection）。组中某一成员的发生故障到组中某一非故障成员发现此故障的时间间隔要尽可能短；</li>
+<li>准确性（accuracy）。失败检测的假正比例（false positives）要尽可能小。即将健康地节点误认为是故障节点的概率要小；</li>
+<li>网络消息负载（network message load）。协议每秒的网络传输开销应尽可能低。</li>
+</ul>
+<p>在实际环境下，有一些属性是不能被同时完全满足的，比如强完整性和准确性。但强完整性必须要保证，因此往往会牺牲一定的失败检测准确性。另外，准确性的提升也一定程度上会增加网络消息负载。因此，实际分布式应用需要对其所需的安全性和活性进行 trade-off。</p>
+<p>SWIM 包含一个基于随机探测的失败检测过程其和基于 gossip 的更新传播过程。相比于其他成员资格协议其具备如下几个特点：</p>
+<ul>
+<li>高可扩展性（scalability）。随着组中成员数的增加，其会保证上述属性的稳定，这包括任意成员故障被首次检测的平均时间、准确性（即假正比率）以及网络消息开销。且任意成员失败事件的传播速度只是随组成员数增加而对数减缓；</li>
+<li>强鲁棒性（robustness）。其可容忍组中任意范围的成员故障和网络故障，可达到最高的去中心化水平和网络故障容忍能力，这在复杂的分布式环境至关重要；</li>
+<li>易于部署和维护（ease of deployment and maintenance）。其完全去中心化的架构设计使得新成员的加入非常简单，只需知道并联系任意组成员加入即可，且成员的离开也不会对整个系统有关键影响；</li>
+<li>易于实现（simplicity of implementation）。考虑到 SWIM 的 peer-to-peer 的设计，其不需要由某一中心节点或协调节点来维护关键状态或者执行特殊操作，因此其包含较少的状态和消息种类数。</li>
+</ul>
+<p>值得注意的是，上述特征都是基于 SWIM 的设计来保证的。</p>
+<h2 id="SWIM"><a href="#SWIM" class="headerlink" title="SWIM"></a>SWIM</h2><p>SWIM 包含的两个组件——失败检测（failure detection）和更新传播（update dissemination）。其中，失败检测即对组（集群）中故障成员的检测。SWIM 包含的更新传播即为传播导致集群成员的变化的事件，诸如节点的加入、离开或故障。</p>
+<h3 id="失败检测"><a href="#失败检测" class="headerlink" title="失败检测"></a>失败检测</h3><p>SWIM 包含的失败检测是基于已有研究[10]。成员故障检测是一个完全去中心化的周期性过程，一个周期被称为是协议周期（protocol peroid）。在每个周期内，每个组成员 $M_i$ 从其本地的组成员列表中随机选择一个组成员 $M_j$ 发送 ping 消息以执行直接探测（direct probe），如果在超时时间内，$M_i$ 仍未收到目标探测成员 $M_j$ 返回的 ack 消息，其会紧接着会执行一个间接探测（indirect probe）过程，它首先从其本地成员列表中随机选择 m 个成员，然后向他们发送 ping-req 消息，收到 ping-req 的组成员会向目标探测成员 $M_j$ 发送 ping 消息，若这 m 个组成员任意一个收到了目标探测成员 $M_j$ 响应的 ack 消息，则其会将此 ack 消息转发给 $M_i$。若 $M_i$ 在协议超时时间内未收到 $M_j$ 回应他的 ack 消息，也没有收到其他成员（间接探测成员）转发给他的 ack 消息，则 $M_i$ 将在本地将 $M_j$ 标记为失败状态。</p>
+<p>（超时时间选择、协议周期选择、ping&amp;ping-req&amp;ack消息大小以及为什么不是$M_i$直接发送m个ping消息给$M_j$）</p>
+<h3 id="更新传播"><a href="#更新传播" class="headerlink" title="更新传播"></a>更新传播</h3><p>当 $M_i$ 检测到 $M_j$ 成员出现故障后，其通过多播（multicast）的形式将此消息发送给组其他成员。当组其他成员收到此消息后，其同样会将 $M_j$ 标记为失败，并从本地成员列表中删除。对于一个新节点加入组的事件（离开组也是类似），原论文提供了多种方法，包括直接加入某个公开的多播地址（即组关联的多播地址），或者广播新节点加入消息，又或者选择一个或多个协调者，然后由此协调者发送节点加入消息。但实际上这些方法都不够恰当，比如，若使用 IP 或者硬件 multicast 的方式，考虑到 multicast 的best-effort 性质，可能会出现消息丢失的情况而导致组成员未收到此消息。消息广播的代价也较大。下文阐述的 SWIM 的扩展包含了对此问题的解决方案。</p>
+<h2 id="SWIM-扩展"><a href="#SWIM-扩展" class="headerlink" title="SWIM 扩展"></a>SWIM 扩展</h2><p>上文阐述的 SWIM 只是一个包含失败检测和更新传播的基本模型，且不能适用于实际应用，因此原论文在扩展部分针对性的进行改进优化。</p>
+<h3 id="基于-Infection-Style-的更新传播模型"><a href="#基于-Infection-Style-的更新传播模型" class="headerlink" title="基于 Infection-Style 的更新传播模型"></a>基于 Infection-Style 的更新传播模型</h3><p>首先，针对 SWIM 执行的更新传播过程不能很好处理节点加入或离开问题。原论文扩展了 SWIM，在这种情况下，其采用基于 gossip 的更新传播模型，即将成员更新的消息附加（piggyback）到失败检测的消息（ping、ping-req 以及 ack）中，如此一来，就省去了针对这一类型的更新事件而难以选择发送目标成员的问题，也避免产生额外的消息（但无疑使得失败检测消息负载更大）。另外，考虑到每一个成员更新消息会被 $\lambda\log_2n$ 个成员转发，其中n为组大小，而 $\lambda$ 为一个调优参数，另外，每个成员会记录每个更新消息被发送的次数，且对于存在多个成员更新消息时，优先选择发送次数较少的更新。</p>
+<h3 id="引入-Suspicion-机制以降低假正率"><a href="#引入-Suspicion-机制以降低假正率" class="headerlink" title="引入 Suspicion 机制以降低假正率"></a>引入 Suspicion 机制以降低假正率</h3><p>其次，SWIM 规定一旦在协议周期时间内成员 $M_i$ 未收到目标探测成员 $M_j$ 的 ack 消息，则将 $M_j$ 标记为失败。该举措往往会导致较高的假正率（较低的准确率），即误将健康的目标探测节点标记为失败。因为考虑到消息丢失或者目标探测节点处于睡眠状态，甚至 $M_j$ 可能因为负载太高等等，都可能导致 $M_i$ 不能收到，或者不能及时处理 $M_j$ 响应的 ack 消息，因此错误的将目标探测成员标记为失败。</p>
+<p>针对这种情况，SWIM 提出了 suspicion 子协议。其工作过程如下：在 $M_i$ 没有直接或间接收到 $M_j$ 的ack消息后，其并不直接将其标记为失败。相反地，$M_i$ 在本地成列表中将 $M_j$ 标记为一个怀疑（suspected）成员，此外，$M_i$ 会将 suspect 消息 {Suspect $M_j$: $M_i$ suspects $M_j$} 并将其通过更新传播模型发送出去。组中任何成员在收到此 suspect 消息后，同样会将 $M_j$ 标记为怀疑对象，但怀疑对象仍然处于成员的本地成员列表中，仍然作为非失败的成员对待，因此其仍然是 ping 消息的接收对象。但假设 $M_j$ 实际上并未发生故障，即某一成员 $M_k$ 在超时时间内成功 ping 通了一个被怀疑的成员 $M_j$，则其首先取消对 $M_j$ 的怀疑标记，然后同样通过更新传播模型发送一个 alive 消息 {Alive $M_j$: $M_k$ knows $M_j$ is alive}，收到此 alive 消息的成员同样会取消 $M_j$ 的怀疑标记，值得注意的是，在收到 suspect 消息时，$M_j$ 自身也可发送 alive 消息。另一种假设是 $M_j$ 确实出现了故障，因此 $M_i$ 在协议超时时间内收不到 alive 消息，则其会进一步将 $M_j$ 标记为失败，并将其从本地成员列表中删除，同时发送一个 confirm 消息 {Confirm $M_j$: $M_i$ declares $M_j$ as faulty}。该 confirm 消息能够覆盖之前的 suspect 和 alive 消息，同时导致收到此消息的成员也将 $M_j$ 从成员列表中删除。</p>
+<p>另外，SWIM 为每个成员保存一个全局的计数器 incarnation，以区分不同轮数的 suspect/alive/confirm 消息，因为每个成员可能会经历多次被标记为怀疑对象。incarnation 的值同 suspect/alive/confirm 的优先级相关，具体可参考原论文4.2节。</p>
+<h3 id="基于-Round-Robin-选择目标探测成员"><a href="#基于-Round-Robin-选择目标探测成员" class="headerlink" title="基于 Round-Robin 选择目标探测成员"></a>基于 Round-Robin 选择目标探测成员</h3><p>SWIM 最后一个改进的地方是让每个成员从其本地成员列表中以 round-robin 的方式选择失败检测的目标成员，而不采用完全随机的选择策略。因为在最差的情况下，完全随机的选择策略无法预估故障成员首次被探测成功的最大延迟（因为理论上存在集群成员可能永远不会被选择作为探测目标）。相反，通过使用 round-robin 的选择策略，在保证每个成员的本地成员列表的随机性的基础上，最大的探测延迟是存在上界的，另外新成员的列表插入位置也是随机的，每次选择完一轮所有的本地成员后，会将本地成员列表中的元素位置打乱。</p>
+<p>简单小结，SWIM 是一个可扩展的且具有弱一致性的组成员资格协议。其可扩展性是相比于传统的基于 heartbeating 的协议而言，基于 heartbeating 的协议在成员规模变大时容易造成单点的 CPU 和网络瓶颈，而且中心节点的特殊性使得其鲁棒性降低，协议本身也难以实现和维护。相反，SWIM 通过将协议划分为失败检测和成员更新传播两个部分来解决这个问题。其中，SWIM 包含的失败检测通过使用 peer-to-peer 的随机探测通信方式来提升协议的可扩展性，其可保证故障成员被首次探测的时间以及组中每个成员的消息负载都独立于组成员数量。另外，SWIM 的成员更新传播基于一种基于 gossip 的通信方式，同时将成员更新消息附加到失败探测的消息上，以提升协议的有效性和可靠性。最后，通过引入 suspicion 子协议，牺牲部分失败检测时间，以降低失败检测的假正率，而通过整合随机选择和 round-robin 策略以保证本地成员列表中任意成员的故障探测延迟都是有限的。</p>
+<h2 id="关于-gossip"><a href="#关于-gossip" class="headerlink" title="关于 gossip"></a>关于 gossip</h2><p>gossip 协议应用广泛，典型地，gossip 协议可用于将数据分发到网络中的每一个节点。根据不同的具体应用场景，网络中两个节点之间存在三种通信方式：推送模式、拉取模式、Push/Pull。</p>
+<ul>
+<li>Push: 节点 A 将数据 (key,value,version) 及对应的版本号推送给 B 节点，B 节点更新 A 中比自己新的数据；</li>
+<li>Pull：节点 A 仅将数据 (key, version) 推送给 B，B 将本地比 A 新的数据（key, value, version）推送给 A，A 更新本地；</li>
+<li>Push/Pull：与 Pull 类似，只是多了一步，A 再将本地比 B 新的数据推送给 B，B 则更新本地。</li>
+</ul>
+<p>如果把两个节点数据同步一次定义为一个周期，则在一个周期内，Push 需通信 1 次，Pull 需 2 次，Push/Pull 则需 3 次。虽然消息数增加了，但从效果上来讲，Push/Pull 最好，理论上一个周期内可以使两个节点完全一致。直观上，Push/Pull 的收敛速度也是最快的。</p>
 
       
     </div>
@@ -486,11 +497,15 @@
           
             <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
           
-            <a href="/tags/分布式协调服务/" rel="tag"># 分布式协调服务</a>
+            <a href="/tags/gossip/" rel="tag"># gossip</a>
           
-            <a href="/tags/原子广播协议/" rel="tag"># 原子广播协议</a>
+            <a href="/tags/组成员资格协议/" rel="tag"># 组成员资格协议</a>
           
-            <a href="/tags/分布式锁/" rel="tag"># 分布式锁</a>
+            <a href="/tags/成员发现/" rel="tag"># 成员发现</a>
+          
+            <a href="/tags/失败检测/" rel="tag"># 失败检测</a>
+          
+            <a href="/tags/负载均衡/" rel="tag"># 负载均衡</a>
           
         </div>
       
@@ -518,8 +533,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/11/16/MapReduce-原型实现/" rel="next" title="MapReduce 原型实现">
-                <i class="fa fa-chevron-left"></i> MapReduce 原型实现
+              <a href="/2020/11/01/serf/" rel="next" title="Serf 原理剖析">
+                <i class="fa fa-chevron-left"></i> Serf 原理剖析
               </a>
             
           </div>
@@ -527,10 +542,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/12/11/浅析分布式事务/" rel="prev" title="浅析分布式事务">
-                浅析分布式事务 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -681,7 +692,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一个应用实例阐述"><span class="nav-number">1.</span> <span class="nav-text">一个应用实例阐述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZooKeeper-两个-ordering-guarantees"><span class="nav-number">2.</span> <span class="nav-text">ZooKeeper 两个 ordering guarantees</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZooKeeper-实现原理"><span class="nav-number">3.</span> <span class="nav-text">ZooKeeper 实现原理</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#SWIM"><span class="nav-number">1.</span> <span class="nav-text">SWIM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#失败检测"><span class="nav-number">1.1.</span> <span class="nav-text">失败检测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更新传播"><span class="nav-number">1.2.</span> <span class="nav-text">更新传播</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SWIM-扩展"><span class="nav-number">2.</span> <span class="nav-text">SWIM 扩展</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基于-Infection-Style-的更新传播模型"><span class="nav-number">2.1.</span> <span class="nav-text">基于 Infection-Style 的更新传播模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#引入-Suspicion-机制以降低假正率"><span class="nav-number">2.2.</span> <span class="nav-text">引入 Suspicion 机制以降低假正率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于-Round-Robin-选择目标探测成员"><span class="nav-number">2.3.</span> <span class="nav-text">基于 Round-Robin 选择目标探测成员</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关于-gossip"><span class="nav-number">3.</span> <span class="nav-text">关于 gossip</span></a></li></ol></div>
             
 
           </div>
