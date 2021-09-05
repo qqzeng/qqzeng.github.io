@@ -4,7 +4,7 @@
   <url>
     <loc>https://qtozeng.top/2021/09/05/%E6%B5%85%E6%9E%90%E7%BB%84%E6%88%90%E5%91%98%E8%B5%84%E6%A0%BC%E5%8D%8F%E8%AE%AE-SWIM/</loc>
     
-    <lastmod>2021-09-05T07:17:39.150Z</lastmod>
+    <lastmod>2021-09-05T07:53:00.757Z</lastmod>
     
   </url>
   
@@ -191,14 +191,14 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2018/12/20/%E7%90%86%E8%A7%A3-Paxos-Made-Simple/</loc>
+    <loc>https://qtozeng.top/2018/11/11/%E7%90%86%E8%A7%A3-The-Google-File-System/</loc>
     
     <lastmod>2019-05-13T13:57:34.178Z</lastmod>
     
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2018/11/11/%E7%90%86%E8%A7%A3-The-Google-File-System/</loc>
+    <loc>https://qtozeng.top/2018/12/20/%E7%90%86%E8%A7%A3-Paxos-Made-Simple/</loc>
     
     <lastmod>2019-05-13T13:57:34.178Z</lastmod>
     
@@ -268,13 +268,6 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2018/11/16/MapReduce-%E5%8E%9F%E5%9E%8B%E5%AE%9E%E7%8E%B0/</loc>
-    
-    <lastmod>2019-05-13T13:57:34.168Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://qtozeng.top/2019/01/16/etcd-raft-LeaseRead-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
     
     <lastmod>2019-05-13T13:57:34.168Z</lastmod>
@@ -282,14 +275,21 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2019/03/07/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/</loc>
+    <loc>https://qtozeng.top/2018/11/16/MapReduce-%E5%8E%9F%E5%9E%8B%E5%AE%9E%E7%8E%B0/</loc>
+    
+    <lastmod>2019-05-13T13:57:34.168Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://qtozeng.top/2018/10/25/Live-Sequence-Protocol-%E5%AE%9E%E7%8E%B0/</loc>
     
     <lastmod>2019-05-13T13:57:34.167Z</lastmod>
     
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2018/10/25/Live-Sequence-Protocol-%E5%AE%9E%E7%8E%B0/</loc>
+    <loc>https://qtozeng.top/2019/03/07/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/</loc>
     
     <lastmod>2019-05-13T13:57:34.167Z</lastmod>
     

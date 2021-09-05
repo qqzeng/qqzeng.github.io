@@ -402,7 +402,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,509
+                  3,482
                 </span>
               words
 
@@ -418,7 +418,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  13
+                  12
                 </span>
               mins
             </div>
@@ -440,7 +440,7 @@
 
       
         
-          <p><a href="[SWIM.pdf (cornell.edu">SWIM</a>](<a href="https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf))（Scalable" target="_blank" rel="noopener">https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf))（Scalable</a> Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或故障而相应动态更新。组成员资格协议被广泛应用于分布式场景，包括成员发现（member discovery）、失败检测（failure detection）以及负载均衡（load balancing）等。SWIM 采用的点对点（peer-to-peer）以及随机探测（randomized probe-based）通信的设计使得其相比与传统的基于心跳（heartbeating）的成员协议，具有更好的可扩展性和鲁棒性，即能更好地容忍网络和节点故障，而且也更容易实现、部署和维护。值得一提的是，考虑到它使用的是基于 gossip 的成员更新传播，因此它也是弱一致性或者最终一致性的，即同一时刻，不同成员的本地集群成员视图可能存在差异，但在有限的时间内会趋于一致。</p>
+          <p><a href="https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf" target="_blank" rel="noopener">SWIM</a>（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或故障而相应动态更新。组成员资格协议被广泛应用于分布式场景，包括成员发现（member discovery）、失败检测（failure detection）以及负载均衡（load balancing）等。SWIM 采用的点对点（peer-to-peer）以及随机探测（randomized probe-based）通信的设计使得其相比与传统的基于心跳（heartbeating）的成员协议，具有更好的可扩展性和鲁棒性，即能更好地容忍网络和节点故障，而且也更容易实现、部署和维护。值得一提的是，考虑到它使用的是基于 gossip 的成员更新传播，因此它也是弱一致性或者最终一致性的，即同一时刻，不同成员的本地集群成员视图可能存在差异，但在有限的时间内会趋于一致。</p>
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2021/09/05/浅析组成员资格协议-SWIM/#more" rel="contents">
