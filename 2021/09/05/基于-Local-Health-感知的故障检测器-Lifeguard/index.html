@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT">
+  <meta name="keywords" content="分布式系统,gossip,组成员资格协议,成员发现,失败检测,负载均衡,">
 
 
 
@@ -93,13 +93,18 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="一抹光辉油彩">
-<meta property="og:url" content="https://qtozeng.top/tags/分布式计算框架/index.html">
+<meta name="description" content="上一篇文章阐述了一种可扩展的且具有弱一致性的组成员资格协议——SWIM，它包括一个基于点对点的（peer-to-peer）的随机探测通信的故障检测器，以及一个基于 gossip 并采用消息 piggybacking 的成员更新传播两个部分。在 SWIM 的扩展部分，其引入了suspicion 子协议以降低失败探测的假正比例，即将健康成员误认为是故障成员的情况。尽管如此，节点在缓慢的消息处理的场景下">
+<meta name="keywords" content="分布式系统,gossip,组成员资格协议,成员发现,失败检测,负载均衡">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于 Local Health 感知的故障检测器 Lifeguard">
+<meta property="og:url" content="https://qtozeng.top/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/index.html">
 <meta property="og:site_name" content="一抹光辉油彩">
+<meta property="og:description" content="上一篇文章阐述了一种可扩展的且具有弱一致性的组成员资格协议——SWIM，它包括一个基于点对点的（peer-to-peer）的随机探测通信的故障检测器，以及一个基于 gossip 并采用消息 piggybacking 的成员更新传播两个部分。在 SWIM 的扩展部分，其引入了suspicion 子协议以降低失败探测的假正比例，即将健康成员误认为是故障成员的情况。尽管如此，节点在缓慢的消息处理的场景下">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2021-09-05T12:50:39.812Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="一抹光辉油彩">
+<meta name="twitter:title" content="基于 Local Health 感知的故障检测器 Lifeguard">
+<meta name="twitter:description" content="上一篇文章阐述了一种可扩展的且具有弱一致性的组成员资格协议——SWIM，它包括一个基于点对点的（peer-to-peer）的随机探测通信的故障检测器，以及一个基于 gossip 并采用消息 piggybacking 的成员更新传播两个部分。在 SWIM 的扩展部分，其引入了suspicion 子协议以降低失败探测的假正比例，即将健康成员误认为是故障成员的情况。尽管如此，节点在缓慢的消息处理的场景下">
 
 
 
@@ -129,13 +134,13 @@
 
 
 
-  <link rel="canonical" href="https://qtozeng.top/tags/分布式计算框架/">
+  <link rel="canonical" href="https://qtozeng.top/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/">
 
 
 
 
 
-  <title>标签: 分布式计算框架 | 一抹光辉油彩</title>
+  <title>基于 Local Health 感知的故障检测器 Lifeguard | 一抹光辉油彩</title>
   
 
 
@@ -163,7 +168,7 @@
     
   
 
-  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left ">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
@@ -289,52 +294,254 @@
           <div id="content" class="content">
             
 
-  
-  
-  
-  <div class="post-block tag">
+  <div id="posts" class="posts-expand">
+    
 
-    <div id="posts" class="posts-collapse">
-      <div class="collection-title">
-        <h2>分布式计算框架<small>标签</small>
-        </h2>
-      </div>
+  
 
-      
-        
+  
+  
+  
 
   <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-    <header class="post-header">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/">
 
-      <h3 class="post-title">
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
         
-            <a class="post-title-link" href="/2018/11/16/MapReduce-原型实现/" itemprop="url">
-              
-                <span itemprop="name">MapReduce 原型实现</span>
-              
-            </a>
         
-      </h3>
+          <h2 class="post-title" itemprop="name headline">基于 Local Health 感知的故障检测器 Lifeguard</h2>
+        
 
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2018-11-16T22:53:42+08:00" content="2018-11-16">
-          11-16
-        </time>
-      </div>
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-05T20:43:00+08:00">
+                2021-09-05
+              </time>
+            
 
-    </header>
-  </article>
+            
 
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式系统</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/组成员资格协议/" itemprop="url" rel="index">
+                    <span itemprop="name">组成员资格协议</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,050
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  7
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上一篇文章阐述了一种可扩展的且具有弱一致性的组成员资格协议——SWIM，它包括一个基于点对点的（peer-to-peer）的随机探测通信的故障检测器，以及一个基于 gossip 并采用消息 piggybacking 的成员更新传播两个部分。在 SWIM 的扩展部分，其引入了suspicion 子协议以降低失败探测的假正比例，即将健康成员误认为是故障成员的情况。尽管如此，节点在缓慢的消息处理的场景下，即在面临较大的 CPU 竞争或者网络延时的情况下，仍然会导致 SWIM 出现较高的假正比例。因此，hashicorp 的研究人员扩展了 SWIM，通过引入节点 local health 的概念，提出了基于 local health 感知的 <a href="https://arxiv.org/abs/1707.00788" target="_blank" rel="noopener">Lifeguard</a> 故障检测器（Lifeguard: Local Health Awareness for More Accurate Failure Detection）。Lifeguard 对 SWIM 的扩展增强包括三个部分：基于 local health 感知的探测、基于 local health 感知的 Suspicion，以及 Buddy System。在模拟控制和生产环境下的实验结果表明，Lifeguard 的引入将故障检测的假正比例降低了 50 倍，同时减少了故障成员被首次检测的延迟。</p>
+<a id="more"></a>
+<p>本文阐述基于 local health 感知的节点故障检测器 Lifeguard，它致力于对 SWIM 的故障检测存在的较高假正比例的问题进行缓解。具体地，本文首先简要介绍节点慢消息处理出现的实际场景以及由此导致的较高节点故障误判率所引发的问题，然后重点阐述Lifeguard 包含的三个部分。</p>
+<h2 id="慢消息处理"><a href="#慢消息处理" class="headerlink" title="慢消息处理"></a>慢消息处理</h2><p>故障检测的误判的根本原因是节点慢消息处理。具体地，节点 CPU 负载较高或者连接到节点的网络延迟较大，导致节点未能在超时时间内接收到目标探测对象的 ack 消息，这使得节点误认为目标探测节点出现故障。这在集群中多个节点同时处于慢消息处理的状态时更为严重。在生产环境下，web 服务器的请求激增会导致其来不及处理其他的网路请求，类似的，在音视频转码等 CPU 密集型的应用同样会导致网路包处理超时。显然，节点处于慢消息处理状态情形较少，且其持续时间并不会过长，但其影响也不可忽视。当节点的负载或网络延时频繁变化时，会导致健康的节点反复被标记为故障或健康，若节点状态的变化会触发集群执行 failover 操作，常见的如增加新的成员或重分配集群数据，这带来的代价显然非常昂贵。</p>
+<h2 id="SWIM-Suspicion-子协议的不足"><a href="#SWIM-Suspicion-子协议的不足" class="headerlink" title="SWIM Suspicion 子协议的不足"></a>SWIM Suspicion 子协议的不足</h2><p>SWIM 原论文提出的用于缓解误判的 Suspicion 子协议存在的问题是，其仍然以节点会及时处理消息作为前提。具体地，Refute 消息能够顺利起作用的一个前提是探测节点能够成功接收到这一消息，但当探测结点处于慢消息处理状态时，其根本无法处理任何消息，包括该 Refute 消息，因此，Suspicion 机制的作用也就大大降低了。</p>
+<p>因此，误判现象的本质是节点未能及时处理消息，另外节点消息响应的缺失也表明节点处于慢消息处理状态。相应的，Lifeguard 提出的解决办法也很直接，考虑到误判是由节点的负载或网络延时导致的，因此，如果让节点实时掌握自身的负载状况，即节点本地健康感知（local health awareness），则这允许节点基于自身健康状况来调整对目标成员故障检测的超时时限，以尽可能避免将健康的节点标记为故障成员。</p>
+<h2 id="Lifeguard"><a href="#Lifeguard" class="headerlink" title="Lifeguard"></a>Lifeguard</h2><h3 id="基于-local-health-感知的故障检测"><a href="#基于-local-health-感知的故障检测" class="headerlink" title="基于 local health 感知的故障检测"></a>基于 local health 感知的故障检测</h3><p>Lifeguard 包含的第一个扩展是基于 local health 感知的故障检测，它将原本 SWIM 所使用的固定探测周期和超时时限调整为根据节点的 local health 状况来动态调整。直观来看，若节点自身健康较差，即节点处于降级状态时，节点必须对判定目标节点为故障成员的操作更加保守，因为其自身可能是不可靠的，因此其基于此得出的结论也不够有说服力。这在 Lifeguard 中是通过一个 Local Health Multiplier（LHM）计数器来实现，它反应了节点最近同其他成员进行的故障检测相关的消息交换情况，此值的大小即表示节点对判定目标节点为故障状态的保守程度。LHM 是通过一种启发式的方法获得，具体计算方法可参考原论文 section Ⅵ part A。</p>
+<h3 id="基于-local-health-感知的-Suspicion-子协议"><a href="#基于-local-health-感知的-Suspicion-子协议" class="headerlink" title="基于 local health 感知的 Suspicion 子协议"></a>基于 local health 感知的 Suspicion 子协议</h3><p>Lifeguard 的第二个扩展是将 SWIM Suspicion 子协议更改为基于 local health 感知的 Suspicion 方案，它将原本 SWIM Suspicion 阶段的固定超时时限调整为动态变化的超时时限。直观而言，当一个节点发现目标节点可能处于故障状态，或者其从其他节点那得知目标节点可能处于故障状态，此时该节点对目标节点反馈（驳斥）此怀疑的超时时间是最长的，因为我们此时有理由认为很可能只是因为自身或其它节点处于降级状态而怀疑目标节点处于故障状态。但一旦我们发现越来越多的节点也认为目标节点处于故障状态时，我们将减少分配给目标节点的超时时限，因为此时我们有更多的理由认为目标节点可能真的已经处于故障状态了。类似地，此动态超时时限的计算方法同样可参考原论文section Ⅵ part B。</p>
+<h3 id="Buddy-System"><a href="#Buddy-System" class="headerlink" title="Buddy System"></a>Buddy System</h3><p>Lifeguard 的最后一个扩展是 Buddy System，即节点通过 ping 消息直接将 Suspect 消息发送给目标节点。SWIM 设计将成员更新消息附加到基于 gossip 的失败检测消息上，这可能导致 Suspect 消息消耗更多的时间才能扩散出去，因为基于 gossip 的消息传递需要若干轮次才能完全扩散此消息。相反，Buddy System 认为任何时候一旦我们认为目标节点可能出现故障时，我们应该将此 Suspect 消息优先级调为最高，并直接将此消息通过 ping 的方式发送给目标节点，以让目标节点尽可能及时的响应（反馈）此怀疑。</p>
+<p>至此，关于 Lifeguard 的相关阐述已经完毕。关于 Lifeguard 的具体实验，包括假正比例、故障检测延迟以及网路负载等指标的测试结果可以直接参考原论文，另外本文只是对 Lifeguard 针对 SWIM 的三个拓展进行非正式的且通俗易懂的一个阐述，原论文 section Ⅵ part C 描述了更多的细节。</p>
+<p>最后，对 Lifeguard 所做的三个拓展进行扼要概括：其一，基于 local health 感知的故障检测取代了 SWIM 的故障检测，其直观动机是一个降级的节点理应保守地认为目标节点为故障节点；其二，基于 local health 感知的 Suspicion，其直观动机是给予目标节点响应的超时时限应该是动态变化的，且目标节点被越多的节点怀疑，其被分配的响应超时时限也应该越小；最后，Buddy System 即提升 Suspect 消息的优先级，其背后动机是让目标节点尽可能快的响应其他节点对其的怀疑。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li><a href="https://www.hashicorp.com/blog/making-gossip-more-robust-with-lifeguard" target="_blank" rel="noopener">Making Gossip More Robust with Lifeguard</a></li>
+<li><a href="https://www.hashicorp.com/resources/everybody-talks-gossip-serf-memberlist-raft-swim-hashicorp-consul" target="_blank" rel="noopener">Everybody Talks: Gossip, Serf, memberlist, Raft, and SWIM in HashiCorp Consul</a></li>
+<li><a href="https://www.hashicorp.com/resources/failure-detection-in-the-era-of-gray-failures" target="_blank" rel="noopener">Detecting failures and avoiding false positives (hashicorp.com)</a></li>
+<li><a href="https://arxiv.org/abs/1707.00788" target="_blank" rel="noopener">Lifeguard: Local Health Awareness for More Accurate Failure Detection</a></li>
+</ol>
 
       
     </div>
+    
+    
+    
 
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
+          
+            <a href="/tags/gossip/" rel="tag"># gossip</a>
+          
+            <a href="/tags/组成员资格协议/" rel="tag"># 组成员资格协议</a>
+          
+            <a href="/tags/成员发现/" rel="tag"># 成员发现</a>
+          
+            <a href="/tags/失败检测/" rel="tag"># 失败检测</a>
+          
+            <a href="/tags/负载均衡/" rel="tag"># 负载均衡</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/09/05/浅析组成员资格协议-SWIM/" rel="next" title="浅析组成员资格协议 SWIM">
+                <i class="fa fa-chevron-left"></i> 浅析组成员资格协议 SWIM
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
   </div>
   
   
   
+  </article>
 
-  
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -342,6 +549,14 @@
 
 
           
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
         </div>
         
           
@@ -361,8 +576,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
@@ -438,6 +662,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#慢消息处理"><span class="nav-number">1.</span> <span class="nav-text">慢消息处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SWIM-Suspicion-子协议的不足"><span class="nav-number">2.</span> <span class="nav-text">SWIM Suspicion 子协议的不足</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Lifeguard"><span class="nav-number">3.</span> <span class="nav-text">Lifeguard</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基于-local-health-感知的故障检测"><span class="nav-number">3.1.</span> <span class="nav-text">基于 local health 感知的故障检测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于-local-health-感知的-Suspicion-子协议"><span class="nav-number">3.2.</span> <span class="nav-text">基于 local health 感知的 Suspicion 子协议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Buddy-System"><span class="nav-number">3.3.</span> <span class="nav-text">Buddy System</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">4.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
@@ -584,6 +824,10 @@
   
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
@@ -624,6 +868,23 @@
 
 
 
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
 
   
 

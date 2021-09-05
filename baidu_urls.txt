@@ -1,3 +1,4 @@
+https://qtozeng.top/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/
 https://qtozeng.top/2021/09/05/浅析组成员资格协议-SWIM/
 https://qtozeng.top/2020/11/01/serf/
 https://qtozeng.top/2020/10/24/memberlist-原理剖析/

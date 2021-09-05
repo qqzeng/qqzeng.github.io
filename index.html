@@ -304,6 +304,196 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/" itemprop="url">基于 Local Health 感知的故障检测器 Lifeguard</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-05T20:43:00+08:00">
+                2021-09-05
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式系统</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/组成员资格协议/" itemprop="url" rel="index">
+                    <span itemprop="name">组成员资格协议</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,050
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  7
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>上一篇文章阐述了一种可扩展的且具有弱一致性的组成员资格协议——SWIM，它包括一个基于点对点的（peer-to-peer）的随机探测通信的故障检测器，以及一个基于 gossip 并采用消息 piggybacking 的成员更新传播两个部分。在 SWIM 的扩展部分，其引入了suspicion 子协议以降低失败探测的假正比例，即将健康成员误认为是故障成员的情况。尽管如此，节点在缓慢的消息处理的场景下，即在面临较大的 CPU 竞争或者网络延时的情况下，仍然会导致 SWIM 出现较高的假正比例。因此，hashicorp 的研究人员扩展了 SWIM，通过引入节点 local health 的概念，提出了基于 local health 感知的 <a href="https://arxiv.org/abs/1707.00788" target="_blank" rel="noopener">Lifeguard</a> 故障检测器（Lifeguard: Local Health Awareness for More Accurate Failure Detection）。Lifeguard 对 SWIM 的扩展增强包括三个部分：基于 local health 感知的探测、基于 local health 感知的 Suspicion，以及 Buddy System。在模拟控制和生产环境下的实验结果表明，Lifeguard 的引入将故障检测的假正比例降低了 50 倍，同时减少了故障成员被首次检测的延迟。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2021/09/05/浅析组成员资格协议-SWIM/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -402,7 +592,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,482
+                  3,483
                 </span>
               words
 
@@ -440,7 +630,7 @@
 
       
         
-          <p><a href="https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf" target="_blank" rel="noopener">SWIM</a>（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或故障而相应动态更新。组成员资格协议被广泛应用于分布式场景，包括成员发现（member discovery）、失败检测（failure detection）以及负载均衡（load balancing）等。SWIM 采用的点对点（peer-to-peer）以及随机探测（randomized probe-based）通信的设计使得其相比与传统的基于心跳（heartbeating）的成员协议，具有更好的可扩展性和鲁棒性，即能更好地容忍网络和节点故障，而且也更容易实现、部署和维护。值得一提的是，考虑到它使用的是基于 gossip 的成员更新传播，因此它也是弱一致性或者最终一致性的，即同一时刻，不同成员的本地集群成员视图可能存在差异，但在有限的时间内会趋于一致。</p>
+          <p><a href="https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf" target="_blank" rel="noopener">SWIM</a>（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或故障而相应动态更新。组成员资格协议被广泛应用于分布式场景，包括成员发现（member discovery）、失败检测（failure detection）、负载均衡（load balancing）以及事件广播（event broadcast）等。SWIM 采用的点对点（peer-to-peer）以及随机探测（randomized probe-based）通信的设计使得其相比与传统的基于心跳（heartbeating）的成员协议，具有更好的可扩展性和鲁棒性，即能更好地容忍网络和节点故障，而且也更容易实现、部署和维护。值得一提的是，考虑到它使用的是基于 gossip 的成员更新传播，因此它也是弱一致性或者最终一致性的，即同一时刻，不同成员的本地集群成员视图可能存在差异，但在有限的时间内会趋于一致。</p>
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2021/09/05/浅析组成员资格协议-SWIM/#more" rel="contents">
@@ -1935,185 +2125,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2020/01/06/The-Fast-File-System/">
-
-    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="一抹光辉油彩">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2020/01/06/The-Fast-File-System/" itemprop="url">The Fast File System</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-06T19:26:36+08:00">
-                2020-01-06
-              </time>
-            
-
-            
-
-            
-
-
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/单机存储/" itemprop="url" rel="index">
-                    <span itemprop="name">单机存储</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  2,848
-                </span>
-              words
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  10
-                </span>
-              mins
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>上一篇文章从文件系统所使用的数据结构和典型文件访问操作流程两个方面，简要介绍一个简单文件系统(<code>vsfs</code>)原型。其目的主要在于理解一个最基本的文件系统的核心，并且如何理解和学习一个文件系统，是一篇总结和启发性的文章。本文从简单文件系统或早期 unix 系统所使用的文件系统存在的典型问题出发，引出更优秀的文件系统——<code>The Fast File System</code>，它在兼容已有文件系统接口规范的前提下，对已有文件系统存在的问题，针对性进行优化以提升文件系统的访问和存储效率，同时进一步提升系统的易用性。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2020/01/06/The-Fast-File-System/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2163,7 +2174,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">41</span>
+                  <span class="site-state-item-count">42</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2252,7 +2263,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">216.6k</span>
+    <span title="Site words total count">218.7k</span>
   
 </div>
 

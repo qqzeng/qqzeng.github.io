@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="一抹光辉油彩">
 <meta property="og:description" content="SWIM（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-09-05T07:53:00.757Z">
+<meta property="og:updated_time" content="2021-09-05T12:02:32.499Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="浅析组成员资格协议 SWIM">
 <meta name="twitter:description" content="SWIM（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或">
@@ -404,7 +404,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,482
+                  3,483
                 </span>
               words
 
@@ -441,14 +441,14 @@
       
 
       
-        <p><a href="https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf" target="_blank" rel="noopener">SWIM</a>（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或故障而相应动态更新。组成员资格协议被广泛应用于分布式场景，包括成员发现（member discovery）、失败检测（failure detection）以及负载均衡（load balancing）等。SWIM 采用的点对点（peer-to-peer）以及随机探测（randomized probe-based）通信的设计使得其相比与传统的基于心跳（heartbeating）的成员协议，具有更好的可扩展性和鲁棒性，即能更好地容忍网络和节点故障，而且也更容易实现、部署和维护。值得一提的是，考虑到它使用的是基于 gossip 的成员更新传播，因此它也是弱一致性或者最终一致性的，即同一时刻，不同成员的本地集群成员视图可能存在差异，但在有限的时间内会趋于一致。</p>
+        <p><a href="https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf" target="_blank" rel="noopener">SWIM</a>（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或故障而相应动态更新。组成员资格协议被广泛应用于分布式场景，包括成员发现（member discovery）、失败检测（failure detection）、负载均衡（load balancing）以及事件广播（event broadcast）等。SWIM 采用的点对点（peer-to-peer）以及随机探测（randomized probe-based）通信的设计使得其相比与传统的基于心跳（heartbeating）的成员协议，具有更好的可扩展性和鲁棒性，即能更好地容忍网络和节点故障，而且也更容易实现、部署和维护。值得一提的是，考虑到它使用的是基于 gossip 的成员更新传播，因此它也是弱一致性或者最终一致性的，即同一时刻，不同成员的本地集群成员视图可能存在差异，但在有限的时间内会趋于一致。</p>
 <a id="more"></a>
 <p>本文内容包含三个部分，首先简单介绍组成员资格协协议包含的失败检测的几个关键特征或指标，以及 SWIM 的特点或者优势，然后阐述 SWIM 包含的两个基本组件——失败检测和成员更新传播，最后阐述原论文中描述的 SWIM 的扩展内容或增强特性。</p>
 <p>为了更好的理解失败检测协议的效率和可扩展性，从理论和实践角度，其需要保证或考虑如下几个关键属性：</p>
 <ul>
 <li>强完整性（strong completeness）。组中任意成员的故障需要被所有非故障成员检测到；</li>
-<li>失败检测速度（speed of failure detection）。组中某一成员发生故障到组中某一非故障成员发现此故障的延迟要尽可能短；</li>
-<li>准确性（accuracy）。失败检测的假正比例（false positives）要尽可能小。即将健康地节点误认为是故障节点的概率要小；</li>
+<li>失败检测速度（speed of failure detection）。组中某成员发生故障到组中某非故障成员发现此故障的延迟尽可能短；</li>
+<li>准确性（accuracy）。失败检测的假正比例（false positives）尽可能小。即将健康节点误认为是故障节点的概率要小；</li>
 <li>网络消息负载（network message load）。协议每秒的网络传输开销应尽可能低。</li>
 </ul>
 <p>在实际环境下，有一些属性是不能被同时完全满足的，比如强完整性和准确性。但强完整性必须要保证，因此往往会牺牲一定的失败检测准确性。另外，准确性的提升也一定程度上会增加网络消息负载。因此，实际分布式应用需要对其所需的安全性和活性进行 trade-off。</p>
@@ -543,6 +543,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/" rel="prev" title="基于 Local Health 感知的故障检测器 Lifeguard">
+                基于 Local Health 感知的故障检测器 Lifeguard <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -621,7 +625,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">41</span>
+                  <span class="site-state-item-count">42</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -726,7 +730,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">216.6k</span>
+    <span title="Site words total count">218.7k</span>
   
 </div>
 
