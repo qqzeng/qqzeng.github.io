@@ -1,3 +1,6 @@
+https://qtozeng.top/2021/09/05/浅析组成员资格协议-SWIM/
+https://qtozeng.top/2020/11/01/serf/
+https://qtozeng.top/2020/10/24/memberlist-原理剖析/
 https://qtozeng.top/2020/06/04/go-函数和方法运行时调用解析/
 https://qtozeng.top/2020/05/26/go-map-原理剖析/
 https://qtozeng.top/2020/05/23/go-slice-最佳实践/
