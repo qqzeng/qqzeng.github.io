@@ -101,7 +101,7 @@
 <meta property="og:site_name" content="一抹光辉油彩">
 <meta property="og:description" content="SWIM（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-09-05T12:02:32.499Z">
+<meta property="og:updated_time" content="2021-09-05T13:03:47.952Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="浅析组成员资格协议 SWIM">
 <meta name="twitter:description" content="SWIM（Scalable Weakly-consistent Infection-style Process Group Membership Protocol）是一个点对点（peer-to-peer）的组成员资格协议（group membership protocol）。简单而言，组成员资格协议为该组中每个成员提供包含组中其他非故障成员的本地集群成员视图，该成员列表随着成员或进程的加入、退出或">
@@ -404,7 +404,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,483
+                  3,496
                 </span>
               words
 
@@ -473,8 +473,8 @@
 <p>简单小结，SWIM 是一个可扩展的且具有弱一致性的组成员资格协议。其可扩展性是相比于传统的基于 heartbeating 的协议而言，基于 heartbeating 的协议在成员规模变大时容易造成单点的 CPU 和网络瓶颈，而且中心节点的特殊性使得其鲁棒性降低，协议本身也难以实现和维护。相反，SWIM 通过将协议划分为失败检测和成员更新传播两个部分来解决这个问题。其中，SWIM 包含的失败检测通过使用 peer-to-peer 的随机探测通信方式来提升协议的可扩展性，其可保证故障成员被首次探测的时间以及组中每个成员的消息负载都独立于组成员数量。另外，SWIM 的成员更新传播基于一种基于 gossip 的通信方式，同时将成员更新消息附加到失败探测的消息上，以提升协议的有效性和可靠性。最后，通过引入 suspicion 子协议，牺牲部分失败检测时间，以降低失败检测的假正率，而通过整合随机选择和 round-robin 策略以保证本地成员列表中任意成员的故障探测延迟都是有限的。</p>
 <h2 id="关于-gossip"><a href="#关于-gossip" class="headerlink" title="关于 gossip"></a>关于 gossip</h2><p>gossip 协议应用广泛，典型地，gossip 协议可用于将数据分发到网络中的每一个节点。根据不同的具体应用场景，网络中两个节点之间存在三种通信方式：推送模式、拉取模式、Push/Pull。</p>
 <ul>
-<li>Push: 节点 A 将数据 (key,value,version) 及对应的版本号推送给 B 节点，B 节点更新 A 中比自己新的数据；</li>
-<li>Pull：节点 A 仅将数据 (key, version) 推送给 B，B 将本地比 A 新的数据（key, value, version）推送给 A，A 更新本地；</li>
+<li>Push: 节点 A 将完整的数据 (key,value,version) 及对应的版本号推送给 B 节点，B 节点更新 A 中比自己新的数据；</li>
+<li>Pull：节点 A 仅将数据键和版本 (key, version) 推送给节点 B，节点 B 将本地比节点 A 新的数据（key, value, version）推送给 A，A 更新本地；</li>
 <li>Push/Pull：与 Pull 类似，只是多了一步，A 再将本地比 B 新的数据推送给 B，B 则更新本地。</li>
 </ul>
 <p>如果把两个节点数据同步一次定义为一个周期，则在一个周期内，Push 需通信 1 次，Pull 需 2 次，Push/Pull 则需 3 次。虽然消息数增加了，但从效果上来讲，Push/Pull 最好，理论上一个周期内可以使两个节点完全一致。直观上，Push/Pull 的收敛速度也是最快的。</p>
@@ -647,7 +647,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">61</span>
+                  <span class="site-state-item-count">58</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -730,7 +730,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">218.7k</span>
+    <span title="Site words total count">222.4k</span>
   
 </div>
 
