@@ -1,5 +1,8 @@
 https://qtozeng.top/2021/12/19/nomad-go-plugin-实践解析/
 https://qtozeng.top/2021/12/19/hashicorp-go-plugin-解析/
+https://qtozeng.top/2021/12/12/raft-集群成员变更异常处理/
+https://qtozeng.top/2021/12/01/raft-集群日志复制异常处理/
+https://qtozeng.top/2021/11/25/raft-集群选举异常处理/
 https://qtozeng.top/2021/09/05/基于-Local-Health-感知的故障检测器-Lifeguard/
 https://qtozeng.top/2021/09/05/浅析组成员资格协议-SWIM/
 https://qtozeng.top/2020/11/01/serf/

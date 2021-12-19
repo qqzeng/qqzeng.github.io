@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="分布式系统,一致性算法,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上一篇文章阐述的是 raft 集群日志复制过程中的异常处理，其是 raft 协议安全性的基础和核心部分，因为 raft 的工作就是在接收客户端并发请求日志提交时，能保持在多个节点上的副本的一致性。这篇文章阐述 raft 集群成员变更的异常处理，本文的内容可能在集群日常运行过程中不会出现，主要应用在集群初始化或节点故障导致新节点需要加入集群的环节，因此 raft 协议库都会包含其实现。raft 集群">
+<meta name="keywords" content="分布式系统,一致性算法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="raft 集群成员变更异常处理">
+<meta property="og:url" content="https://qtozeng.top/2021/12/12/raft-集群成员变更异常处理/index.html">
+<meta property="og:site_name" content="一抹光辉油彩">
+<meta property="og:description" content="上一篇文章阐述的是 raft 集群日志复制过程中的异常处理，其是 raft 协议安全性的基础和核心部分，因为 raft 的工作就是在接收客户端并发请求日志提交时，能保持在多个节点上的副本的一致性。这篇文章阐述 raft 集群成员变更的异常处理，本文的内容可能在集群日常运行过程中不会出现，主要应用在集群初始化或节点故障导致新节点需要加入集群的环节，因此 raft 协议库都会包含其实现。raft 集群">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639924141/blog/47-raft-configuration-update/集群成员单个变更_dzj904.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639924140/blog/47-raft-configuration-update/新节点日志影响_leader_响应客户端_ubccwk.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639924140/blog/47-raft-configuration-update/新节点日志复制_riszrf.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639924141/blog/47-raft-configuration-update/移除_leader_自身_lqn6qa.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639924141/blog/47-raft-configuration-update/一次性变更多个节点_vdr7bl.png">
+<meta property="og:updated_time" content="2021-12-19T14:53:24.567Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="raft 集群成员变更异常处理">
+<meta name="twitter:description" content="上一篇文章阐述的是 raft 集群日志复制过程中的异常处理，其是 raft 协议安全性的基础和核心部分，因为 raft 的工作就是在接收客户端并发请求日志提交时，能保持在多个节点上的副本的一致性。这篇文章阐述 raft 集群成员变更的异常处理，本文的内容可能在集群日常运行过程中不会出现，主要应用在集群初始化或节点故障导致新节点需要加入集群的环节，因此 raft 协议库都会包含其实现。raft 集群">
+<meta name="twitter:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639924141/blog/47-raft-configuration-update/集群成员单个变更_dzj904.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2021/12/12/raft-集群成员变更异常处理/">
+
+
+
+
+
+  <title>raft 集群成员变更异常处理 | 一抹光辉油彩</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">一抹光辉油彩</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2021/12/12/raft-集群成员变更异常处理/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">raft 集群成员变更异常处理</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-12-12T15:34:44+08:00">
+                2021-12-12
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式系统</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式系统/一致性算法/" itemprop="url" rel="index">
+                    <span itemprop="name">一致性算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4,433
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  15
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上一篇文章阐述的是 raft 集群日志复制过程中的异常处理，其是 raft 协议安全性的基础和核心部分，因为 raft 的工作就是在接收客户端并发请求日志提交时，能保持在多个节点上的副本的一致性。这篇文章阐述 raft 集群成员变更的异常处理，本文的内容可能在集群日常运行过程中不会出现，主要应用在集群初始化或节点故障导致新节点需要加入集群的环节，因此 raft 协议库都会包含其实现。raft 集群成员版本的核心是基于 raft 基础协议，并将配置的变更也作为一条日志，而日志内容为更新后的集群成员列表。本文内容都是源于对 raft 博士论文的总结。</p>
+<a id="more"></a>
+<h2 id="raft-集群成员变更"><a href="#raft-集群成员变更" class="headerlink" title="raft 集群成员变更"></a>raft 集群成员变更</h2><p>首先简要阐述 raft 集群成员变更的基本原理和流程。在实际部署或运维集群时，常常面临增加或移除集群成员节点的需求。显然，我们可手工完成这个变更，以增加节点为例，比如可以先停止集群，然后人工将新加入的节点增加到所有集群成员的集群视图配置文件中，因此后续再次启动集群时，其会成为集群一员。另外，对于节点替换的操作，可以将新加入节点的 ip 改为被替换节点的 ip 即可。但这些操作都需要人为介入，因此必然存在操作失误等风险。但实际上 raft 协议本身支持自动完成节点变更的操作，且同时可保证集群不中断服务。</p>
+<p>raft 在进行集群成员变更时，最重要的一点是始终保证协议的安全性——集群只有一个 leader。raft 集群成员变更算法基于 raft 基础协议，即其将配置的变更也作为一条日志，日志内容为更新后的集群成员列表。对于增加单个成员的步骤如下：</p>
+<ul>
+<li>当 leader 收到集群成员变更请求时，其将变更后的成员列表作为日志内容持久化在本地；</li>
+<li>然后尝试通过 AppendEntries RPC 请求将日志复制到其他成员节点；</li>
+<li>当其他成员节点收到该日志，并将它存储到本地时，对于该节点，其集群成员视图即已更新；</li>
+<li>类似的，当集群中多数节点存储了该日志时，该成员变更日志即已被 commit，成员变更过程即已经结束。</li>
+</ul>
+<p>此时，leader 可知道集群中多数节点已应用了更新后的集群配置，因此，那些未应用更新后的集群配置的节点是不能被选举为 leader（若此时集群 leader 宕机）。且值得注意的是，leader 本身也可能正是被移除的节点。</p>
+<p>上面的步骤阐述的是针对单个节点发生变更的情形，那该算法可否一次性变更多个节点呢？答案是不行，因为一次性变更多个节点没法保证协议安全性，即同一时刻，集群中可能存在两个 leader。原因也很简单，如下图所示：原本集群中有 S1、S2 和 S3 三个节点，S3 为leader，当 S4 和 S5 一次性加入集群时，可能 S1 和 S2 都还未收到请求，因此他们都认为集群中目前还只有 3 个节点，而只有 S3 知道集群中实际上有 5 个节点。当某一时刻集群发生网络分区时，S1 和 S2 不能收到 S3 的心跳，则主动发起选举，S1 可收到 S2 的投票而当选，此时 S3 完全可以收到 S4 和 S5 的投票而当选 ，此时集群出现了两个 leader。因此，基于上述集群变更的步骤，当需要变更多个节点时，需串行地单个单个地进行变更。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1639924141/blog/47-raft-configuration-update/集群成员单个变更_dzj904.png" style="zoom:80%;"></p>
+<h2 id="可用性问题的处理"><a href="#可用性问题的处理" class="headerlink" title="可用性问题的处理"></a>可用性问题的处理</h2><p>上一节描述的集群节点配置变更的流程看似简单，但实际上需要考虑很多细节问题，且这些问题会影响到集群可用性。一般来说，集群服务不可用的时间间隔应该不能大于节点接收心跳的超时时间，否则就会导致集群重新选主。概括而言，上述流程在三个方面会影响集群的可用性：</p>
+<ul>
+<li><p>Catching up new servers：考虑到新加入的节点本地日志为空，若此时集群中又存在宕机的节点，可能使得新加入的节点也成为了 majority，但因为其日志为空，因此 leader 必须先将本地所有日志先同步给它，然后再处理客户端的日志提交请求，这会造成 leader 无法及时响应客户端的日志提交请求；</p>
+</li>
+<li><p>Removing the current leader：若集群成员配置变更正是将 leader 移除，那么当前 leader 必须在某个时间点下台，且在某个时间段内，会发现 leader 并不属于集群成员（在其自己看来），但其又需要管理集群；</p>
+</li>
+<li>Disruptive servers：当集群成员配置变更后，不在配置中的节点可能因为不能收到 leader 的心跳消息而超时触发重新选举，导致 leader 被迫下台，但因为其不在集群配置中，且也未包含集群成员变更配置的日志，导致其不能当选为 leader，但其会反复进行选举导致新选举出来的 leader 反复下台，这破坏了集群的可用性。</li>
+</ul>
+<p>下面逐一分析上述三个会导致集群可用性的问题，并阐述 raft 的应对措施。</p>
+<h3 id="Catching-up-new-servers"><a href="#Catching-up-new-servers" class="headerlink" title="Catching up new servers"></a>Catching up new servers</h3><p>如下图所示，有两种情况会导致新加入集群的节点因为日志为空，导致 leader 不能及时响应客户端提交的日志请求。</p>
+<ul>
+<li>其一是上文阐述的当新节点加入后，集群中已有的一个节点恰好宕机，因此新加入的节点（可能）会被加入到 majority 中，但因为其此时日志为空，leader 必须先为其同步所有日志，才能处理客户端的日志提交请求；</li>
+<li>另外，当集群中连续加入节点时，即使此时集群已有节点都正常工作，也可能使得新加入的节点中一个或多个被加入到 majority 中，此时同样可能会严重影响集群可用性。</li>
+</ul>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1639924140/blog/47-raft-configuration-update/新节点日志影响_leader_响应客户端_ubccwk.png" style="zoom:80%;"></p>
+<p>为了处理可用性问题，raft 在集群配置变更生效前，为新加入到集群的节点引入一种新的状态—— non-voting 成员，即此时只有 leader 会向其同步日志，但其并不会被计算为日志提交中的 majority 或选票数目中的 majority，一旦该 non-voting 成员的日志差不多追赶上 leader 的日志，则此时其角色可转为 follower。</p>
+<p>但问题在于 leader 同步给 non-voting 节点的日志量达到多少时，该节点的日志才可被称为差不多赶上了 leader 的日志。raft 论文采用和 redis 的主从数据同步类似的方案，如下图所示：</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1639924140/blog/47-raft-configuration-update/新节点日志复制_riszrf.png" style="zoom:80%;"></p>
+<ul>
+<li>leader 将同步日志给 non-voting 节点的整个过程分为若干个 round；</li>
+<li>在每一个 round 期间，leader 都会将其本地的未同步的所有日志同步给 non-voting 节点，但在同步过程中从客户端收到日志除外，其会被放到下一个同步 round 中。显然，round 的同步耗时将随着 round 轮数增加而显著降低；</li>
+<li>如此反复，直到 leader 发现某一个 round 同步耗时未超过节点心跳超时时间。此时，leader 将该 non-voting 节点加入到集群，即该节点的角色正式转为 follower。同步耗时不能超过节点心跳超时时间的原因是，此时 non-voting 节点所需日志的同步时间已不足以触发超时选举，即不会再影响到集群可用性；</li>
+<li>另一种情况是，由于日志量过大，或者网络带宽过小导致 leader 不断地同步，导致同步的 round 数目超过预设的阈值（比如 10）时，leader 将拒绝同步，同时放弃此次集群成员配置变更的操作，因此此时需要客户端发起重试。且考虑到此时新加入的节点已包含集群部分日志，因此重试后很有可能顺利加入集群。</li>
+</ul>
+<p>此外，有两点需注意：</p>
+<ul>
+<li>leader 在为新加入的节点同步日志前，必须先检测节点是否正常且可用，因为不可用的节点很可能会影响集群可用性；</li>
+<li>实际上，leader 并不知道新加入的节点为一个全新的节点，即日志量为 0，它只能通过不断地执行 AppendEntries RPC 请求来获取它们第一个共同日志的索引位置。因此，该尝试过程会非常耗时。论文中提到最简单的解决方案为在 AppendEntries RPC 请求的响应中附上节点的日志长度，如此以来，只需一个请求即可发现该节点为一个全新的节点。</li>
+</ul>
+<h3 id="Removing-the-current-leader"><a href="#Removing-the-current-leader" class="headerlink" title="Removing the current leader"></a>Removing the current leader</h3><p>当集群成员配置变更正是将 leader 自身移除时，leader 必须在某一个时间点下台。那具体是哪一个时间点呢？实际上，当新的成员配置被作为日志提交时，leader 才允许下台，且在 leader 下台后，拥有更新后的集群配置的节点会当选为 leader。相反，若 leader 在这之前下台，它可能会因为超时触发选举并重新当选。另外，如下图所示，若当前集群只包含两个节点，显然只有当更新后的配置被提交后旧 leader 才能下台，否则因为另一个节点缺少更新后的集群配置而无法当选为 leader，集群也因此陷入不可用状态。相反，若旧 leader 在将更新后的配置复制到另一个节点后才下台，则此时另一个节点可直接当选。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1639924141/blog/47-raft-configuration-update/移除_leader_自身_lqn6qa.png" style="zoom:80%;"></p>
+<p>总而言之，若当前 leader 需要将自己移出集群时，则在更新后的配置被 commit 前，leader 将继续管理这个集群，比如继续接收客户的日志请求，并将它复制到其他节点，但计算日志复制数目时需将自己排除在外。</p>
+<h3 id="Disruptive-servers"><a href="#Disruptive-servers" class="headerlink" title="Disruptive servers"></a>Disruptive servers</h3><p>当发生集群成员配置时，不在配置中的节点因为不能收到 leader 的心跳消息而超时触发重新选举，导致 leader 被迫下台，但因其不在集群配置中，所以其不能当选为 leader，但其会反复触发选举导致新选举出来的 leader 不断下台。若多个节点被依次移出集群，状况可能会更糟糕。</p>
+<p>raft 论文表示其首先想到的应对办法是：在节点触发选举前，引入一个 Pre-Vote 阶段。即在节点即将触发超时选举前，首先需同其他节点确认其是否有机会当选（Pre-Vote 阶段），即确认其包含的日志是否足够新。只有其他 majority 节点反馈它有机会当选时，节点才递增 term，然后开始广播 RequestVote RPC 请求。相反，若其他节点反馈其根本没有机会当选，则其不应该发其选举动作。但这并不能完全解决问题，因为在上面的情形中，被移除的节点确实拥有足够新的日志，即确实有机会当选。</p>
+<p>基于此，raft 论文称此时不能再依据日志的新旧来判断是否应该触发选举。且考虑到 raft 协议中，leader 是凭借同 follower 保持心跳来维持自己的 leader 地位。因此，raft 论文称可调整 RequestVote RPC 的处理逻辑——当 follower 在心跳超时时间内收到 RequestVote RPC 时，即使该请求具备投票条件，其也不会为其投票，而直接丢弃或拒绝该请求。显然，针对 RequestVote RPC 请求的处理逻辑的改动不会影响正常选举流程，但其同 leader 主动将自己的 leader 角色转让给指定 follower 的处理逻辑冲突（在本系列的第一篇文章中阐述的），因为在此情况下，当 follower 收到 leader 主动让权的请求时，即使其心跳未超时，它还是会主动发起选举动作。raft 作者称唯一的解决办法是将 RequestVote RPC 请求中增加一个字段，用于标识该请求是否为 leader 授权。</p>
+<h2 id="基于-joint-consensus-的集群成员变更"><a href="#基于-joint-consensus-的集群成员变更" class="headerlink" title="基于 joint consensus 的集群成员变更"></a>基于 joint consensus 的集群成员变更</h2><p>在 raft 论文中还给出了一种基于 joint consensus 的集群成员变更方案，该方案在保证安全性和可用性的同时，不限制单此变更的集群成员的数目，但其相对更复杂，作者也推荐上述的一次只变更一个集群成员的方案更简单，更适合工程落地，而该基于 joint consensus 的变更方案只会出现在论文中，且仅仅是为了论文的完整性。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1639924141/blog/47-raft-configuration-update/一次性变更多个节点_vdr7bl.png" style="zoom:80%;"></p>
+<p>这里简单阐述基于 joint consensus 的集群成员变更的原理：</p>
+<ul>
+<li>其背景是为了支持一次性变更多个集群成员，需要引入一个中间态，即将集群转换到一个过渡状态——joint consensus。</li>
+<li>基于 joint consensus 的集群成员变更过程：两阶段变更。<ul>
+<li>首先，在未提交任何更新的配置前，集群所有成员都拥有旧的配置；</li>
+<li>其次，在将集群转换到一个中间阶段，即 leader 将包含新旧配置的的日志复制到其他所有节点。若在此期间内发生选举，则拥有新旧任意配置的节点都可当选为 leader，而一旦该状态被 commit，则只拥有新配置或旧配置的节点不可能当选为 leader，即必须同时包含新旧配置的节点才可当选。另外，在 joint consensus 状态中，若 leader 提交日志请求，则必须同时保证拥有新配置和旧配置的两个多数节点集都复制了该日志。</li>
+<li>最后，再将集群转换到仅包含新配置的状态，即 leader 再将包含新配置的日志请求复制到其他所有节点。类似的，一旦该日志请求被 commit，即表示集群目前只剩下包含有新配置的节点。</li>
+</ul>
+</li>
+</ul>
+<h2 id="一些注意点"><a href="#一些注意点" class="headerlink" title="一些注意点"></a>一些注意点</h2><ul>
+<li>raft 协议的自动化集群成员配置变更还可用于集群初始化环节。即在初始节点建立单节点集群后，让其他节点一个接一个地加入到集群；</li>
+<li>一旦节点收到成员变更的日志并将其落盘后，其集群成员视图就已经更新，而不需要等到该日志被 commit 后才更新；</li>
+<li>raft 协议中将发送者配置用于实施协议处理流程，对于 RequestVote RPC 和 AppendEntries RPC 请求都是如此。比如在集群成员变更时，在未收到节点配置变更的请求前，节点可能为新加入到集群的节点投票。类似的，节点也可能接收到新加入集群的节点发出的日志复制请求；</li>
+<li>leader 可能会将自己移出集群。且存在一段时间，leader 会继续管理该集群，接收客户的日志请求，但其本身并不属于集群一员，因此在计算日志是否已被提交时，其不会将自己计算在内；</li>
+<li>在集群成员配置发生变更的任何时间点都允许发生选举。在配置被 commit 后，只有具有更新后的配置的节点才有机会当选为 leader，相反，则 leader 可以在未更新配置的节点或已更新配置的节点中产生；</li>
+<li>在集群成员配置变更期间，若 leader 未被移出集群，则只要 leader 在整个变更期间保持同其他 follower 的心跳，则其会一直当选为 leader，即使 follower 收到了 term 更大的节点的投票请求，其也不会为其投票。相反，若 leader 需要被移出集群，则当变更后的配置被 commit 后，其主动下台，包含有更新后配置的节点会选举出 leader；</li>
+<li>在集群成员变更期间，leader 可持续接收客户端的日志提交请求，即使有新的节点加入集群也不会导致集群不可用；</li>
+<li>当集群成员变更同时涉及到增加节点和移除节点的操作时，建议先增加节点，再移除节点。若先移除节点可能会增加集群故障率，因为节点越少其容忍度也越低。</li>
+</ul>
+<p>至此，关于 raft 集群成员配置变更流程以及配置变更流程中可能会发生的异常情况都已阐述完毕。本文的重点是raft 集群成员变更过程中需要特殊处理的情况，若这些问题未处理好，则会造成集群不可用。其中 raft 作者给出的很多解决方案都值得我们去理解。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1] CONSENSUS: BRIDGING THEORY AND PRACTICE(<a href="https://web.stanford.edu/~ouster/cgi-bin/papers/OngaroPhD.pdf" target="_blank" rel="noopener">https://web.stanford.edu/~ouster/cgi-bin/papers/OngaroPhD.pdf</a>)</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/分布式系统/" rel="tag"># 分布式系统</a>
+          
+            <a href="/tags/一致性算法/" rel="tag"># 一致性算法</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/12/01/raft-集群日志复制异常处理/" rel="next" title="raft 集群日志复制异常处理">
+                <i class="fa fa-chevron-left"></i> raft 集群日志复制异常处理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/12/19/hashicorp-go-plugin-解析/" rel="prev" title="hashicorp go-plugin 解析">
+                hashicorp go-plugin 解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Zeng Qiaoqiao</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">47</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">58</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="Email">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>Email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#raft-集群成员变更"><span class="nav-number">1.</span> <span class="nav-text">raft 集群成员变更</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可用性问题的处理"><span class="nav-number">2.</span> <span class="nav-text">可用性问题的处理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Catching-up-new-servers"><span class="nav-number">2.1.</span> <span class="nav-text">Catching up new servers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Removing-the-current-leader"><span class="nav-number">2.2.</span> <span class="nav-text">Removing the current leader</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Disruptive-servers"><span class="nav-number">2.3.</span> <span class="nav-text">Disruptive servers</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于-joint-consensus-的集群成员变更"><span class="nav-number">3.</span> <span class="nav-text">基于 joint consensus 的集群成员变更</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一些注意点"><span class="nav-number">4.</span> <span class="nav-text">一些注意点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">5.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zeng Qiaoqiao</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">239.2k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+  </script>
+
+  
+
+  
+  
+
+
+  
+
+  
+
+  <!-- 代码块复制功能 -->
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+</body>
+</html>
