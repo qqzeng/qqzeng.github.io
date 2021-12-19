@@ -2,6 +2,20 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://qtozeng.top/2021/12/19/nomad-go-plugin-%E5%AE%9E%E8%B7%B5%E8%A7%A3%E6%9E%90/</loc>
+    
+    <lastmod>2021-12-19T13:01:22.284Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://qtozeng.top/2021/12/19/hashicorp-go-plugin-%E8%A7%A3%E6%9E%90/</loc>
+    
+    <lastmod>2021-12-19T13:01:13.739Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://qtozeng.top/2020/09/19/memberlist-%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/</loc>
     
     <lastmod>2021-09-19T09:17:18.615Z</lastmod>
@@ -275,14 +289,14 @@
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2019/01/16/etcd-raft-LeaseRead-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
+    <loc>https://qtozeng.top/2018/11/16/MapReduce-%E5%8E%9F%E5%9E%8B%E5%AE%9E%E7%8E%B0/</loc>
     
     <lastmod>2019-05-13T13:57:34.168Z</lastmod>
     
   </url>
   
   <url>
-    <loc>https://qtozeng.top/2018/11/16/MapReduce-%E5%8E%9F%E5%9E%8B%E5%AE%9E%E7%8E%B0/</loc>
+    <loc>https://qtozeng.top/2019/01/16/etcd-raft-LeaseRead-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90/</loc>
     
     <lastmod>2019-05-13T13:57:34.168Z</lastmod>
     

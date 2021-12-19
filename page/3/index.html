@@ -304,6 +304,364 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/05/14/nsq-topic-源码简析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/05/14/nsq-topic-源码简析/" itemprop="url">nsq topic 源码简析</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-14T13:48:03+08:00">
+                2019-05-14
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/消息队列/" itemprop="url" rel="index">
+                    <span itemprop="name">消息队列</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4,146
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  17
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>上一篇文章阐述了<code>nsqd</code>模块的源码。准确而言是<code>nsqd</code>服务启动过程的部分源码。内容非常多，总共分为五个部分来分析，其中略讲的内容包括利用<code>svc</code>启动进程的流程、<code>nsqd</code>实例创建及初始化过程。重点阐述的内容包括<code>nsqd</code>异步开启<code>nsqlookupd</code>查询过程，以及<code>nsqd</code>与<code>nsqlookupd</code>通信的主循环逻辑。另外，还有<code>nsqd</code>建立的<code>tcp</code>连接处理器的相关内容，这点比较复杂，涉及两个过程：<code>IOLoop</code>主循环读取连接的请求内容，以及<code>messagePump</code>处理消息发送的核心逻辑。最后略讲<code>http</code>连接处理器的创建过程。本文的主题是<code>topic</code>，相对简单。<code>topic</code>可以看作是生产者投递消息的一个逻辑键，一个<code>nsqd</code>实例可以维护多个<code>topic</code>实例，每当生产者将消息投递到某个的<code>nsqd</code>上特定的<code>topic</code>时，它随即将消息拷贝后发送到与其关联的<code>channel</code>实例集合。与<code>channel</code>实例类似，<code>topic</code>实例存储消息也涉及到两个消息队列：内存消息队列和持久化消息队列，因此对于消息的存储维护，<code>topic</code>实例和<code>channel</code>实例分开管理。同样，为了方便读者理解，本文只论述到<code>topic</code>本身的相关逻辑，换言之，不涉及到<code>topic</code>收发消息的逻辑。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/05/14/nsq-topic-源码简析/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/05/13/nsq-nsqd-服务启动源码简析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/05/13/nsq-nsqd-服务启动源码简析/" itemprop="url">nsq nsqd 服务启动源码简析</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-13T11:55:15+08:00">
+                2019-05-13
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/消息队列/" itemprop="url" rel="index">
+                    <span itemprop="name">消息队列</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  11,746
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  50
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>上一篇文章阐述了<code>nsqlookupd</code>模块的源码，主要分析<code>nsqlookupd</code>服务进程启动、实例构建及初始化、<code>tcp &amp; http</code>请求处理器的构建和注册以及由<code>nsqlookupd</code>提供的<code>topic</code>注册及查询功能这几个流程的相关源码。<code>nsqlookupd</code>耦合的模块较少，程序逻辑也较简单。但由于其和<code>topic</code>及<code>channel</code>等密切相关，因此<code>nsqd</code>更为复杂。<code>nsqd</code>充当<code>nsq</code>消息队列核心角色，它负责接收、排队以及转发（投递）消息，因此这需要同<code>nsq</code>各个组件交互，包括生产者、消费者、<code>nsqlookupd</code>以及<code>nsqadmin</code>。<code>nsq</code>提供<code>http/https</code>的方式与生产者通信，主要包括<code>topic</code>和<code>channel</code>创建和查询，配置更新，以及消息发布等功能。另外<code>nsq</code>提供了<code>tcp</code>的方式与消费者及生产者通信，为消费者提供消息订阅功能，而为生产者提供消息发布的功能。最后，考虑到<code>nsqd</code>无状态的特性，<code>nsqd</code>可以通过横向扩展来增强请求处理能力，也可以通过增加一个或多个备份来提高数据可靠性。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/05/13/nsq-nsqd-服务启动源码简析/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/05/12/nsq-nsqlookupd-源码简析/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -1778,386 +2136,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/01/11/etcd-raft-WAL日志管理源码简析/">
-
-    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="一抹光辉油彩">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/01/11/etcd-raft-WAL日志管理源码简析/" itemprop="url">etcd-raft WAL日志管理源码简析</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-11T10:58:11+08:00">
-                2019-01-11
-              </time>
-            
-
-            
-
-            
-
-
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式系统</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/分布式协调服务/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式协调服务</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  7,698
-                </span>
-              words
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  36
-                </span>
-              mins
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>上一篇文章简单分析了<code>etcd-raft</code> 网络传输组件相关的源码。本文会简要分析<code>etcd-raft WAL</code>日志管理部分的源码。<code>WAL</code>(<code>Write-Ahead Logging</code>)即为预写式日志，即在真正执行写操作之前先写日志，这在数据库系统和分布式系统领域很常见。它是为了保证数据的可靠写。日志对于利用一致性协议构建高可用的分布式系统而言至关重要，在<code>etcd raft</code>中，日志也会在各节点之间同步。并且<code>etcd</code>提供了一个<code>WAL</code>的日志库，它暴露日志管理相关的接口以方便应用程序具体操作日志的逻辑。本文从应用调用 <code>WAL</code>库执行日志追加逻辑切入，重点分析<code>etcd</code>提供的<code>WAL</code>日志库的相关接口实现逻辑细则，包括<code>WAL</code>日志的设计、日志创建追加等。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/01/11/etcd-raft-WAL日志管理源码简析/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2019/01/10/etcd-raft-网络传输源码简析/">
-
-    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Zeng Qiaoqiao">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="一抹光辉油彩">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/01/10/etcd-raft-网络传输源码简析/" itemprop="url">etcd-raft 网络传输源码简析</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-10T17:33:09+08:00">
-                2019-01-10
-              </time>
-            
-
-            
-
-            
-
-
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式系统</span>
-                  </a>
-                </span>
-
-                
-                
-                  ， 
-                
-              
-                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
-                  <a href="/categories/分布式系统/分布式协调服务/" itemprop="url" rel="index">
-                    <span itemprop="name">分布式协调服务</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-wordcount">
-              
-                
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">字数统计&#58;</span>
-                
-                <span title="字数统计">
-                  3,378
-                </span>
-              words
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
-                
-                <span title="阅读时长">
-                  16
-                </span>
-              mins
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>上一篇文章简单分析了<code>etcd raftexample</code>的源码。我们知道，<code>etcd raft</code>只实现了<code>raft</code>协议核心部分，而将诸如日志、快照及消息的网络传输交给应用来管理。本文会简单分析<code>raft</code>集群用来实现消息在节点之间传输部分的相关逻辑。因为<code>etcd raft</code>会在节点之间传递各种消息指令，包括日志复制、快照拷贝等，这都需要通过应用来将对应的消息转发到集群中其它节点。简单而言，<code>raft</code>实现的节点之间的网络传输将消息的读写进行分离，即每两个节点之间存在两条消息通道，分别用作消息的接收与发送，另外针对不同类型的消息的收发，其也提供了不同的组件。本文会对大致的消息传输的流程进行介绍。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/01/10/etcd-raft-网络传输源码简析/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2207,7 +2185,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">42</span>
+                  <span class="site-state-item-count">44</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2296,7 +2274,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">222.3k</span>
+    <span title="Site words total count">227.2k</span>
   
 </div>
 

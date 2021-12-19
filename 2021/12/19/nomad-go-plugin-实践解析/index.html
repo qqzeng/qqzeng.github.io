@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script>
+<link href="//cdn.bootcss.com/pace/1.0.2/themes/pink/pace-theme-flash.css" rel="stylesheet">
+<meta name="theme-color" content="#222">
+<style>
+    .pace .pace-progress {
+        background: #1E92FB; /*进度条颜色*/
+        height: 2px;
+    }
+    .pace .pace-progress-inner {
+         box-shadow: 0 0 10px #1E92FB, 0 0 5px     #1E92FB; /*阴影颜色*/
+    }
+    .pace .pace-activity {
+        border-top-color: #1E92FB;    /*上边框颜色*/
+        border-left-color: #1E92FB;    /*左边框颜色*/
+    }
+</style>
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/avastar-circle-32x32.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/avastar-circle-16x16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="go,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Nomad 是 Hashicorp 公司出品的一款用于编排和管理应用的框架的开源产品。所谓编排即用于组织应用及其依赖的服务，并实现应用的多实例（副本）机制，而所谓管理即管理应用的生命周期，提供类似于操作系统 supervisor 进程之于其他进程的功能。Nomad 支持多种类型的负载，如批处理任务、容器化应用又或者 Java 应用等。在设计上，Nomad 通过任务执行驱动特性抽象了负载类型，即每一">
+<meta name="keywords" content="go">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nomad go-plugin 实践解析">
+<meta property="og:url" content="https://qtozeng.top/2021/12/19/nomad-go-plugin-实践解析/index.html">
+<meta property="og:site_name" content="一抹光辉油彩">
+<meta property="og:description" content="Nomad 是 Hashicorp 公司出品的一款用于编排和管理应用的框架的开源产品。所谓编排即用于组织应用及其依赖的服务，并实现应用的多实例（副本）机制，而所谓管理即管理应用的生命周期，提供类似于操作系统 supervisor 进程之于其他进程的功能。Nomad 支持多种类型的负载，如批处理任务、容器化应用又或者 Java 应用等。在设计上，Nomad 通过任务执行驱动特性抽象了负载类型，即每一">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639909411/blog/44-go-plugin-02/nomad-go-plugin_bzyrvs.png">
+<meta property="og:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639909411/blog/44-go-plugin-02/nomad-go-plugin-practice_wdjpfr.png">
+<meta property="og:updated_time" content="2021-12-19T13:01:22.284Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="nomad go-plugin 实践解析">
+<meta name="twitter:description" content="Nomad 是 Hashicorp 公司出品的一款用于编排和管理应用的框架的开源产品。所谓编排即用于组织应用及其依赖的服务，并实现应用的多实例（副本）机制，而所谓管理即管理应用的生命周期，提供类似于操作系统 supervisor 进程之于其他进程的功能。Nomad 支持多种类型的负载，如批处理任务、容器化应用又或者 Java 应用等。在设计上，Nomad 通过任务执行驱动特性抽象了负载类型，即每一">
+<meta name="twitter:image" content="https://res.cloudinary.com/turalyon/image/upload/v1639909411/blog/44-go-plugin-02/nomad-go-plugin_bzyrvs.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://qtozeng.top/2021/12/19/nomad-go-plugin-实践解析/">
+
+
+
+
+
+  <title>nomad go-plugin 实践解析 | 一抹光辉油彩</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?32c9335b479b9d4ab2d32b6e9dd59ed8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">一抹光辉油彩</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://qtozeng.top/2021/12/19/nomad-go-plugin-实践解析/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zeng Qiaoqiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一抹光辉油彩">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">nomad go-plugin 实践解析</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-12-19T20:32:42+08:00">
+                2021-12-19
+              </time>
+            
+
+            
+
+            
+
+
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope="" itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index">
+                    <span itemprop="name">go</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,462
+                </span>
+              words
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  9
+                </span>
+              mins
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Nomad 是 Hashicorp 公司出品的一款用于编排和管理应用的框架的开源产品。所谓编排即用于组织应用及其依赖的服务，并实现应用的多实例（副本）机制，而所谓管理即管理应用的生命周期，提供类似于操作系统 supervisor 进程之于其他进程的功能。Nomad 支持多种类型的负载，如批处理任务、容器化应用又或者 Java 应用等。在设计上，Nomad 通过任务执行驱动特性抽象了负载类型，即每一种负载类型由同其相对应的任务执行驱动来负责运行，这使得用户可自定义任务驱动以提供符合其特殊需求应用的运行时环境。实际上，可扩展的任务执行驱动即为 Nomad 的插件系统，每一种类型的执行驱动即为一个插件，其底层基于 go-plugin 实现。简单而言，Nomad 在启动时会同时运行其内置的插件二进制集合，当用户提交特定类型的负载到集群时，其通过 gRPC 同相应类型的插件程序通信，以执行用户的任务。承接上一篇查询 go-plugin 的文章，为了更好地理解 go-plugin 的实际应用，本文简单介绍 go-plugin 在 Nomad 中的实践。</p>
+<a id="more"></a>
+<h2 id="Nomad-任务执行驱动"><a href="#Nomad-任务执行驱动" class="headerlink" title="Nomad 任务执行驱动"></a>Nomad 任务执行驱动</h2><p>Nomad 基于 go-plugin 将每一种负载类型的执行环境抽象为任务执行驱动。所谓任务执行驱动，即为基于 go-plugin 开发的插件系统中的业务实现，Nomad 官方定义了所有扩展的执行驱动所必须实现的接口，这些接口实际上即为一个任务的生命周期操作接口。具体地，<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/plugins/base/base.go#L9" target="_blank" rel="noopener">BasePlugin</a> 定义驱动的基本信息和配置，因此是需要实现的接口的一部分，而 <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/plugins/drivers/driver.go#L40" target="_blank" rel="noopener">DriverPlugin</a> 即为业务接口，其继承了 BasePlugin，同时定义了任务的基本操作接口，如启动任务、停止任务、恢复任务等。还记得上一篇文章阐述的，基于 go-plugin 开插件系统，对于服务提供方（Server 端），只需提供业务实现即可，其他的如请求转发和解析逻辑都由 go-plugin 完成。因此，若我们需要让 Nomad 支持我们自定义的负载类型，只需要编写 DriverPlugin 的实现即可，如下图中的 SvcRun 即为一个可运行常驻型应用的任务驱动，另外几个都是 Nomad 官方<a href="https://www.nomadproject.io/docs/drivers" target="_blank" rel="noopener">内置的执行驱动</a>。关于 Nomad 任务执行驱动可以从<a href="https://www.nomadproject.io/docs/internals/plugins" target="_blank" rel="noopener">这里</a>详细了解。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1639909411/blog/44-go-plugin-02/nomad-go-plugin_bzyrvs.png" alt="nomad-go-plugin" style="zoom:50%;"></p>
+<h2 id="Nomad-任务执行驱动初始化解析"><a href="#Nomad-任务执行驱动初始化解析" class="headerlink" title="Nomad 任务执行驱动初始化解析"></a>Nomad 任务执行驱动初始化解析</h2><p>本文不会过度关注任务执行驱动各接口的定义和实现，而是专注于解析 Nomad 如何基于 go-plugin 来实现任务执行驱动系统，实际上是一个官方的 go-plugin 的实践案例，其本质和 go-plugin 的 helloworld 案例相同。</p>
+<p>Nomad 的任务驱动包含两个部分：内部驱动和外部驱动，内部驱动即官方内置在 Nomad 主程序中的驱动，因此其实际上内嵌在 Nomad 主程序二进制中的。而外部驱动为用户自定义的驱动，二者在 Nomad 中的初始化逻辑不同，因为外部驱动 Nomad 主程序无法提前知晓，而只能在启动时，扫描驱动目录以加载并执行用户自定义的驱动二进制。总而言之，用户自定义驱动才是 Nomad 基于 go-plugin 的实践。</p>
+<h3 id="外部驱动-Server-端初始化过程"><a href="#外部驱动-Server-端初始化过程" class="headerlink" title="外部驱动 Server 端初始化过程"></a>外部驱动 Server 端初始化过程</h3><p>首先来阐述用户自定义驱动 Server 端的初始化过程，即插件进程自身的初始化过程。用户自定义的驱动包含两部分，一个是针对 DriverPlugin 的实现，一个是 main 方法用于启动插件二进制，并开启 gRPC Server 监听等待宿主机进程的连接。在代码层面，其过程比较简单：</p>
+<ol>
+<li>在 <a href="https://github.com/qqzeng/nomad-skeleton-driver-plugin/blob/main/main.go#L14" target="_blank" rel="noopener">main 方法</a>中调用 Nomad 的 <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/plugins/serve.go#L19" target="_blank" rel="noopener">Serve 方法</a>同时传入任务驱动的构造工厂方法；</li>
+<li>在 Serve 中实例化该任务驱动；</li>
+<li>最后根据插件类型（Nomad 基于 go-plugin 实现了任务驱动插件 DriverPlugin 和设备驱动插件 DevicePlugin）调用 go-plugin 的 <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/plugins/serve.go#L42" target="_blank" rel="noopener">Serve 方法</a>。其传入了握手信息、其支持的插件（BasePlugin 和 DriverPlugin）并将网络协议设置为 gRPC；</li>
+<li>后续逻辑即为 go-plugin Server 端初始化逻辑：启动插件二进制，同时构造 gRPC Server 并开启连接监听。</li>
+</ol>
+<h3 id="任务执行驱动加载器的初始化过程"><a href="#任务执行驱动加载器的初始化过程" class="headerlink" title="任务执行驱动加载器的初始化过程"></a>任务执行驱动加载器的初始化过程</h3><p>考虑到内部驱动的代码是放在 Nomad 主程序中的，因此其没有外部驱动被动加载执行这个过程，其在主程序包初始化时会通过插件的 Catalog 的接口 <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/catalog/register.go#L14" target="_blank" rel="noopener">主动注册</a>到宿主进程的插件集中，注册时同样提供其驱动配置以及构造工厂方法。在 Nomad 主程序启动时会遍历所有主动注册的插件，对他们进行初始化。下面简单阐述 Nomad 插件加载器的初始化过程。</p>
+<ol>
+<li>在 Nomad 主程序<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/command/agent/agent.go#L106" target="_blank" rel="noopener">启动</a>时，其分别初始化 Nomad Client 和 Server 以及 Consul Client 的配置，并<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/command/agent/agent.go#L129" target="_blank" rel="noopener">引导 Client 的插件加载器系统</a>。引导插件加载器主要包含如下几个步骤：</li>
+<li>首先通过 Catalog <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/catalog/catalog.go#L51" target="_blank" rel="noopener">获取所有主动注册的内部驱动</a>；</li>
+<li>然后初始化插件加载器的配置 PluginLoaderConfig，其中包含内部驱动的配置以及外部驱动的目录等信息，依次来实例化插件加载器 PluginLoader；</li>
+<li>在<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/loader/loader.go#L115" target="_blank" rel="noopener">实例化 PluginLoader</a> 的过程中，首先校验插件加载器包含的各项配置，并转换插件系统中支持的驱动版本，然后构建插件加载器，并调用它的 <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/loader/init.go#L54" target="_blank" rel="noopener">init 方法</a>来初始化插件加载器；初始化过程主要包含几个步骤：</li>
+<li>首先<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/loader/init.go#L88" target="_blank" rel="noopener">初始化内部驱动</a>，即依次构建内部驱动实例，通过调用驱动实例获取驱动基本信息，然后获取驱动的版本以及配置 schema，最后将这些信息封装成 pluginInfo 返回；</li>
+<li>其次，<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/loader/init.go#L214" target="_blank" rel="noopener">扫描外部驱动的二进制目录</a>，获取合法的驱动二进制信息；</li>
+<li>接下来，<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/loader/init.go#L313" target="_blank" rel="noopener">基于 go-plugin 加载所有外部插件</a>，以获取其基础信息。该过程即为 go-plugin 宿主机进程的初始化过程，核心步骤是创建插件客户端，以启动插件二进制程序，并获取 gRPC Client，然后将其转换为基础驱动实例以获取驱动的基本信息和配置信息。最后同样将这些封装为 pluginInfo 返回；</li>
+<li>然后，<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/loader/init.go#L391" target="_blank" rel="noopener">合并内部和外部驱动实例</a>，若包含相同的驱动，取版本较高的驱动实例；</li>
+<li><p>最后，<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/loader/init.go#L422" target="_blank" rel="noopener">校验并设置驱动的配置信息</a>，即针对每一个驱动，若其包含用户定义的配置信息，则基于其配置 schema 解析它，并调用驱动的 SetConfig 方法以设置驱动的配置，这些配置信息在驱动执行</p>
+</li>
+<li><p>插件加载器 PluginLoader 实例化完成后，然后基于此 PluginLoader 构建 <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/singleton/singleton.go#L37" target="_blank" rel="noopener">SingletonLoader</a>，SingletonLoader 用于实现保证每一个驱动只存在一个实例，其内部保存了一个以驱动实例的 ID 作为 Key 的字典。宿主机进程可以通过传入驱动的基础信息和配置信息以实例化一个驱动（<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/singleton/singleton.go#L53" target="_blank" rel="noopener">Dispense 接口</a>），后续则直接使用已实例化的驱动即可。在宿主机进程当即重启时，其也可通过宕机为该驱动实例保存的基本信息（网络协议、通信地址以及驱动进程 ID）来重新让驱动进程关联到新的宿主机进程（<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/helper/pluginutils/singleton/singleton.go#L58" target="_blank" rel="noopener">Reattach 接口</a>）。实际上，SingletonLoader 即为 Nomad 内部封装的用于获取驱动实例的入口。</p>
+</li>
+</ol>
+<h2 id="Nomad-执行任务时获取驱动过程解析"><a href="#Nomad-执行任务时获取驱动过程解析" class="headerlink" title="Nomad 执行任务时获取驱动过程解析"></a>Nomad 执行任务时获取驱动过程解析</h2><p>当用户提交一个具有特定任务驱动的任务时，该任务实例在 Nomad 中是以 Allocation 承载的，Nomad Client 会定期从 Nomad Server <a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/client.go#L1638-L1662" target="_blank" rel="noopener">同步 Allocation 实例</a>，根据对比 Nomad Client 已有实例，<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/client.go#L2176-L2234" target="_blank" rel="noopener">针对性处理拉取到的 Allocation</a>，比如当<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/client.go#L2330-L2405" target="_blank" rel="noopener">获取到新的 Allocation 实例时</a>，其会<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/allocrunner/alloc_runner.go#L177-L234" target="_blank" rel="noopener">创建新的 AllocationRunner</a>，并交给 AllocRunner 去处理，而 AllocRunner 会取出 Allocation 中包含的所有任务配置，根据任务的配置信息，生成对应的任务，然后<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/allocrunner/alloc_runner.go#L237-L268" target="_blank" rel="noopener">创建对应的 TaskRunner 实例</a>，并将任务交给 TaskRunner 处理。<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/allocrunner/taskrunner/task_runner.go#L274-L370" target="_blank" rel="noopener">TaskRunner 初始化时</a>，会<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/allocrunner/taskrunner/task_runner.go#L814-L838" target="_blank" rel="noopener">初始化其需执行的任务的驱动实例</a>。具体地，其将任务包含的驱动的名称传给 DriverManager 以获取一个指定类型的驱动实例，<a href="https://github.com/qqzeng/nomad/blob/source_analysis_v0.12.0/client/pluginmanager/drivermanager/instance.go#L179-L238" target="_blank" rel="noopener">DriverManager 底层则是通过上文阐述的 SingletonLoader 来获取（Dispense 或者Reattach）对应的驱动实例</a>。</p>
+<p><img src="https://res.cloudinary.com/turalyon/image/upload/v1639909411/blog/44-go-plugin-02/nomad-go-plugin-practice_wdjpfr.png" alt="nomad-go-plugin-practice" style="zoom:50%;"></p>
+<p>至此，Nomad 基于 go-plugin 的实践相关内容以及阐述完毕。本文主要是介绍了三个方面的内容，Nomad 任务执行驱动的简要介绍、Nomad 外部驱动 Server 端初始化过程、Nomad 启动时任务驱动加载器的初始化过程以及 Nomad 执行任务时获取驱动实例的过程。实际上，Nomad 的任务执行驱动系统同 go-plugin 相关的逻辑和 go-plugin 的 helloworld 项目的逻辑完全一样，只不过因为 Nomad 项目本身的复杂性，宿主机进程获取并管理外部插件实例的逻辑较为复杂，但这同 go-plugin 本身的使用并无太大关联。</p>
+<h1 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h1><p>[1]. <a href="https://github.com/qqzeng/nomad" target="_blank" rel="noopener">nomad source</a><br>[2]. <a href="https://www.nomadproject.io/docs/drivers" target="_blank" rel="noopener">nomad driver</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/go/" rel="tag"># go</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/12/19/hashicorp-go-plugin-解析/" rel="next" title="hashicorp go-plugin 解析">
+                <i class="fa fa-chevron-left"></i> hashicorp go-plugin 解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container"></div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Zeng Qiaoqiao</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">44</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">58</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/qqzeng" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:qtozeng@gmail.com" target="_blank" title="Email">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>Email</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Nomad-任务执行驱动"><span class="nav-number">1.</span> <span class="nav-text">Nomad 任务执行驱动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Nomad-任务执行驱动初始化解析"><span class="nav-number">2.</span> <span class="nav-text">Nomad 任务执行驱动初始化解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#外部驱动-Server-端初始化过程"><span class="nav-number">2.1.</span> <span class="nav-text">外部驱动 Server 端初始化过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#任务执行驱动加载器的初始化过程"><span class="nav-number">2.2.</span> <span class="nav-text">任务执行驱动加载器的初始化过程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Nomad-执行任务时获取驱动过程解析"><span class="nav-number">3.</span> <span class="nav-text">Nomad 执行任务时获取驱动过程解析</span></a></li></ol><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文献"><span class="nav-number"></span> <span class="nav-text">参考文献</span></a></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zeng Qiaoqiao</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">227.2k</span>
+  
+</div>
+
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+-->
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '254c17f1918f80ab52dd',
+          clientSecret: '34c85cd4d80c0f06e9818833a9ae32a9ba4cc669',
+          accessToken: '708b17957b91acd33283ceae79fa7a1ad50c714f', 
+          repo: 'qqzeng.github.io',
+          owner: 'qqzeng',
+          admin: ['qqzeng'],
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')
+    </script>
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+  </script>
+
+  
+
+  
+  
+
+
+  
+
+  
+
+  <!-- 代码块复制功能 -->
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap')
+      $(e).after($wrap)
+      $wrap.append($('<button>').addClass('copy-btn').append('复制').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text()
+        }).toArray().join('\n')
+        var ta = document.createElement('textarea')
+        document.body.appendChild(ta)
+        ta.style.position = 'absolute'
+        ta.style.top = '0px'
+        ta.style.left = '0px'
+        ta.value = code
+        ta.select()
+        ta.focus()
+        var result = document.execCommand('copy')
+        document.body.removeChild(ta)
+        
+          if(result)$(this).text('复制成功')
+          else $(this).text('复制失败')
+        
+        $(this).blur()
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn')
+        setTimeout(function () {
+          $b.text('复制')
+        }, 300)
+      }).append(e)
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+</body>
+</html>
